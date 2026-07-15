@@ -1,0 +1,2 @@
+2026-07-15 09:37:58.230 -05:00 [INF] Error al obtener datos de la API usuarios: There is no row at position 0.
+2026-07-15 09:38:55.826 -05:00 [INF] Error al obtener datos de la API usuarios: There is no row at position 0.

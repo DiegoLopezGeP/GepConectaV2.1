@@ -1,0 +1,98 @@
+﻿@using WhatsappComercial.Interfaces.Contactos
+@using WhatsappComercial.Modelos
+
+@inject IGuardarContacto guardarContacto
+@inject NotificationService notificationService
+
+<div class="rz-p-0 rz-p-md-12">
+
+    <RadzenTemplateForm TItem="Contacto"
+                        Data="@contacto"
+                        Submit="OnSubmitContacto"
+                        InvalidSubmit="OnInvalidSubmit">
+
+        <RadzenStack Gap="1rem">
+
+            <RadzenRow AlignItems="AlignItems.Center">
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenLabel Text="Nombre Completo" Component="NombreContacto" />
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="8">
+                    <RadzenTextBox Name="NombreContacto"
+                                   @bind-Value="contacto.NombreContacto"
+                                   Style="width:100%;" />
+
+                    <RadzenRequiredValidator Component="NombreContacto"
+                                             Text="El nombre es obligatorio." />
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow AlignItems="AlignItems.Center">
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenLabel Text="Celular" Component="CelularContacto" />
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="8">
+                    <RadzenTextBox Name="CelularContacto"
+                                   @bind-Value="contacto.CelularContacto"
+                                   Style="width:100%;" />
+
+                    <RadzenRequiredValidator Component="CelularContacto"
+                                             Text="El celular es obligatorio." />
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow>
+                <RadzenColumn Size="12" class="rz-text-align-end">
+
+                    <RadzenButton Text="Guardar"
+                                  Icon="save"
+                                  ButtonType="ButtonType.Submit"
+                                  ButtonStyle="ButtonStyle.Primary" />
+
+                </RadzenColumn>
+            </RadzenRow>
+
+        </RadzenStack>
+
+    </RadzenTemplateForm>
+
+</div>
+
+@code {
+
+    private Contacto contacto = new();
+
+    private async Task OnSubmitContacto()
+    {
+        try
+        {
+            await guardarContacto.GuardarContactoAsync(contacto);
+
+            notificationService.Notify(
+                NotificationSeverity.Success,
+                "Correcto",
+                "El contacto fue registrado correctamente.");
+
+            // Si deseas limpiar el formulario
+            contacto = new Contacto();
+        }
+        catch (Exception ex)
+        {
+            notificationService.Notify(
+                NotificationSeverity.Error,
+                "Error",
+                ex.Message);
+        }
+    }
+
+    private void OnInvalidSubmit(FormInvalidSubmitEventArgs args)
+    {
+        notificationService.Notify(
+            NotificationSeverity.Warning,
+            "Formulario",
+            "Complete los campos obligatorios.");
+    }
+
+}

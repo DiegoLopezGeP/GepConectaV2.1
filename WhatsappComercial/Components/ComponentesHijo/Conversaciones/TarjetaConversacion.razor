@@ -1,0 +1,19 @@
+﻿@using WhatsappComercial.Modelos.DTOs
+@foreach (var item in datosTarjetaConversacion)
+{
+	<RadzenCard>
+		<RadzenStack Orientation="Orientation.Horizontal">
+			<RadzenImage Path="lib\Imagenes\imagen1.png" Style="width:60px; height: 60px;"></RadzenImage>
+			<RadzenText Text="@item.NombreCliente"></RadzenText>
+		</RadzenStack>
+
+		<RadzenText Text="@item.EstadoConversacion"></RadzenText>
+		<RadzenText Text="@item.Fecha.ToString()"></RadzenText>
+	</RadzenCard>
+}
+
+
+@code {
+	[Parameter] public List<DatosTarjetaConversacionDTO> datosTarjetaConversacion { get; set; } = new();
+}
+

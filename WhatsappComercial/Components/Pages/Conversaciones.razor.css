@@ -1,0 +1,54 @@
+﻿.contenedor-conversaciones {
+    display: grid;
+    height: calc(100vh - 160px);
+    overflow: hidden;
+}
+
+.panel-lista,
+.panel-chat {
+    min-width: 0;
+    overflow: hidden;
+}
+
+@media (min-width: 769px) {
+    .contenedor-conversaciones {
+        grid-template-columns: 30% 70%;
+    }
+
+    .panel-lista,
+    .panel-chat {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .btn-volver {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .contenedor-conversaciones {
+        grid-template-columns: 100%;
+    }
+
+    .panel-lista,
+    .panel-chat {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .mostrar-lista .panel-lista {
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-end;
+    }
+
+    .mostrar-chat .panel-chat {
+        display: flex;
+    }
+
+    .btn-volver {
+        display: flex;
+    }
+}

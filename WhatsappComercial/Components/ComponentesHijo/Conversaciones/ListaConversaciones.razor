@@ -1,0 +1,68 @@
+﻿@using WhatsappComercial.Modelos.DTOs
+@using WhatsappComercial.Components.ComponentesHijo.Contactos
+@inject DialogService dialogService
+@inject IJSRuntime JS
+
+<RadzenStack Orientation="Orientation.Horizontal" Gap="5px">
+	<RadzenButton Icon="search" Variant="Variant.Filled" ButtonStyle="ButtonStyle.Info" Style="width: 50px; height: 50px; border-radius: 10px;" Click="AbrirBusquedaCliente"></RadzenButton>
+	<RadzenButton Icon="add" Variant="Variant.Filled" ButtonStyle="ButtonStyle.Success" Style="width: 50px; height: 50px; border-radius: 10px;" Click="AbrirRegistroContacto"></RadzenButton>
+</RadzenStack>
+
+
+
+
+<RadzenStack Style="width: 100%">
+	<TarjetaConversacion datosTarjetaConversacion="@datosTarjeta"></TarjetaConversacion>
+</RadzenStack>
+
+
+
+@code {
+	List<DatosTarjetaConversacionDTO> datosTarjeta = new();
+	[Parameter] public string? NombreUsuarioDA { get; set; }
+
+	private async Task AbrirBusquedaCliente()
+	{
+
+		bool esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
+		var opciones = new DialogOptions
+		{
+			Width = esMovil ? "95%" : "40%",
+			CloseDialogOnOverlayClick = false,
+			TitleContent = null,
+			ShowClose = true
+		};
+
+		if (esMovil)
+		{
+			opciones.Style = "margin-top:30%;";
+		}
+
+		var result = await dialogService.OpenAsync<ConsultaContacto>(
+			"Buscar Contacto",
+			null,
+			opciones);
+
+	}
+
+	private async Task AbrirRegistroContacto()
+	{
+		bool esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
+		var opciones = new DialogOptions
+		{
+			Width = esMovil ? "95%" : "40%",
+			CloseDialogOnOverlayClick = false,
+			TitleContent = null,
+			ShowClose = true
+		};
+
+		if (esMovil)
+		{
+			opciones.Style = "margin-top:30%;";
+		}
+		var result = await dialogService.OpenAsync<RegistroContacto>(
+			"Registro de Contacto",
+			null,
+			opciones);
+	}
+}

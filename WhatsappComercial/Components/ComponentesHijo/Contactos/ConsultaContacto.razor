@@ -1,0 +1,137 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+@using WhatsappComercial.Enums
+@using WhatsappComercial.Interfaces.Contactos
+@using WhatsappComercial.Modelos
+@using WhatsappComercial.Modelos.DTOs
+@inject IBusquedaContactos busquedaContactos
+
+<RadzenCard Style="width:100%; margin-bottom:10px;">
+    <RadzenRadioButtonList TValue="TipoContactoEnum"
+                           Data="@tiposContacto"
+                           TextProperty="Texto"
+                           ValueProperty="Valor"
+                           @bind-Value="tipoContactoEnum" />
+</RadzenCard>
+
+
+<RadzenStack Gap="1rem" Style="width:100%;">
+
+    <RadzenTextBox @bind-Value="textoBusqueda"
+                   Placeholder="Buscar por número de identificación o celular"
+                   Style="width:100%;"
+                   @onkeydown="OnKeyDown" />
+
+    <RadzenDataGrid TItem="Contacto"
+                    Data="@contactosFiltrados"
+                    AllowSorting="true"
+                    AllowPaging="true"
+                    PageSize="5"
+                    AllowColumnResize="true"
+                    AllowAlternatingRows="false"
+                    SelectionMode="DataGridSelectionMode.Single"
+                    RowSelect="OnRowSelect"
+                    ShowPagingSummary="true"
+                    PagerHorizontalAlign="HorizontalAlign.Left">
+
+        <Columns>
+
+            <RadzenDataGridColumn TItem="Contacto"
+                                  Property="@nameof(Contacto.NombreContacto)"
+                                  Title="Nombre" />
+
+            <RadzenDataGridColumn TItem="Contacto"
+                                  Property="@nameof(Contacto.CelularContacto)"
+                                  Title="Celular" />
+
+        </Columns>
+
+    </RadzenDataGrid>
+
+    <RadzenStack Orientation="Orientation.Horizontal"
+                 JustifyContent="JustifyContent.End">
+
+        <RadzenButton Text="Editar Contacto"
+                      Icon="close"
+                      Disabled="@(contactoSeleccionado is null)"
+                      ButtonStyle="ButtonStyle.Light" />
+
+        <RadzenButton Text="Crear Conversacion"
+                      Icon="check"
+                      ButtonStyle="ButtonStyle.Primary"
+                      Disabled="@(contactoSeleccionado is null)"
+                      Click="SeleccionarContacto" />
+
+    </RadzenStack>
+
+</RadzenStack>
+
+@code
+{
+    [Parameter] public string? NombreUsuarioDA { get; set; }
+    private string? textoBusqueda;
+    private TipoContactoEnum tipoContactoEnum = TipoContactoEnum.Titular;
+    private List<OpcionTipoContacto> tiposContacto = new()
+    {
+        new()
+        {
+            Valor = TipoContactoEnum.Titular,
+            Texto = "Titular"
+        },
+        new()
+        {
+            Valor = TipoContactoEnum.Beneficiario,
+            Texto = "Beneficiario"
+        }
+    };
+
+
+
+    private Contacto? contactoSeleccionado;
+
+    private List<Contacto> contactos = new();
+
+    private List<Contacto> contactosFiltrados = new();
+
+    protected override void OnInitialized()
+    {
+
+    }
+
+    private void OnRowSelect(Contacto contacto)
+    {
+        contactoSeleccionado = contacto;
+    }
+
+    private void SeleccionarContacto()
+    {
+        if (contactoSeleccionado is null)
+            return;
+
+        Console.WriteLine(contactoSeleccionado.NombreContacto);
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            BuscarContacto();
+        }
+    }
+
+    private async Task BuscarContacto()
+    {
+        contactoSeleccionado = null;
+
+        if (string.IsNullOrWhiteSpace(textoBusqueda))
+        {
+            contactosFiltrados = contactos.ToList();
+            return;
+        }
+
+
+
+        var filtro = textoBusqueda.Trim();
+
+        contactosFiltrados = await busquedaContactos.ObtenerContactoAsync(filtro);
+    }
+}

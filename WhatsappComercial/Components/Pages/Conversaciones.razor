@@ -1,0 +1,61 @@
+﻿@page "/conversaciones"
+@using WhatsappComercial.Components.ComponentesHijo.Conversaciones
+@using WhatsappComercial.Enums
+@using WhatsappComercial.Servicios.AutenticacionUsuario
+@using WhatsappComercial.Interfaces.Usuarios
+@using WhatsappComercial.Modelos
+@inject IUsuarios informacionUsuario
+@inject IHttpContextAccessor HttpContextAccessor
+
+<div class="contenedor-conversaciones @ClaseVista">
+
+    <div class="panel-lista">
+
+        <ListaConversaciones NombreUsuarioDA="@userName"></ListaConversaciones>
+@* 
+        <RadzenButton Text="Abrir conversación"
+                      Click="@(()=>AbrirConversacion(1))" /> *@
+
+    </div>
+
+    <div class="panel-chat">
+
+        <RadzenButton Icon="arrow_back"
+                      Text="Volver"
+                      Click="Volver"
+                      class="btn-volver" />
+
+        <!-- Conversación -->
+
+    </div>
+
+</div>
+
+<stile>
+
+</stile>
+
+@code {
+
+    private VistaConversaciones vistaActual = VistaConversaciones.Lista;
+    private int? idConversacionSeleccionada;
+    private string ClaseVista =>
+        vistaActual == VistaConversaciones.Lista
+            ? "mostrar-lista"
+            : "mostrar-chat";
+
+    string userName = string.Empty;
+    GrupoUser infoUsuarioConectado = new(); 
+
+    protected override async Task OnInitializedAsync()
+    {
+        userName = HttpContextAccessor.HttpContext?.User?.Identity?.Name?.Split("\\").Last() ?? "Desconocido";
+        infoUsuarioConectado = await informacionUsuario.ObtenerInformacionUsuario(userName);
+    }
+
+    private void Volver()
+    {
+        vistaActual = VistaConversaciones.Lista;
+    }
+
+}
