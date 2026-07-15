@@ -181,6 +181,41 @@ namespace WhatsappComercial.Servicios.AccesoADatos
 
         }
 
+        public string GrabarRegistroDevuelveConsecutivo<T>(T objeto, string nombreTabla)
+        {
+            try
+            {
+                DataTable tablaEsquema = ServicioDatos.TraerEsquemaTabla(nombreTabla, Aplicacion);
+
+                DataRow fila = tablaEsquema.NewRow();
+
+                PropertyInfo[] propiedades = typeof(T).GetProperties();
+
+                foreach (PropertyInfo propiedad in propiedades)
+                {
+                    if (tablaEsquema.Columns.Contains(propiedad.Name) && propiedad.CanRead)
+                    {
+                        object valor = propiedad.GetValue(objeto) ?? DBNull.Value;
+                        fila[propiedad.Name] = valor;
+                    }
+                }
+
+                tablaEsquema.Rows.Add(fila);
+
+                if (tablaEsquema.Rows.Count > 0)
+                {
+                    return InsertarRegistroDevuelveConsecutivo(tablaEsquema);
+                }
+
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
+            }
+        }
+
         public string GrabarCamposCoincidentes<T>(T objeto, string nombreTabla)
         {
             DataTable tablaEsquema = ServicioDatos.TraerEsquemaTabla(nombreTabla, Aplicacion);

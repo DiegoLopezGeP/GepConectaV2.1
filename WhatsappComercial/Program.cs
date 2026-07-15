@@ -4,12 +4,17 @@ using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.Extensions.FileProviders;
 using Radzen;
 using WhatsappComercial.Components;
+using WhatsappComercial.Extensions;
 using WhatsappComercial.Interfaces.Contactos;
+using WhatsappComercial.Interfaces.Conversaciones;
+using WhatsappComercial.Interfaces.Tickets;
 using WhatsappComercial.Interfaces.Usuarios;
 using WhatsappComercial.Modelos;
 using WhatsappComercial.Servicios.AccesoADatos;
 using WhatsappComercial.Servicios.AutenticacionUsuario;
 using WhatsappComercial.Servicios.Contactos;
+using WhatsappComercial.Servicios.Conversaciones;
+using WhatsappComercial.Servicios.Tickets;
 using WhatsappComercial.Servicios.Usuarios;
 
 namespace WhatsappComercial
@@ -28,13 +33,10 @@ namespace WhatsappComercial
             builder.Services.AddHttpContextAccessor();
             builder.Services.Configure<ConfiguracionApp>(builder.Configuration.GetSection("AppSettings"));
             builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme).AddNegotiate();
-            builder.Services.AddScoped<ServicioAccesoDatos>();
-            builder.Services.AddScoped<IBusquedaContactos, BusquedaContactos>();
-            builder.Services.AddScoped<IGuardarContacto, GuardarContacto>();
-            builder.Services.AddScoped<IUsuarios, Usuarios>();
+  
+            builder.Services.AddApplicationServices();
 
-
-            builder.Services.AddScoped<ObtenerNombreUsuario>();
+      
 
             builder.Services.AddRazorPages();
             builder.Services.AddHttpClient();

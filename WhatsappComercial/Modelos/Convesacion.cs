@@ -1,6 +1,6 @@
 ﻿namespace WhatsappComercial.Modelos
 {
-    public class Convesaciones
+    public class Convesacion
     {
         public int IdConversacion { get; set; }
         public DateTime FechaFinConversacion { get; set; }
