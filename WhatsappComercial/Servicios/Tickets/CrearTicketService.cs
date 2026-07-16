@@ -12,7 +12,7 @@ namespace WhatsappComercial.Servicios.Tickets
         {
             _servicioAccesoDatos = servicioAccesoDatos;
         }
-        public async Task<int> CrearTicket(Ticket ticket)
+        public async Task<int> CrearTicketAsync(Ticket ticket)
         {
             try
             {
@@ -24,6 +24,7 @@ namespace WhatsappComercial.Servicios.Tickets
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.ToString());
                 throw;
             }
         }

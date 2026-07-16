@@ -3,6 +3,6 @@ namespace WhatsappComercial.Interfaces.Tickets
 {
     public interface ICrearTicket
     {
-        Task<int> CrearTicket(Ticket ticket);
+        Task<int> CrearTicketAsync(Ticket ticket);
     }
 }

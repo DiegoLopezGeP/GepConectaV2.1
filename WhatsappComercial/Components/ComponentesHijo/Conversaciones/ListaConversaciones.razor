@@ -1,5 +1,6 @@
-﻿@using WhatsappComercial.Modelos.DTOs
-@using WhatsappComercial.Components.ComponentesHijo.Contactos
+﻿@using WhatsappComercial.Components.ComponentesHijo.Contactos
+@using WhatsappComercial.Modelos
+@using WhatsappComercial.Modelos.DTOs
 @inject DialogService dialogService
 @inject IJSRuntime JS
 
@@ -20,29 +21,35 @@
 @code {
 	List<DatosTarjetaConversacionDTO> datosTarjeta = new();
 	[Parameter] public string? NombreUsuarioDA { get; set; }
+	[Parameter] public GrupoUser InformacionUsuarioAutenticado { get; set; } = new();
 
 	private async Task AbrirBusquedaCliente()
 	{
-
 		bool esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
+
 		var opciones = new DialogOptions
 		{
 			Width = esMovil ? "95%" : "40%",
 			CloseDialogOnOverlayClick = false,
 			TitleContent = null,
-			ShowClose = true
+			ShowClose = true,
+			Style = esMovil ? "margin-top:30%;" : null
 		};
-
-		if (esMovil)
-		{
-			opciones.Style = "margin-top:30%;";
-		}
 
 		var result = await dialogService.OpenAsync<ConsultaContacto>(
 			"Buscar Contacto",
-			null,
+			new Dictionary<string, object?>
+			{
+				{ "NombreUsuarioDA", NombreUsuarioDA },
+				{ "InformacionUsuarioAutenticado", InformacionUsuarioAutenticado }
+			},
 			opciones);
 
+		// Si el diálogo retorna un resultado puedes procesarlo aquí.
+		// if (result != null)
+		// {
+		//     ...
+		// }
 	}
 
 	private async Task AbrirRegistroContacto()

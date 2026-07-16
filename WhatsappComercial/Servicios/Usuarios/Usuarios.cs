@@ -14,7 +14,7 @@ namespace WhatsappComercial.Servicios.Usuarios
         {
             _servicioAccesoDatos = servicioAccesoDatos;
         }
-        public async Task<GrupoUser?> ObtenerInformacionUsuario(string nombreUsuarioDA)
+        public async Task<GrupoUser> ObtenerInformacionUsuario(string nombreUsuarioDA)
         {
             try
             {

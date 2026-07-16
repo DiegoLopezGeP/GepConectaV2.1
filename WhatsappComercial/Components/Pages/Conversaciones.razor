@@ -1,7 +1,6 @@
 ﻿@page "/conversaciones"
 @using WhatsappComercial.Components.ComponentesHijo.Conversaciones
 @using WhatsappComercial.Enums
-@using WhatsappComercial.Servicios.AutenticacionUsuario
 @using WhatsappComercial.Interfaces.Usuarios
 @using WhatsappComercial.Modelos
 @inject IUsuarios informacionUsuario
@@ -11,7 +10,7 @@
 
     <div class="panel-lista">
 
-        <ListaConversaciones NombreUsuarioDA="@userName"></ListaConversaciones>
+        <ListaConversaciones NombreUsuarioDA="@userName" InformacionUsuarioAutenticado="@infoUsuarioConectado"></ListaConversaciones>
 @* 
         <RadzenButton Text="Abrir conversación"
                       Click="@(()=>AbrirConversacion(1))" /> *@
@@ -38,7 +37,6 @@
 @code {
 
     private VistaConversaciones vistaActual = VistaConversaciones.Lista;
-    private int? idConversacionSeleccionada;
     private string ClaseVista =>
         vistaActual == VistaConversaciones.Lista
             ? "mostrar-lista"

@@ -1,9 +1,16 @@
 ﻿@using Microsoft.AspNetCore.Components.Web
 @using WhatsappComercial.Enums
 @using WhatsappComercial.Interfaces.Contactos
+@using WhatsappComercial.Interfaces.Conversaciones
+@using WhatsappComercial.Interfaces.Tickets
 @using WhatsappComercial.Modelos
 @using WhatsappComercial.Modelos.DTOs
 @inject IBusquedaContactos busquedaContactos
+@inject ICrearTicket crearTicket
+@inject ICrearConversacion crearConversacion
+@inject IAsignarTicket asignarTicket
+@inject NotificationService notificacion
+@inject DialogService dialogService
 
 <RadzenCard Style="width:100%; margin-bottom:10px;">
     <RadzenRadioButtonList TValue="TipoContactoEnum"
@@ -19,7 +26,7 @@
     <RadzenTextBox @bind-Value="textoBusqueda"
                    Placeholder="Buscar por número de identificación o celular"
                    Style="width:100%;"
-                   @onkeydown="OnKeyDown" />
+                   @onkeyup="OnKeyUp" />
 
     <RadzenDataGrid TItem="Contacto"
                     Data="@contactosFiltrados"
@@ -59,7 +66,7 @@
                       Icon="check"
                       ButtonStyle="ButtonStyle.Primary"
                       Disabled="@(contactoSeleccionado is null)"
-                      Click="SeleccionarContacto" />
+                      Click="CrearNuevaConversacion" />
 
     </RadzenStack>
 
@@ -68,6 +75,7 @@
 @code
 {
     [Parameter] public string? NombreUsuarioDA { get; set; }
+    [Parameter] public GrupoUser InformacionUsuarioAutenticado { get; set; } = new();
     private string? textoBusqueda;
     private TipoContactoEnum tipoContactoEnum = TipoContactoEnum.Titular;
     private List<OpcionTipoContacto> tiposContacto = new()
@@ -102,19 +110,106 @@
         contactoSeleccionado = contacto;
     }
 
-    private void SeleccionarContacto()
+    private async Task CrearNuevaConversacion()
     {
-        if (contactoSeleccionado is null)
-            return;
+        try
+        {
+            // Validaciones
+            if (contactoSeleccionado is null)
+            {
+                notificacion.Notify(
+                    NotificationSeverity.Warning,
+                    "Atención",
+                    "Debe seleccionar un contacto.");
 
-        Console.WriteLine(contactoSeleccionado.NombreContacto);
+                return;
+            }
+
+            if (InformacionUsuarioAutenticado is null)
+            {
+                throw new InvalidOperationException("No fue posible obtener la información del usuario autenticado.");
+            }
+
+            if (InformacionUsuarioAutenticado.IdGrupoUser <= 0)
+            {
+                notificacion.Notify(
+                    NotificationSeverity.Warning,
+                    "Atención",
+                    "El usuario no pertenece a un grupo de trabajo.");
+
+                return;
+            }
+
+            // Crear ticket
+            Ticket nuevoTicket = new()
+            {
+                IdGrupoUser = InformacionUsuarioAutenticado.IdGrupoUser
+            };
+
+            int idTicket = await crearTicket.CrearTicketAsync(nuevoTicket);
+
+            if (idTicket <= 0)
+            {
+                throw new Exception("No fue posible crear el ticket.");
+            }
+
+            var fechaActual = DateTime.Now;
+
+            // Crear conversación
+            Conversacion nuevaConversacion = new()
+            {
+                FechaFinConversacion = null,
+                FechaInicioConversacion = fechaActual,
+                FechaUltimoMensaje = fechaActual,
+                EstadoConversacion = EstadoConversacionEnum.Activa.ToString(),
+                ActivaConAsesor = true,
+                FechaEnvioUltimaPlantilla = null,
+                EsPrimeraInteraccion = true,
+                IntentosInactividad = 0,
+                IdTicket = idTicket,
+                IdTipificacion = 0,
+                NumeroTelefonoConversacion = contactoSeleccionado.CelularContacto,
+                IdContacto = contactoSeleccionado.IdContacto
+            };
+
+            int idConversacion = await crearConversacion.CrearNuevaConversaciones(nuevaConversacion);
+
+            if (idConversacion <= 0)
+            {
+                throw new Exception("No fue posible crear la conversación.");
+            }
+
+            // Asignar ticket
+            bool asignado = await asignarTicket.AsignarTicketNuevaConversacion(idTicket, idConversacion);
+
+            if (!asignado)
+            {
+                throw new Exception("La conversación fue creada, pero no fue posible asignar el ticket.");
+            }
+
+            notificacion.Notify(
+                NotificationSeverity.Success,
+                "Correcto",
+                "La conversación fue creada correctamente.");
+
+            dialogService.Close(idConversacion);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+
+            notificacion.Notify(
+                NotificationSeverity.Error,
+                "Error",
+                ex.Message);
+        }
     }
 
-    private void OnKeyDown(KeyboardEventArgs e)
+    private async Task OnKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
-            BuscarContacto();
+            await BuscarContacto();
         }
     }
 

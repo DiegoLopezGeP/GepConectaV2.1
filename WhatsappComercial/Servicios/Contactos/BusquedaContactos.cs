@@ -41,6 +41,7 @@ namespace WhatsappComercial.Servicios.Contactos
             catch (Exception ex)
             {
                 // Si tienes un logger, regístralo aquí.
+                Console.WriteLine(ex.ToString());
                 throw;
             }
         }
