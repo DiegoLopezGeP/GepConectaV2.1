@@ -1,0 +1,61 @@
+﻿.ticket-superior {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.ticket-badge {
+    margin-left: auto; /* Siempre se alinea a la derecha */
+
+    background: #0d6efd;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.marca-nueva {
+    background: #4caf50;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.contenido-conversacion {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.datos-conversacion {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.nombre-cliente {
+    font-size: 17px;
+    font-weight: 600;
+    color: #222;
+    /* Permite varias líneas */
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.25;
+}
+
+.pie-conversacion {
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #666;
+    font-size: 13px;
+}
+
+.estado {
+    font-weight: 500;
+}

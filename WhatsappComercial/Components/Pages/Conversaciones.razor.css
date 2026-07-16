@@ -2,12 +2,19 @@
     display: grid;
     height: calc(100vh - 160px);
     overflow: hidden;
+
+}
+
+.panel-lista {
+    background: aliceblue;
+    gap: 2%;
 }
 
 .panel-lista,
 .panel-chat {
     min-width: 0;
     overflow: hidden;
+    padding:10px;
 }
 
 @media (min-width: 769px) {
@@ -40,8 +47,9 @@
 
     .mostrar-lista .panel-lista {
         display: flex;
-        justify-content: flex-end;
+        justify-content: space-between;
         align-items: flex-end;
+        flex-direction: column-reverse;
     }
 
     .mostrar-chat .panel-chat {

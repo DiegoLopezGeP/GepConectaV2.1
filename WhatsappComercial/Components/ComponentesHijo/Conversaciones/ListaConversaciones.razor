@@ -2,30 +2,87 @@
 @using WhatsappComercial.Modelos
 @using WhatsappComercial.Modelos.DTOs
 @inject DialogService dialogService
-@inject IJSRuntime JS
-
-<RadzenStack Orientation="Orientation.Horizontal" Gap="5px">
-	<RadzenButton Icon="search" Variant="Variant.Filled" ButtonStyle="ButtonStyle.Info" Style="width: 50px; height: 50px; border-radius: 10px;" Click="AbrirBusquedaCliente"></RadzenButton>
-	<RadzenButton Icon="add" Variant="Variant.Filled" ButtonStyle="ButtonStyle.Success" Style="width: 50px; height: 50px; border-radius: 10px;" Click="AbrirRegistroContacto"></RadzenButton>
-</RadzenStack>
 
 
+<div class="panel-conversaciones">
 
+	<div class="acciones-conversaciones">
+		<RadzenStack Orientation="Orientation.Horizontal" Gap="10px" JustifyContent="@(esMovil ? JustifyContent.End : JustifyContent.Start)" Style="margin-bottom:20px;">
+			<RadzenButton Icon="search"
+						  Variant="Variant.Filled"
+						  ButtonStyle="ButtonStyle.Info"
+						  Style="width:50px;height:50px;border-radius:10px;"
+						  Click="AbrirBusquedaCliente" />
 
-<RadzenStack Style="width: 100%">
-	<TarjetaConversacion datosTarjetaConversacion="@datosTarjeta"></TarjetaConversacion>
-</RadzenStack>
+			<RadzenButton Icon="add"
+						  Variant="Variant.Filled"
+						  ButtonStyle="ButtonStyle.Success"
+						  Style="width:50px;height:50px;border-radius:10px;"
+						  Click="AbrirRegistroContacto" />
+		</RadzenStack>
+	</div>
+
+	<RadzenTextBox @bind-Value="TextoBusqueda"
+				   Placeholder="Buscar por ticket o celular"
+				   Style="width:100%;border-radius:10px;margin:15px 0;" />
+
+	<RadzenStack Gap="0.5rem" Style="padding: 10px;">
+		<RadzenChipList @bind-Value="@selectedCategory"
+						TValue="string"
+						Data="@categories"
+						TextProperty="Name"
+						ValueProperty="Name"
+						ChipStyle="BadgeStyle.Base" 
+						Change="OnFiltroBotonConversaciones" />
+	</RadzenStack>
+
+	<div class="contenedor-tarjetas">
+		<TarjetaConversacion datosTarjetaConversacion="@ListaDatosTarjetaFiltrada" />
+	</div>
+
+</div>
 
 
 
 @code {
-	List<DatosTarjetaConversacionDTO> datosTarjeta = new();
+	[Parameter] public List<DatosTarjetaConversacionDTO> ListaDatosTarjeta { get; set; } = new();
 	[Parameter] public string? NombreUsuarioDA { get; set; }
 	[Parameter] public GrupoUser InformacionUsuarioAutenticado { get; set; } = new();
+	private List<DatosTarjetaConversacionDTO> ListaDatosTarjetaFiltrada = new();
+	private string textoBusqueda = string.Empty;
+	[Parameter] public bool esMovil { get; set; }
+
+
+	string selectedCategory = "Activas";
+
+	List<NamedItem> categories = new()
+	{
+		new NamedItem("Activas"),
+		new NamedItem("No Leídos")
+	};
+
+	public record NamedItem(string Name);
+
+	private string TextoBusqueda
+	{
+		get => textoBusqueda;
+		set
+		{
+			textoBusqueda = value;
+			FiltrarConversaciones();
+		}
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		ListaDatosTarjetaFiltrada = ListaDatosTarjeta.ToList();
+		FiltrarConversaciones();
+
+	}
 
 	private async Task AbrirBusquedaCliente()
 	{
-		bool esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
+		// esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
 
 		var opciones = new DialogOptions
 		{
@@ -54,7 +111,7 @@
 
 	private async Task AbrirRegistroContacto()
 	{
-		bool esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
+		// esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
 		var opciones = new DialogOptions
 		{
 			Width = esMovil ? "95%" : "40%",
@@ -71,5 +128,31 @@
 			"Registro de Contacto",
 			null,
 			opciones);
+	}
+	private void FiltrarConversaciones()
+	{
+		if (string.IsNullOrWhiteSpace(textoBusqueda))
+		{
+			ListaDatosTarjetaFiltrada = ListaDatosTarjeta.ToList();
+			return;
+		}
+
+		string filtro = textoBusqueda.Trim();
+
+		ListaDatosTarjetaFiltrada = ListaDatosTarjeta
+			.Where(c =>
+				(!string.IsNullOrWhiteSpace(c.NombreCliente) &&
+					c.NombreCliente.Contains(filtro, StringComparison.OrdinalIgnoreCase))
+				||
+				// (!string.IsNullOrWhiteSpace(c.NumeroTelefono) &&
+				//  c.NumeroTelefono.Contains(filtro, StringComparison.OrdinalIgnoreCase))
+				// ||
+				c.IdTicket.ToString().Contains(filtro))
+			.ToList();
+	}
+
+	private async Task OnFiltroBotonConversaciones()
+	{
+		Console.WriteLine(selectedCategory);
 	}
 }

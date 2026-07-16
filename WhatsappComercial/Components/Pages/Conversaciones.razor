@@ -2,15 +2,20 @@
 @using WhatsappComercial.Components.ComponentesHijo.Conversaciones
 @using WhatsappComercial.Enums
 @using WhatsappComercial.Interfaces.Usuarios
+@using WhatsappComercial.Interfaces.Conversaciones
 @using WhatsappComercial.Modelos
+@using WhatsappComercial.Modelos.DTOs
+
 @inject IUsuarios informacionUsuario
+@inject IObtenerConversaciones obtenerConversaciones
 @inject IHttpContextAccessor HttpContextAccessor
+
+@inject IJSRuntime JS
 
 <div class="contenedor-conversaciones @ClaseVista">
 
     <div class="panel-lista">
-
-        <ListaConversaciones NombreUsuarioDA="@userName" InformacionUsuarioAutenticado="@infoUsuarioConectado"></ListaConversaciones>
+        <ListaConversaciones NombreUsuarioDA="@userName" InformacionUsuarioAutenticado="@infoUsuarioConectado" ListaDatosTarjeta="@ListaConversaciones" esMovil="@esMovil"></ListaConversaciones>
 @* 
         <RadzenButton Text="Abrir conversación"
                       Click="@(()=>AbrirConversacion(1))" /> *@
@@ -44,11 +49,28 @@
 
     string userName = string.Empty;
     GrupoUser infoUsuarioConectado = new(); 
+    List<DatosTarjetaConversacionDTO> ListaConversaciones = new();
+    bool esMovil;
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+
+            esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
+
+            StateHasChanged();
+        
+    }
     protected override async Task OnInitializedAsync()
     {
+        //esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
         userName = HttpContextAccessor.HttpContext?.User?.Identity?.Name?.Split("\\").Last() ?? "Desconocido";
         infoUsuarioConectado = await informacionUsuario.ObtenerInformacionUsuario(userName);
+        await ObtenerConversacionesPorUsuario();
+    }
+
+    private async Task ObtenerConversacionesPorUsuario()
+    {
+        ListaConversaciones = await obtenerConversaciones.ObtenerDatosConversacionContacto(infoUsuarioConectado);
     }
 
     private void Volver()

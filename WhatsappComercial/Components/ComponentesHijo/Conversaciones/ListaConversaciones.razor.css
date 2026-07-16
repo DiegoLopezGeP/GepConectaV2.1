@@ -1,0 +1,31 @@
+﻿.panel-conversaciones {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.acciones-conversaciones {
+    order: 1;
+}
+
+.contenedor-tarjetas {
+    order: 3;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+}
+
+@media (max-width: 768px) {
+
+    .acciones-conversaciones {
+        order: 4;
+        margin-top: 15px;
+        align-items:flex-end;
+    }
+
+    .contenedor-tarjetas {
+        order: 3;
+    }
+}

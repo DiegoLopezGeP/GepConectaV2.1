@@ -1,19 +1,53 @@
 ﻿@using WhatsappComercial.Modelos.DTOs
+
 @foreach (var item in datosTarjetaConversacion)
 {
-	<RadzenCard>
-		<RadzenStack Orientation="Orientation.Horizontal">
-			<RadzenImage Path="lib\Imagenes\imagen1.png" Style="width:60px; height: 60px;"></RadzenImage>
-			<RadzenText Text="@item.NombreCliente"></RadzenText>
-		</RadzenStack>
+	<RadzenCard Style="margin-bottom: 5px; border-radius: 12px; padding: 12px; cursor: pointer;">
 
-		<RadzenText Text="@item.EstadoConversacion"></RadzenText>
-		<RadzenText Text="@item.Fecha.ToString()"></RadzenText>
+		<div class="ticket-superior">
+
+			@if (esNuevaConversacion)
+			{
+				<span class="marca-nueva">
+					Nueva
+				</span>
+			}
+
+			<span class="ticket-badge">
+				Ticket #@item.IdTicket
+			</span>
+
+		</div>
+
+		<div class="contenido-conversacion">
+
+			<RadzenImage Path="Images/Hombre.jpg"
+						 Style="    width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0;" />
+
+			<div class="datos-conversacion">
+
+				<div class="nombre-cliente">
+					@item.NombreCliente
+				</div>
+
+				<div class="pie-conversacion">
+					<span>@item.Fecha.ToString("dd/MM/yyyy h:mm tt")</span>
+
+					<span class="estado">
+						@item.EstadoConversacion
+					</span>
+				</div>
+
+			</div>
+
+		</div>
+
 	</RadzenCard>
 }
 
 
 @code {
 	[Parameter] public List<DatosTarjetaConversacionDTO> datosTarjetaConversacion { get; set; } = new();
+	bool esNuevaConversacion = false;
 }
 
