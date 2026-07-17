@@ -14,68 +14,118 @@
 
 <div class="contenedor-conversaciones @ClaseVista">
 
-    <div class="panel-lista">
-        <ListaConversaciones NombreUsuarioDA="@userName" InformacionUsuarioAutenticado="@infoUsuarioConectado" ListaDatosTarjeta="@ListaConversaciones" esMovil="@esMovil"></ListaConversaciones>
-@* 
+	<div class="panel-lista">
+		<ListaConversaciones NombreUsuarioDA="@userName" InformacionUsuarioAutenticado="@infoUsuarioConectado" ListaDatosTarjeta="@ListaConversaciones" esMovil="@esMovil" OnAbrirConversacion="AbrirConversacion"></ListaConversaciones>
+		@*
         <RadzenButton Text="Abrir conversación"
                       Click="@(()=>AbrirConversacion(1))" /> *@
 
-    </div>
+	</div>
 
-    <div class="panel-chat">
+	<div class="panel-chat">
 
-        <RadzenButton Icon="arrow_back"
-                      Text="Volver"
-                      Click="Volver"
-                      class="btn-volver" />
+		@if (esMovil)
+		{
+			
 
-        <!-- Conversación -->
+			@* <RadzenButton Icon="arrow_back"
+                          Text="Volver"
+                          Click="Volver"
+                          class="btn-volver" /> *@
+		}
+		<RadzenStack Gap="2%">
+			<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver"></TarjetaDatosConversación>
+			<VisorMensajes></VisorMensajes>
+			<CuadroDeTexto EsMovil="@esMovil"></CuadroDeTexto>
+		</RadzenStack>
 
-    </div>
+
+        
+		<!-- Conversación -->
+
+	</div>
 
 </div>
 
-<stile>
+<style>
+	.btn-atras {
+		width: 42px;
+		height: 42px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		border: 1px solid #dcdcdc;
+		border-radius: 50%;
+		background-color: #ffffff;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+	}
 
-</stile>
+		.btn-atras:hover {
+			background-color: #f5f5f5;
+			border-color: #bdbdbd;
+		}
+
+		.btn-atras:active {
+			transform: scale(0.95);
+		}
+</style>
 
 @code {
 
-    private VistaConversaciones vistaActual = VistaConversaciones.Lista;
-    private string ClaseVista =>
-        vistaActual == VistaConversaciones.Lista
-            ? "mostrar-lista"
-            : "mostrar-chat";
+	private VistaConversaciones vistaActual = VistaConversaciones.Lista;
+	private DatosTarjetaConversacionDTO? conversacionSeleccionada;
+	private string ClaseVista =>
+		vistaActual == VistaConversaciones.Lista
+			? "mostrar-lista"
+			: "mostrar-chat";
 
-    string userName = string.Empty;
-    GrupoUser infoUsuarioConectado = new(); 
-    List<DatosTarjetaConversacionDTO> ListaConversaciones = new();
-    bool esMovil;
+	string userName = string.Empty;
+	GrupoUser infoUsuarioConectado = new();
+	List<DatosTarjetaConversacionDTO> ListaConversaciones = new();
+	bool esMovil;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
 
-            esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
+		esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
 
-            StateHasChanged();
-        
-    }
-    protected override async Task OnInitializedAsync()
-    {
-        //esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
-        userName = HttpContextAccessor.HttpContext?.User?.Identity?.Name?.Split("\\").Last() ?? "Desconocido";
-        infoUsuarioConectado = await informacionUsuario.ObtenerInformacionUsuario(userName);
-        await ObtenerConversacionesPorUsuario();
-    }
+		StateHasChanged();
 
-    private async Task ObtenerConversacionesPorUsuario()
-    {
-        ListaConversaciones = await obtenerConversaciones.ObtenerDatosConversacionContacto(infoUsuarioConectado);
-    }
+	}
+	protected override async Task OnInitializedAsync()
+	{
+		//esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
+		userName = HttpContextAccessor.HttpContext?.User?.Identity?.Name?.Split("\\").Last() ?? "Desconocido";
+		infoUsuarioConectado = await informacionUsuario.ObtenerInformacionUsuario(userName);
+		await ObtenerConversacionesPorUsuario();
+	}
 
-    private void Volver()
-    {
-        vistaActual = VistaConversaciones.Lista;
-    }
+	private async Task ObtenerConversacionesPorUsuario()
+	{
+		ListaConversaciones = await obtenerConversaciones.ObtenerDatosConversacionContacto(infoUsuarioConectado);
+	}
 
+	private async Task Volver()
+	{
+		vistaActual = VistaConversaciones.Lista;
+	}
+
+
+
+	private async Task AbrirConversacion(DatosTarjetaConversacionDTO conversacion)
+	{
+		conversacionSeleccionada = conversacion;
+
+		if (esMovil)
+		{
+			vistaActual = VistaConversaciones.Conversacion;
+		}
+
+		// Aquí luego cargarás los mensajes
+		// await CargarMensajes(conversacion.IdConversacion);
+
+		StateHasChanged();
+	}
 }

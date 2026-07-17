@@ -1,0 +1,264 @@
+﻿<RadzenCard class="contenedor-chat">
+
+	<div class="lista-mensajes">
+
+        @{
+            DateTime? ultimoDia = null;
+        }
+
+        @foreach (var mensaje in Mensajes.OrderBy(m => m.Fecha))
+        {
+            if (ultimoDia != mensaje.Fecha.Date)
+            {
+                ultimoDia = mensaje.Fecha.Date;
+
+                <div class="separador-fecha">
+                    @ObtenerTextoFecha(mensaje.Fecha)
+                </div>
+            }
+
+            <div class="@(mensaje.EsEntrante ? "mensaje-entrante" : "mensaje-saliente")">
+
+                <div class="burbuja">
+
+                    <div class="texto">
+                        @mensaje.Texto
+                    </div>
+
+                    <div class="hora">
+                        @mensaje.Fecha.ToString("hh:mm tt")
+                    </div>
+
+                </div>
+
+            </div>
+        }
+
+	</div>
+
+</RadzenCard>
+<style>
+	.contenedor-chat {
+		height: 55vh;
+		padding: 15px;
+		border-radius: 12px;
+		overflow: hidden;
+	}
+
+	.lista-mensajes {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		height: 100%;
+		overflow-y: auto;
+	}
+
+	.mensaje-entrante {
+		display: flex;
+		justify-content: flex-start;
+	}
+
+	.mensaje-saliente {
+		display: flex;
+		justify-content: flex-end;
+	}
+
+	.burbuja {
+		max-width: 70%;
+		padding: 10px 14px;
+		border-radius: 16px;
+		word-break: break-word;
+		position: relative;
+	}
+
+	.mensaje-entrante .burbuja {
+		background: #f1f1f1;
+		color: #222;
+		border-bottom-left-radius: 4px;
+	}
+
+	.mensaje-saliente .burbuja {
+		background: #d9fdd3;
+		color: #222;
+		border-bottom-right-radius: 4px;
+	}
+
+	.texto {
+		white-space: pre-wrap;
+	}
+
+	.hora {
+		margin-top: 6px;
+		text-align: right;
+		font-size: 11px;
+		color: #777;
+	}
+    .separador-fecha {
+        align-self: center;
+        background: #e9edef;
+        color: #54656f;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        margin: 10px 0;
+        box-shadow: 0 1px 2px rgba(0,0,0,.08);
+    }
+</style>
+@code {
+
+
+
+
+	public class MensajeDTO
+	{
+		public string Texto { get; set; } = string.Empty;
+		public DateTime Fecha { get; set; }
+		public bool EsEntrante { get; set; }
+	}
+
+    private List<MensajeDTO> Mensajes = new()
+{
+    // Hace 10 días
+    new()
+    {
+        Texto = "👋 Hola, quisiera conocer los planes exequiales.",
+        Fecha = DateTime.Today.AddDays(-10).AddHours(9).AddMinutes(10),
+        EsEntrante = true
+    },
+    new()
+    {
+        Texto = "😊 ¡Con mucho gusto! ¿Es para afiliación individual o familiar?",
+        Fecha = DateTime.Today.AddDays(-10).AddHours(9).AddMinutes(12),
+        EsEntrante = false
+    },
+    new()
+    {
+        Texto = "👨‍👩‍👧‍👦 Es para toda mi familia.",
+        Fecha = DateTime.Today.AddDays(-10).AddHours(9).AddMinutes(15),
+        EsEntrante = true
+    },
+
+    // Hace 5 días
+    new()
+    {
+        Texto = "Buenos días nuevamente. 😊",
+        Fecha = DateTime.Today.AddDays(-5).AddHours(8).AddMinutes(30),
+        EsEntrante = true
+    },
+    new()
+    {
+        Texto = "¡Hola! ¿Cómo estás? 👋",
+        Fecha = DateTime.Today.AddDays(-5).AddHours(8).AddMinutes(31),
+        EsEntrante = false
+    },
+    new()
+    {
+        Texto = "Quisiera saber si el plan incluye asistencia nacional. 🚑",
+        Fecha = DateTime.Today.AddDays(-5).AddHours(8).AddMinutes(32),
+        EsEntrante = true
+    },
+    new()
+    {
+        Texto = "Sí 👍 Tenemos cobertura a nivel nacional.",
+        Fecha = DateTime.Today.AddDays(-5).AddHours(8).AddMinutes(33),
+        EsEntrante = false
+    },
+
+    // Ayer
+    new()
+    {
+        Texto = "Hola nuevamente 😊",
+        Fecha = DateTime.Today.AddDays(-1).AddHours(14).AddMinutes(5),
+        EsEntrante = true
+    },
+    new()
+    {
+        Texto = "¡Hola! ¿En qué puedo ayudarte hoy?",
+        Fecha = DateTime.Today.AddDays(-1).AddHours(14).AddMinutes(6),
+        EsEntrante = false
+    },
+    new()
+    {
+        Texto = "¿Podrían enviarme la cotización? 📄",
+        Fecha = DateTime.Today.AddDays(-1).AddHours(14).AddMinutes(7),
+        EsEntrante = true
+    },
+    new()
+    {
+        Texto = "Claro 👍 En unos minutos la recibirás por este medio.",
+        Fecha = DateTime.Today.AddDays(-1).AddHours(14).AddMinutes(9),
+        EsEntrante = false
+    },
+
+    // Hoy
+    new()
+    {
+        Texto = "👋 Buenos días, ya recibí la cotización.",
+        Fecha = DateTime.Today.AddHours(8).AddMinutes(10),
+        EsEntrante = true
+    },
+    new()
+    {
+        Texto = "😊 ¡Excelente! ¿Qué te pareció?",
+        Fecha = DateTime.Today.AddHours(8).AddMinutes(11),
+        EsEntrante = false
+    },
+    new()
+    {
+        Texto = "Me parece muy buena opción. 😃",
+        Fecha = DateTime.Today.AddHours(8).AddMinutes(12),
+        EsEntrante = true
+    },
+    new()
+    {
+        Texto = "🎉 Nos alegra mucho saberlo.",
+        Fecha = DateTime.Today.AddHours(8).AddMinutes(13),
+        EsEntrante = false
+    },
+    new()
+    {
+        Texto = "¿Qué documentos debo enviar? 📑",
+        Fecha = DateTime.Today.AddHours(8).AddMinutes(15),
+        EsEntrante = true
+    },
+    new()
+    {
+        Texto = "Solo necesitamos la cédula de cada beneficiario y un número de contacto. 📄",
+        Fecha = DateTime.Today.AddHours(8).AddMinutes(16),
+        EsEntrante = false
+    },
+    new()
+    {
+        Texto = "Perfecto 👍 Los enviaré en un momento.",
+        Fecha = DateTime.Today.AddHours(8).AddMinutes(17),
+        EsEntrante = true
+    },
+    new()
+    {
+        Texto = "Muchas gracias 😊 Quedamos atentos.",
+        Fecha = DateTime.Today.AddHours(8).AddMinutes(18),
+        EsEntrante = false
+    }
+};
+    private string ObtenerTextoFecha(DateTime fecha)
+    {
+        var hoy = DateTime.Today;
+        var dia = fecha.Date;
+
+        if (dia == hoy)
+            return "Hoy";
+
+        if (dia == hoy.AddDays(-1))
+            return "Ayer";
+
+        if (dia >= hoy.AddDays(-7))
+            return fecha.ToString("dddd");
+
+        return fecha.ToString("dd 'de' MMMM 'de' yyyy");
+    }
+
+}
+
+    
+

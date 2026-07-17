@@ -1,0 +1,235 @@
+﻿@inject TooltipService tooltipService
+@inject DialogService dialogService
+<RadzenCard Style="padding:20px; border-radius:12px;">
+
+    @if (EsMovil)
+    {
+        <div class="encabezado-movil">
+            <div class="info-conversacion">
+
+                <div class="fila-superior">
+
+                    <div class="btn-atras" @onclick="Volver">
+                        <RadzenIcon Icon="arrow_back" />
+                    </div>
+
+                    <span class="ticket">
+                        Ticket: #@IdTicket
+                    </span>
+
+                </div>
+
+                <div class="nombre-movil">
+                    @Usuario
+                </div>
+
+            </div>
+
+            <div class="acciones-movil">
+
+                <RadzenButton Icon="info"
+                              Variant="Variant.Text"
+                              ButtonStyle="ButtonStyle.Info"
+                              Click="MostrarDetalles"
+                              MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Ver información" }))" />
+
+                <RadzenButton Icon="check_circle"
+                              Variant="Variant.Text"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Click="FinalizarConversacion"
+                              MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Finalizar conversación" }))" />
+
+            </div>
+
+        </div>
+    }
+    else
+    {
+        <div class="encabezado-conversacion">
+
+            <RadzenText Text="Información de la conversación"
+                        TextStyle="TextStyle.H6" />
+
+            <RadzenButton Icon="check_circle"
+                          Text="Finalizar"
+                          ButtonStyle="ButtonStyle.Danger"
+                          Variant="Variant.Outlined"
+                          Click="FinalizarConversacion"
+                          MouseEnter="@(args => ShowTooltip(args))" />
+
+        </div>
+
+        <RadzenRow Gap="20px">
+
+            <RadzenColumn Size="12" SizeMD="4">
+
+                <div class="campo-info">
+                    <label>Usuario</label>
+                    <RadzenText Text="@Usuario" />
+                </div>
+
+                <div class="campo-info">
+                    <label>Celular</label>
+                    <RadzenText Text="@Celular" />
+                </div>
+
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="4">
+
+                <div class="campo-info">
+                    <label>Identificación</label>
+                    <RadzenText Text="@Identificacion" />
+                </div>
+
+                <div class="campo-info">
+                    <label>Estado / Ticket</label>
+
+                    <div class="estado-ticket">
+                        <span class="estado">@Estado</span>
+                        <span class="ticket">#@IdTicket</span>
+                    </div>
+
+                </div>
+
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="4">
+
+                <div class="campo-info">
+                    <label>Fecha inicio</label>
+                    <RadzenText Text="@FechaInicio.ToString("dd/MM/yyyy HH:mm")" />
+                </div>
+
+                <div class="campo-info">
+                    <label>Fecha finalización</label>
+                    <RadzenText Text="@(FechaFinalizacion?.ToString("dd/MM/yyyy HH:mm") ?? "En curso")" />
+                </div>
+
+            </RadzenColumn>
+
+        </RadzenRow>
+    }
+
+</RadzenCard>
+
+<style>
+    .encabezado-conversacion {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .campo-info {
+        margin-bottom: 15px;
+    }
+
+        .campo-info label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6c757d;
+            margin-bottom: 4px;
+        }
+
+    .estado-ticket {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 2px;
+    }
+
+    .estado {
+        color: #198754;
+        font-weight: 600;
+    }
+
+    .ticket {
+        background: #0d6efd;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .encabezado-movil {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .nombre-movil {
+        font-size: 16px;
+        font-weight: 600;
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: wrap;
+    }
+
+    .acciones-movil {
+        display: flex;
+        gap: 5px;
+    }
+
+    .info-conversacion {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .fila-superior {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+</style>
+@code
+{
+    [Parameter] public string Usuario { get; set; } = "Diego Alexander Lopez Calderon";
+    [Parameter] public string Celular { get; set; } = "573026149993";
+    [Parameter] public string Identificacion { get; set; } = "1022414000";
+    [Parameter] public string Estado { get; set; } = "Activa";
+    [Parameter] public DateTime FechaInicio { get; set; }
+    [Parameter] public DateTime? FechaFinalizacion { get; set; }
+    [Parameter] public string IdTicket { get; set; } = "000101411";
+
+    [Parameter] public EventCallback OnVolver { get; set; }
+
+    [Parameter] public bool EsMovil { get; set; }
+
+    void ShowTooltip(ElementReference elementReference, TooltipOptions options = null) => tooltipService.Open(elementReference, "Pulse para finalizar la conversación!", options);
+
+    private async Task FinalizarConversacion()
+    {
+        // Mostrar confirmación y finalizar la conversación
+    }
+    private async Task MostrarDetalles()
+    {
+        await dialogService.OpenAsync<DetallesConversacionMovil>(
+            "Información de la conversación",
+            new Dictionary<string, object>
+            {
+                { nameof(Usuario), Usuario },
+                { nameof(Celular), Celular },
+                { nameof(Identificacion), Identificacion },
+                { nameof(Estado), Estado },
+                { nameof(FechaInicio), FechaInicio },
+                { nameof(FechaFinalizacion), FechaFinalizacion },
+                { nameof(IdTicket), IdTicket }
+            },
+            new DialogOptions
+            {
+                Width = "90%",
+                Style = "transform: translateY(35%);",
+                CloseDialogOnOverlayClick = true,
+                ShowClose = true
+            });
+    }
+    private async Task Volver()
+    {
+        await OnVolver.InvokeAsync();
+    }
+}

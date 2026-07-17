@@ -2,7 +2,7 @@
 
 @foreach (var item in datosTarjetaConversacion)
 {
-	<RadzenCard Style="margin-bottom: 5px; border-radius: 12px; padding: 12px; cursor: pointer;">
+	<RadzenCard Style="margin-bottom: 5px; border-radius: 12px; padding: 12px; cursor: pointer;" @onclick="() => SeleccionarTarjeta(item)">
 
 		<div class="ticket-superior">
 
@@ -31,7 +31,7 @@
 				</div>
 
 				<div class="pie-conversacion">
-					<span>@item.Fecha.ToString("dd/MM/yyyy h:mm tt")</span>
+					<span>@item.Fecha?.ToString("dd/MM/yyyy h:mm tt")</span>
 
 					<span class="estado">
 						@item.EstadoConversacion
@@ -48,6 +48,12 @@
 
 @code {
 	[Parameter] public List<DatosTarjetaConversacionDTO> datosTarjetaConversacion { get; set; } = new();
+	[Parameter] public EventCallback<DatosTarjetaConversacionDTO> OnSeleccionar { get; set; }
 	bool esNuevaConversacion = false;
+
+	private async Task SeleccionarTarjeta(DatosTarjetaConversacionDTO tarjeta)
+	{
+		await OnSeleccionar.InvokeAsync(tarjeta);
+	}
 }
 

@@ -1,0 +1,105 @@
+﻿@inject IJSRuntime JS
+
+<div class="barra-mensaje">
+
+	<div class="acciones-izquierda @(EsMovil ? "movil" : "")">
+
+		<RadzenButton Icon="attach_file"
+					  Variant="Variant.Text"
+					  ButtonStyle="ButtonStyle.Light"
+					  Click="AdjuntarArchivo" />
+
+		<RadzenButton Icon="mood"
+					  Variant="Variant.Text"
+					  ButtonStyle="ButtonStyle.Light"
+					  Click="MostrarEmojis" />
+
+	</div>
+
+	<RadzenTextArea @bind-Value="mensaje"
+					Placeholder="Escribe un mensaje..."
+					Rows="2"
+					Class="texto-mensaje" />
+
+	@if (string.IsNullOrWhiteSpace(mensaje))
+	{
+		<RadzenButton Icon="mic"
+					  Variant="Variant.Text"
+					  ButtonStyle="ButtonStyle.Info"
+					  Click="GrabarAudio" />
+	}
+	else
+	{
+		<RadzenButton Icon="send"
+					  Variant="Variant.Filled"
+					  ButtonStyle="ButtonStyle.Primary"
+					  Click="EnviarMensaje" />
+	}
+
+</div>
+
+<style>
+	.editor-mensaje {
+		padding: 10px;
+		border-radius: 16px;
+		box-shadow: none;
+	}
+
+	.barra-mensaje {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.acciones-izquierda {
+		display: flex;
+		flex-direction: row;
+		gap: 5px;
+	}
+
+		.acciones-izquierda.movil {
+			flex-direction: column;
+		}
+
+	.texto-mensaje {
+		flex: 1;
+	}
+
+		.texto-mensaje textarea {
+			min-height: 45px;
+			max-height: 150px;
+			resize: none;
+			border-radius: 20px;
+			padding: 10px 15px;
+		}
+</style>
+@code {
+	[Parameter] public bool EsMovil { get; set; }
+	private string mensaje = string.Empty;
+
+	private async Task EnviarMensaje()
+	{
+		if (string.IsNullOrWhiteSpace(mensaje))
+			return;
+
+		Console.WriteLine(mensaje);
+
+		mensaje = string.Empty;
+	}
+
+	private async Task AdjuntarArchivo()
+	{
+		// Abrir selector de archivos
+	}
+
+	private async Task GrabarAudio()
+	{
+		// Iniciar grabación
+	}
+
+	private async Task MostrarEmojis()
+	{
+		// Mostrar selector de emojis
+	}
+
+}

@@ -31,7 +31,7 @@ namespace WhatsappComercial.Servicios.Conversaciones
                 {
                     NombreCliente = row["NombreCliente"].ToString(),
                     IdTicket = Convert.ToInt32(row["IdTicket"]),
-                    Fecha = DateTime.Parse(row["Fecha"].ToString()),
+                    Fecha = DateTime.Parse(row?["Fecha"]?.ToString()),
                     EstadoConversacion = row["EstadoConversacion"].ToString()
                 });
             }
