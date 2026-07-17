@@ -210,7 +210,7 @@
     {
         await dialogService.OpenAsync<DetallesConversacionMovil>(
             "Información de la conversación",
-            new Dictionary<string, object>
+            new Dictionary<string, object?>
             {
                 { nameof(Usuario), Usuario },
                 { nameof(Celular), Celular },
