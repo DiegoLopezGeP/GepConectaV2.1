@@ -6,6 +6,7 @@ using WhatsappComercial.Interfaces.Mensajes;
 using WhatsappComercial.Interfaces.ProcesarMensajeEntrante;
 using WhatsappComercial.Interfaces.Tickets;
 using WhatsappComercial.Interfaces.Usuarios;
+using WhatsappComercial.Interfaces.Utilidades;
 using WhatsappComercial.Servicios.AccesoADatos;
 using WhatsappComercial.Servicios.AutenticacionUsuario;
 using WhatsappComercial.Servicios.Cache;
@@ -17,6 +18,7 @@ using WhatsappComercial.Servicios.ProcesarMensaje;
 using WhatsappComercial.Servicios.Tickets;
 using WhatsappComercial.Servicios.Usuarios;
 using WhatsappComercial.Servicios.WebSocketService;
+using WhatsappComercial.Utilidades;
 
 namespace WhatsappComercial.Extensions
 {
@@ -50,11 +52,15 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<IProcesarMensajeEntrante, ProcesarMensajeService>();
             //Servicio WebSocket
             services.AddScoped<WebSocketServicio>();
+            //Constructor de objeto Tarjeta Conversaciones
+            services.AddScoped<IUtilidades, ConstruirObjetoTarjetaConversacion>();
             //Servicios Estaticos
             //Configuracion Aplicacion
             services.AddSingleton<ConfiguracionApp>();
             //Servicio para gestionar el cache de conversaciones
             services.AddSingleton<ICacheConversaciones, CacheConversacionesService>();
+
+           
 
             return services;
         }

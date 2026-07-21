@@ -1,16 +1,24 @@
 ﻿@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.SignalR
 @using WhatsappComercial.Enums
+@using WhatsappComercial.Hubs
+@using WhatsappComercial.Interfaces.Cache
 @using WhatsappComercial.Interfaces.Contactos
 @using WhatsappComercial.Interfaces.Conversaciones
 @using WhatsappComercial.Interfaces.Tickets
+@using WhatsappComercial.Interfaces.Utilidades
 @using WhatsappComercial.Modelos
 @using WhatsappComercial.Modelos.DTOs
 @inject IBusquedaContactos busquedaContactos
 @inject ICrearTicket crearTicket
 @inject ICrearConversacion crearConversacion
+@inject ICacheConversaciones cacheConversaciones
+@inject IUtilidades utilidades
 @inject IAsignarTicket asignarTicket
 @inject NotificationService notificacion
 @inject DialogService dialogService
+@inject IHubContext<GepConectaHub> _hubGepConecta
+
 
 <RadzenCard Style="width:100%; margin-bottom:10px;">
     <RadzenRadioButtonList TValue="TipoContactoEnum"
@@ -89,6 +97,21 @@
         {
             Valor = TipoContactoEnum.Beneficiario,
             Texto = "Beneficiario"
+        },
+        new()
+        {
+            Valor = TipoContactoEnum.Relacionista,
+            Texto = "Relacionista"
+        }, 
+        new()
+        {
+            Valor = TipoContactoEnum.Pagadurias,
+            Texto = "Pagadurias"
+        },
+        new()
+        {
+            Valor = TipoContactoEnum.Cobranzas,
+            Texto = "Cobranzas"
         }
     };
 
@@ -192,6 +215,11 @@
                 "Correcto",
                 "La conversación fue creada correctamente.");
 
+
+            DatosTarjetaConversacionDTO nuevaConversacionCache = await utilidades.ConstruirObjetoTarjetaConversacionAsync(idConversacion, idTicket, "", EstadoConversacionEnum.Activo, nuevaConversacion.FechaUltimoMensaje, NombreUsuarioDA);
+
+            await _hubGepConecta.Clients.User(NombreUsuarioDA).SendAsync("ActualizarNuevaConversacion", NombreUsuarioDA.Split("\\").Last(), nuevaConversacionCache, false);
+
             dialogService.Close(idConversacion);
         }
         catch (Exception ex)
@@ -227,6 +255,31 @@
 
         var filtro = textoBusqueda.Trim();
 
-        contactosFiltrados = await busquedaContactos.ObtenerContactoAsync(filtro);
+        switch (tipoContactoEnum)
+        {
+            case TipoContactoEnum.Titular:
+                contactosFiltrados = await busquedaContactos.ObtenerClienteTitularAsync(filtro);
+                break;
+
+            case TipoContactoEnum.Beneficiario:
+                contactosFiltrados = await busquedaContactos.ObtenerBeneficiarioAsync(filtro);
+                break;
+
+            case TipoContactoEnum.Relacionista:
+                contactosFiltrados = await busquedaContactos.ObtenerContactoAsync(filtro);
+                break;
+
+            case TipoContactoEnum.Pagadurias:
+                contactosFiltrados = await busquedaContactos.ObtenerClientePagaduriasAsync(filtro);
+                break;
+
+            case TipoContactoEnum.Cobranzas:
+                contactosFiltrados = await busquedaContactos.ObtenerClienteCobranzasAsync(filtro);
+                break;
+
+            default:
+                contactosFiltrados = new List<Contacto>();
+                break;
+        }
     }
 }

@@ -3,6 +3,9 @@
     public enum TipoContactoEnum
     {
         Titular,
-        Beneficiario
+        Beneficiario,
+        Relacionista,
+        Pagadurias, 
+        Cobranzas
     }
 }
