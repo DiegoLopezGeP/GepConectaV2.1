@@ -5,6 +5,9 @@
 @using WhatsappComercial.Interfaces.Cache
 @using WhatsappComercial.Modelos
 @using WhatsappComercial.Modelos.DTOs
+@using Microsoft.AspNetCore.SignalR
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
 
 @inject IUsuarios informacionUsuario
 @inject ICacheConversaciones cacheConversaciones
@@ -73,7 +76,7 @@
 </style>
 
 @code {
-
+	private HubConnection? conexionHubGepConecta;
 	private VistaConversaciones vistaActual = VistaConversaciones.Lista;
 	private DatosTarjetaConversacionDTO? conversacionSeleccionada;
 	private string ClaseVista =>
@@ -85,14 +88,20 @@
 	GrupoUser infoUsuarioConectado = new();
 	List<DatosTarjetaConversacionDTO> ListaConversaciones = new();
 	bool esMovil;
+	private bool signalRInicializado = false;
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
+		if (firstRender)
+		{
+			esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
 
-		esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
+			conexionHubGepConecta = CrearConexionHub($"/GepConectaHub?usuario={userName}");
+			RegistrarEventosSignalR();
+			await conexionHubGepConecta.StartAsync();
 
-		StateHasChanged();
-
+			StateHasChanged(); // aquí sí tiene sentido, porque esMovil cambió tras el primer render
+		}
 	}
 	protected override async Task OnInitializedAsync()
 	{
@@ -100,6 +109,43 @@
 		userName = HttpContextAccessor.HttpContext?.User?.Identity?.Name?.Split("\\").Last() ?? "Desconocido";
 		infoUsuarioConectado = await informacionUsuario.ObtenerInformacionUsuario(userName);
 		await FiltrarConversacionesPorUsuario();
+
+	}
+
+	private HubConnection CrearConexionHub(string endpoint)
+	{
+		return new HubConnectionBuilder()
+			.WithUrl(Navigation.ToAbsoluteUri(endpoint), options =>
+			{
+				options.UseDefaultCredentials = true;
+			})
+			.WithAutomaticReconnect()
+			.ConfigureLogging(logging =>
+			{
+				logging.AddConsole();
+				logging.SetMinimumLevel(LogLevel.Warning);
+			})
+			.Build();
+	}
+
+	private void RegistrarEventosSignalR()
+	{
+		if (conexionHubGepConecta == null)
+			return;
+
+		conexionHubGepConecta.On<string, DatosTarjetaConversacionDTO, bool>("ActualizarNuevaConversacion", async (usuarioDestino, dto, esAsignada) =>
+		{
+			await InvokeAsync(() =>
+			{
+				// Evita duplicados si por alguna razón llega dos veces
+				if (!ListaConversaciones.Any(c => c.IdConversacion == dto.IdConversacion))
+				{
+					ListaConversaciones.Insert(0, dto); // al inicio, como conversación más reciente
+				}
+
+				StateHasChanged();
+			});
+		});
 	}
 
 	private async Task FiltrarConversacionesPorUsuario()

@@ -191,9 +191,10 @@
                 IntentosInactividad = 0,
                 IdTicket = idTicket,
                 IdTipificacion = 0,
-                NumeroTelefonoConversacion = contactoSeleccionado.CelularContacto,
-                IdContacto = contactoSeleccionado.IdContacto
+                NumeroTelefonoConversacion = contactoSeleccionado.CelularContacto
             };
+
+            AsignarTipoContacto(nuevaConversacion, tipoContactoEnum, contactoSeleccionado.IdContacto);
 
             int idConversacion = await crearConversacion.CrearNuevaConversaciones(nuevaConversacion);
 
@@ -216,9 +217,15 @@
                 "La conversación fue creada correctamente.");
 
 
-            DatosTarjetaConversacionDTO nuevaConversacionCache = await utilidades.ConstruirObjetoTarjetaConversacionAsync(idConversacion, idTicket, "", EstadoConversacionEnum.Activo, nuevaConversacion.FechaUltimoMensaje, NombreUsuarioDA);
+            // 2. Actualiza el cache — esto es lo que falta
 
-            await _hubGepConecta.Clients.User(NombreUsuarioDA).SendAsync("ActualizarNuevaConversacion", NombreUsuarioDA.Split("\\").Last(), nuevaConversacionCache, false);
+        
+            DatosTarjetaConversacionDTO nuevaConversacionCache = await utilidades.ConstruirObjetoTarjetaConversacionAsync(idConversacion, idTicket, contactoSeleccionado.NombreContacto, EstadoConversacionEnum.Activo, nuevaConversacion.FechaUltimoMensaje, NombreUsuarioDA);
+            await cacheConversaciones.CrearOActualizarAsync(nuevaConversacionCache);
+
+            var grupoDestino = NombreUsuarioDA.Trim().ToLowerInvariant();
+
+            await _hubGepConecta.Clients.Group(grupoDestino).SendAsync("ActualizarNuevaConversacion", grupoDestino, nuevaConversacionCache, false);
 
             dialogService.Close(idConversacion);
         }
@@ -233,6 +240,38 @@
         }
     }
 
+    private void AsignarTipoContacto(
+    Conversacion conversacion,
+    TipoContactoEnum tipoContacto,
+    int id)
+    {
+        switch (tipoContacto)
+        {
+            case TipoContactoEnum.Titular:
+                conversacion.IdCliente = id;
+                break;
+
+            case TipoContactoEnum.Beneficiario:
+                conversacion.IdBeneficiario = id;
+                break;
+
+            case TipoContactoEnum.Relacionista:
+                conversacion.IdContacto = id;
+                break;
+
+            case TipoContactoEnum.Pagadurias:
+                conversacion.IdBaseTelemercadeo = id;
+                break;
+
+            case TipoContactoEnum.Cobranzas:
+                conversacion.IdCliente = id;
+                break;
+
+            default:
+                conversacion.IdContacto = id;
+                break;
+        }
+    }
     private async Task OnKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")

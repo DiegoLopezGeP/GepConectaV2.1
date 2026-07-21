@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Data;
 using Serilog;
+using Serilog.Core;
 using WhatsappComercial.Interfaces.Cache;
 using WhatsappComercial.Modelos.DTOs;
 using WhatsappComercial.Servicios.AccesoADatos;
@@ -14,6 +15,7 @@ namespace WhatsappComercial.Servicios.Cache
 
         // Índice principal: conversación por Id
         private readonly ConcurrentDictionary<int, DatosTarjetaConversacionDTO> _conversaciones = new();
+
         public Task ActualizarUltimoMensajeAsync(int conversacionId, string preview, DateTime fecha, bool incrementarNoLeidos)
         {
             throw new NotImplementedException();
@@ -29,9 +31,19 @@ namespace WhatsappComercial.Servicios.Cache
             Console.WriteLine($"Cache de conversaciones inicializado con {_conversaciones.Count} conversaciones activas");
         }
 
-        public Task<DatosTarjetaConversacionDTO> CrearOActualizarAsync(DatosTarjetaConversacionDTO conversacion)
+        public async Task<DatosTarjetaConversacionDTO> CrearOActualizarAsync(DatosTarjetaConversacionDTO conversacion)
         {
-            throw new NotImplementedException();
+            _conversaciones.AddOrUpdate(conversacion.IdConversacion, conversacion,(_, existente) =>
+                {
+                    return conversacion;
+                });
+
+            if (ConversacionActualizada != null)
+            {
+                await ConversacionActualizada.Invoke(conversacion);
+            }
+
+            return conversacion;
         }
 
         public Task FinalizarAsync(int conversacionId)
@@ -49,6 +61,7 @@ namespace WhatsappComercial.Servicios.Cache
             List<DatosTarjetaConversacionDTO> conversaciones = _conversaciones
                 .Where(c => c.Value.nombreAsesor == nombreUsuario)
                 .Select(c => c.Value)
+                .OrderByDescending(c => c.Fecha)
                 .ToList();
 
             return conversaciones;

@@ -5,6 +5,7 @@ using Microsoft.Extensions.FileProviders;
 using Radzen;
 using WhatsappComercial.Components;
 using WhatsappComercial.Extensions;
+using WhatsappComercial.Hubs;
 using WhatsappComercial.Interfaces.Contactos;
 using WhatsappComercial.Interfaces.Conversaciones;
 using WhatsappComercial.Interfaces.Tickets;
@@ -95,6 +96,8 @@ namespace WhatsappComercial
             app.MapStaticAssets();
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
+
+            app.MapHub<GepConectaHub>("/GepConectaHub");
 
             app.Run();
         }
