@@ -25,6 +25,14 @@ namespace WhatsappComercial
         {
             var builder = WebApplication.CreateBuilder(args);
 
+
+            builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
+            .AddNegotiate();
+
+            builder.Services.AddAuthorization(options =>
+            {
+                options.FallbackPolicy = options.DefaultPolicy;
+            });
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
@@ -32,7 +40,6 @@ namespace WhatsappComercial
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.Configure<ConfiguracionApp>(builder.Configuration.GetSection("AppSettings"));
-            builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme).AddNegotiate();
   
             builder.Services.AddApplicationServices();
 
@@ -45,12 +52,6 @@ namespace WhatsappComercial
             builder.Services.AddScoped<AccesoDatosSoapClient>(sp =>
                 new AccesoDatosSoapClient(
                     AccesoDatosSoapClient.EndpointConfiguration.AccesoDatosSoap12));
-
-            builder.Services.AddAuthorization(options =>
-            {
-                options.FallbackPolicy = options.DefaultPolicy;
-            });
-
 
             var app = builder.Build();
 
@@ -87,6 +88,8 @@ namespace WhatsappComercial
                     Path.Combine(@"C:\GepConecta\Archivos\Multimedia")),
                 RequestPath = "/Multimedia"
             });
+            app.UseAuthentication();
+            app.UseAuthorization();
             app.UseAntiforgery();
 
             app.MapStaticAssets();
