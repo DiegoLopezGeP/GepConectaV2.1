@@ -1,4 +1,6 @@
 ﻿using System.Data;
+using WhatsappComercial.Components.ComponentesHijo.Conversaciones;
+using WhatsappComercial.Enums;
 using WhatsappComercial.Interfaces.Conversaciones;
 using WhatsappComercial.Modelos;
 using WhatsappComercial.Modelos.DTOs;
@@ -13,6 +15,35 @@ namespace WhatsappComercial.Servicios.Conversaciones
         public ObtenerConversacionesService(ServicioAccesoDatos servicioAccesoDatos)
         {
             _servicioAccesoDatos = servicioAccesoDatos;
+        }
+
+        public async Task<List<DatosTarjetaConversacionDTO>> ObtenerConversacionesActivas()
+        {
+            try
+            {
+                List<DatosTarjetaConversacionDTO> listaConversacionesActivas = new List<DatosTarjetaConversacionDTO>();
+
+                DataTable dtListaConversaciones = await _servicioAccesoDatos.TraerTablaConArregloAsincrono(58, []);
+
+                foreach (DataRow row in dtListaConversaciones.Rows)
+                {
+                    listaConversacionesActivas.Add(new DatosTarjetaConversacionDTO
+                    {
+                        IdConversacion = Convert.ToInt32(row["IdConversacion"]),
+                        NombreCliente = row["NombreCliente"].ToString(),
+                        IdTicket = Convert.ToInt32(row["IdTicket"]),
+                        Fecha = DateTime.Parse(row?["Fecha"]?.ToString()),
+                        EstadoConversacion = Enum.TryParse<EstadoConversacionEnum>(row["EstadoConversacion"]?.ToString(), true, out var estadoConversacion) ? estadoConversacion : EstadoConversacionEnum.Activo,
+                        nombreAsesor = row["NombreAsesor"].ToString()
+                    });
+                }
+
+                return listaConversacionesActivas;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         public async Task<List<DatosTarjetaConversacionDTO>> ObtenerDatosConversacionContacto(GrupoUser informacionUsuarioAutenticado)
@@ -32,7 +63,7 @@ namespace WhatsappComercial.Servicios.Conversaciones
                     NombreCliente = row["NombreCliente"].ToString(),
                     IdTicket = Convert.ToInt32(row["IdTicket"]),
                     Fecha = DateTime.Parse(row?["Fecha"]?.ToString()),
-                    EstadoConversacion = row["EstadoConversacion"].ToString()
+                    EstadoConversacion = Enum.TryParse<EstadoConversacionEnum>(row["EstadoConversacion"]?.ToString(), true, out var estadoConversacion) ? estadoConversacion : EstadoConversacionEnum.Activo
                 });
             }
 

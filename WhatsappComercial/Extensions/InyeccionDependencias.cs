@@ -1,4 +1,6 @@
-﻿using WhatsappComercial.Interfaces.Contactos;
+﻿using WhatsappComercial.HostedService;
+using WhatsappComercial.Interfaces.Cache;
+using WhatsappComercial.Interfaces.Contactos;
 using WhatsappComercial.Interfaces.Conversaciones;
 using WhatsappComercial.Interfaces.Mensajes;
 using WhatsappComercial.Interfaces.ProcesarMensajeEntrante;
@@ -6,6 +8,7 @@ using WhatsappComercial.Interfaces.Tickets;
 using WhatsappComercial.Interfaces.Usuarios;
 using WhatsappComercial.Servicios.AccesoADatos;
 using WhatsappComercial.Servicios.AutenticacionUsuario;
+using WhatsappComercial.Servicios.Cache;
 using WhatsappComercial.Servicios.ConfiguracionEstatica;
 using WhatsappComercial.Servicios.Contactos;
 using WhatsappComercial.Servicios.Conversaciones;
@@ -21,6 +24,9 @@ namespace WhatsappComercial.Extensions
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
+            //HosterService para iniciar la carga de conversacionesActivas
+            services.AddHostedService<InicializadorCacheConversaciones>();
+
             //Servicio Web Acceso Datos
             services.AddScoped<ServicioAccesoDatos>();
             //Autenticacion Usuario
@@ -47,6 +53,8 @@ namespace WhatsappComercial.Extensions
             //Servicios Estaticos
             //Configuracion Aplicacion
             services.AddSingleton<ConfiguracionApp>();
+            //Servicio para gestionar el cache de conversaciones
+            services.AddSingleton<ICacheConversaciones, CacheConversacionesService>();
 
             return services;
         }

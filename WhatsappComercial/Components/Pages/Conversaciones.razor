@@ -2,12 +2,12 @@
 @using WhatsappComercial.Components.ComponentesHijo.Conversaciones
 @using WhatsappComercial.Enums
 @using WhatsappComercial.Interfaces.Usuarios
-@using WhatsappComercial.Interfaces.Conversaciones
+@using WhatsappComercial.Interfaces.Cache
 @using WhatsappComercial.Modelos
 @using WhatsappComercial.Modelos.DTOs
 
 @inject IUsuarios informacionUsuario
-@inject IObtenerConversaciones obtenerConversaciones
+@inject ICacheConversaciones cacheConversaciones
 @inject IHttpContextAccessor HttpContextAccessor
 
 @inject IJSRuntime JS
@@ -99,12 +99,12 @@
 		//esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
 		userName = HttpContextAccessor.HttpContext?.User?.Identity?.Name?.Split("\\").Last() ?? "Desconocido";
 		infoUsuarioConectado = await informacionUsuario.ObtenerInformacionUsuario(userName);
-		await ObtenerConversacionesPorUsuario();
+		await FiltrarConversacionesPorUsuario();
 	}
 
-	private async Task ObtenerConversacionesPorUsuario()
+	private async Task FiltrarConversacionesPorUsuario()
 	{
-		ListaConversaciones = await obtenerConversaciones.ObtenerDatosConversacionContacto(infoUsuarioConectado);
+		ListaConversaciones = await cacheConversaciones.ObtenerActivasPorUsuario(infoUsuarioConectado.NameUser);
 	}
 
 	private async Task Volver()

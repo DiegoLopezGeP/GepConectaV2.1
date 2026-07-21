@@ -2,7 +2,7 @@
 {
     public enum EstadoConversacionEnum
     {
-        Activa,
-        Inactiva
+        Activo,
+        Finalizado
     }
 }
