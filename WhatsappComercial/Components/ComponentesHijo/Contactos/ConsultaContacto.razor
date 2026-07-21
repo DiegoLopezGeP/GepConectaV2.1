@@ -220,7 +220,7 @@
             // 2. Actualiza el cache — esto es lo que falta
 
         
-            DatosTarjetaConversacionDTO nuevaConversacionCache = await utilidades.ConstruirObjetoTarjetaConversacionAsync(idConversacion, idTicket, contactoSeleccionado.NombreContacto, EstadoConversacionEnum.Activo, nuevaConversacion.FechaUltimoMensaje, NombreUsuarioDA);
+            DatosTarjetaConversacionDTO nuevaConversacionCache = await utilidades.ConstruirObjetoTarjetaConversacionAsync(idConversacion, idTicket, contactoSeleccionado.NombreContacto, EstadoConversacionEnum.Activo, nuevaConversacion.FechaUltimoMensaje, NombreUsuarioDA, true);
             await cacheConversaciones.CrearOActualizarAsync(nuevaConversacionCache);
 
             var grupoDestino = NombreUsuarioDA.Trim().ToLowerInvariant();

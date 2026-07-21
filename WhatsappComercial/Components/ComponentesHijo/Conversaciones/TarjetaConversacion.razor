@@ -6,7 +6,7 @@
 
 		<div class="ticket-superior">
 
-			@if (esNuevaConversacion)
+			@if (item.esNuevaConversacion)
 			{
 				<span class="marca-nueva">
 					Nueva
@@ -49,10 +49,11 @@
 @code {
 	[Parameter] public List<DatosTarjetaConversacionDTO> datosTarjetaConversacion { get; set; } = new();
 	[Parameter] public EventCallback<DatosTarjetaConversacionDTO> OnSeleccionar { get; set; }
-	bool esNuevaConversacion = false;
 
 	private async Task SeleccionarTarjeta(DatosTarjetaConversacionDTO tarjeta)
 	{
+		if (tarjeta.esNuevaConversacion)
+			tarjeta.esNuevaConversacion = false;
 		await OnSeleccionar.InvokeAsync(tarjeta);
 	}
 }

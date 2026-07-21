@@ -11,7 +11,7 @@ namespace WhatsappComercial.Utilidades
         {
 
         }
-        public async Task<DatosTarjetaConversacionDTO> ConstruirObjetoTarjetaConversacionAsync(int idConversacion, int idTicket, string nombreCliente, EstadoConversacionEnum estadoConversacion, DateTime fecha, string nombreUsuario)
+        public async Task<DatosTarjetaConversacionDTO> ConstruirObjetoTarjetaConversacionAsync(int idConversacion, int idTicket, string nombreCliente, EstadoConversacionEnum estadoConversacion, DateTime fecha, string nombreUsuario, bool esNuevaConversacion)
         {
             DatosTarjetaConversacionDTO objetoConstruido = new()
             {
@@ -20,7 +20,9 @@ namespace WhatsappComercial.Utilidades
                 IdTicket = idTicket,
                 Fecha = fecha,
                 EstadoConversacion = estadoConversacion,
-                nombreAsesor = nombreUsuario
+                nombreAsesor = nombreUsuario,
+                esNuevaConversacion = esNuevaConversacion
+
             };
             return objetoConstruido;
         }
