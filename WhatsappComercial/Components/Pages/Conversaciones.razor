@@ -4,6 +4,7 @@
 @using WhatsappComercial.Interfaces.Usuarios
 @using WhatsappComercial.Interfaces.Cache
 @using WhatsappComercial.Interfaces.Conversaciones
+@using WhatsappComercial.Interfaces.Mensajes
 @using WhatsappComercial.Modelos
 @using WhatsappComercial.Modelos.DTOs
 @using Microsoft.AspNetCore.SignalR
@@ -12,6 +13,7 @@
 
 @inject IUsuarios informacionUsuario
 @inject IObtenerConversaciones obtenerConversaciones
+@inject IObtenerMensajesConversacion obtenerMensajes
 @inject ICacheConversaciones cacheConversaciones
 @inject IHttpContextAccessor HttpContextAccessor
 
@@ -39,8 +41,13 @@
                           class="btn-volver" /> *@
 		}
 		<RadzenStack Gap="2%">
-			<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado"></TarjetaDatosConversación>
-			<VisorMensajes></VisorMensajes>
+			<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado" ></TarjetaDatosConversación>
+			<VisorMensajes IdConversacion="@(conversacionSeleccionada?.IdConversacion ?? 0)"
+						   Mensajes="@mensajesIniciales"
+						   CargandoMensajesAntiguos="@_cargandoMensajesAntiguos"
+						   DebeIrAlFinal="@_debeIrAlFinal"
+						   OnLlegoAlTope="CargarMensajesAntiguos">
+			</VisorMensajes>
 			<CuadroDeTexto EsMovil="@esMovil"></CuadroDeTexto>
 		</RadzenStack>
 
@@ -80,8 +87,9 @@
 @code {
 	private HubConnection? conexionHubGepConecta;
 	private VistaConversaciones vistaActual = VistaConversaciones.Lista;
-	private DatosTarjetaConversacionDTO? conversacionSeleccionada;
+	private DatosTarjetaConversacionDTO? conversacionSeleccionada = new();
 	private DatosContactoConversacionDTO? contactoConversacionSeleccionado = new();
+	private List<MensajeDTO> mensajesIniciales { get; set; } = new List<MensajeDTO>();
 	private string ClaseVista =>
 		vistaActual == VistaConversaciones.Lista
 			? "mostrar-lista"
@@ -92,6 +100,11 @@
 	List<DatosTarjetaConversacionDTO> ListaConversaciones = new();
 	bool esMovil;
 	private bool signalRInicializado = false;
+
+	private int? _cursorMensajeMasAntiguo;
+	private bool _hayMasMensajesAntiguos = true;
+	private bool _cargandoMensajesAntiguos;
+	private bool _debeIrAlFinal;
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
@@ -162,7 +175,6 @@
 	}
 
 
-
 	private async Task AbrirConversacion(DatosTarjetaConversacionDTO conversacion)
 	{
 		conversacionSeleccionada = conversacion;
@@ -174,9 +186,54 @@
 
 		contactoConversacionSeleccionado = await obtenerConversaciones.ObtenerDatosContactoConversacionSeleccionada(conversacion.IdTicket);
 
-		// Aquí luego cargarás los mensajes
-		// await CargarMensajes(conversacion.IdConversacion);
+		mensajesIniciales = await obtenerMensajes.MensajesConversacion(conversacionSeleccionada.IdConversacion, 10, "NULL");
+
+		_cursorMensajeMasAntiguo = mensajesIniciales.Any()
+			? mensajesIniciales.Min(m => m.IdMensaje)
+			: null;
+		_hayMasMensajesAntiguos = mensajesIniciales.Count == 10;
+		_cargandoMensajesAntiguos = false;
+
+		// Forzamos ir al fondo al abrir el chat
+		_debeIrAlFinal = true;
 
 		StateHasChanged();
 	}
+
+	private async Task CargarMensajesAntiguos()
+	{
+		if (_cargandoMensajesAntiguos || !_hayMasMensajesAntiguos || conversacionSeleccionada is null)
+			return;
+
+		var idConversacionActual = conversacionSeleccionada.IdConversacion;
+
+		_cargandoMensajesAntiguos = true;
+		_debeIrAlFinal = false; // Desactivar ir al fondo al cargar históricos
+		StateHasChanged();
+
+		try
+		{
+			var mensajesAntiguos = await obtenerMensajes.MensajesConversacion(idConversacionActual, 10, _cursorMensajeMasAntiguo.ToString());
+
+			if (conversacionSeleccionada is null || conversacionSeleccionada.IdConversacion != idConversacionActual)
+				return;
+
+			if (mensajesAntiguos.Count == 0)
+			{
+				_hayMasMensajesAntiguos = false;
+				return;
+			}
+
+			mensajesIniciales.InsertRange(0, mensajesAntiguos);
+			_cursorMensajeMasAntiguo = mensajesAntiguos.Min(m => m.IdMensaje);
+			_hayMasMensajesAntiguos = mensajesAntiguos.Count == 10;
+		}
+		finally
+		{
+			_cargandoMensajesAntiguos = false;
+			StateHasChanged();
+		}
+	}
+
+
 }

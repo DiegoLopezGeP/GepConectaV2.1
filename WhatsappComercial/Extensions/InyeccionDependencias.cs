@@ -54,13 +54,18 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<WebSocketServicio>();
             //Constructor de objeto Tarjeta Conversaciones
             services.AddScoped<IUtilidades, ConstruirObjetoTarjetaConversacion>();
+            //Servicio para gestionar los mensajes desde DB
+            services.AddScoped<IObtenerMensajesConversacion, ObtenerMensajesConversacionService>();
+
             //Servicios Estaticos
             //Configuracion Aplicacion
             services.AddSingleton<ConfiguracionApp>();
             //Servicio para gestionar el cache de conversaciones
             services.AddSingleton<ICacheConversaciones, CacheConversacionesService>();
+            //Servicio para gestionar el cache de mensajes
+            services.AddSingleton<ICacheMensajes, CacheMensajes>();
 
-           
+
 
             return services;
         }
