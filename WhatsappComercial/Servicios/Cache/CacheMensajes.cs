@@ -1,66 +1,90 @@
 ﻿using System.Collections.Concurrent;
-using WhatsappComercial.Components.ComponentesHijo.Conversaciones;
 using WhatsappComercial.Interfaces.Cache;
 using WhatsappComercial.Modelos.DTOs;
-using static WhatsappComercial.Components.ComponentesHijo.Conversaciones.VisorMensajes;
 
 namespace WhatsappComercial.Servicios.Cache
 {
+    public class ContenedorConversacionCache
+    {
+        public List<MensajeDTO> Mensajes { get; } = new();
+        public bool SeCargaronTodosLosAntiguos { get; set; } = false;
+        public object CandadoInterno { get; } = new();
+    }
+
     public class CacheMensajes : ICacheMensajes
     {
-        private readonly int _capacidadMaxima;
+        private readonly int _capacidadMaximaConversaciones;
         private readonly object _bloqueoOrden = new();
 
-        private readonly ConcurrentDictionary<int, List<MensajeDTO>> _mensajesPorConversacion = new();
-
-        // Lista enlazada para llevar el orden de "más recientemente usado"
+        private readonly ConcurrentDictionary<int, ContenedorConversacionCache> _cache = new();
         private readonly LinkedList<int> _ordenUso = new();
         private readonly Dictionary<int, LinkedListNode<int>> _nodosPorConversacion = new();
 
-        public CacheMensajes(int capacidadMaxima = 20)
+        public CacheMensajes(int capacidadMaximaConversaciones = 50)
         {
-            _capacidadMaxima = capacidadMaxima;
-        }
-        public void AgregarMensaje(int idConversacion, MensajeDTO mensaje)
-        {
-            if (_mensajesPorConversacion.TryGetValue(idConversacion, out var mensajes))
-            {
-                mensajes.Add(mensaje);
-                MarcarComoUsadaRecientemente(idConversacion);
-            }
-            // Si no está en cache, no pasa nada: cuando el usuario la abra,
-            // se hará la carga completa desde BD con el mensaje ya incluido.
-        }
-
-        public void AgregarMensajesAntiguos(int idConversacion, List<MensajeDTO> mensajesAntiguos)
-        {
-            if (_mensajesPorConversacion.TryGetValue(idConversacion, out var mensajes))
-            {
-                mensajes.InsertRange(0, mensajesAntiguos);
-            }
-        }
-
-        public void GuardarEnCache(int idConversacion, List<MensajeDTO> mensajes)
-        {
-            _mensajesPorConversacion[idConversacion] = mensajes;
-            MarcarComoUsadaRecientemente(idConversacion);
-            AplicarLimiteCapacidad();
+            _capacidadMaximaConversaciones = capacidadMaximaConversaciones;
         }
 
         public List<MensajeDTO>? ObtenerDeCache(int idConversacion)
         {
-            if (_mensajesPorConversacion.TryGetValue(idConversacion, out var mensajes))
+            if (_cache.TryGetValue(idConversacion, out var contenedor))
             {
                 MarcarComoUsadaRecientemente(idConversacion);
-                return mensajes;
+
+                // Hacemos una copia thread-safe para que la UI de Blazor no colisione con SignalR
+                lock (contenedor.CandadoInterno)
+                {
+                    return contenedor.Mensajes.ToList();
+                }
             }
 
             return null;
         }
 
+        public void GuardarEnCache(int idConversacion, List<MensajeDTO> mensajes)
+        {
+            var contenedor = _cache.GetOrAdd(idConversacion, _ => new ContenedorConversacionCache());
+
+            lock (contenedor.CandadoInterno)
+            {
+                contenedor.Mensajes.Clear();
+                contenedor.Mensajes.AddRange(mensajes);
+            }
+
+            MarcarComoUsadaRecientemente(idConversacion);
+            AplicarLimiteCapacidad();
+        }
+
+        public void AgregarMensaje(int idConversacion, MensajeDTO mensaje)
+        {
+            if (_cache.TryGetValue(idConversacion, out var contenedor))
+            {
+                lock (contenedor.CandadoInterno)
+                {
+                    // Evitar duplicados si SignalR y el envío local reaccionan al mismo tiempo
+                    if (!contenedor.Mensajes.Any(m => m.IdMensaje == mensaje.IdMensaje && m.IdMensaje > 0))
+                    {
+                        contenedor.Mensajes.Add(mensaje);
+                    }
+                }
+                MarcarComoUsadaRecientemente(idConversacion);
+            }
+        }
+
+        public void AgregarMensajesAntiguos(int idConversacion, List<MensajeDTO> mensajesAntiguos)
+        {
+            if (_cache.TryGetValue(idConversacion, out var contenedor))
+            {
+                lock (contenedor.CandadoInterno)
+                {
+                    contenedor.Mensajes.InsertRange(0, mensajesAntiguos);
+                }
+            }
+        }
+
         public void RemoverDeCache(int idConversacion)
         {
-            _mensajesPorConversacion.TryRemove(idConversacion, out _);
+            _cache.TryRemove(idConversacion, out _);
 
             lock (_bloqueoOrden)
             {
@@ -90,12 +114,12 @@ namespace WhatsappComercial.Servicios.Cache
         {
             lock (_bloqueoOrden)
             {
-                while (_ordenUso.Count > _capacidadMaxima)
+                while (_ordenUso.Count > _capacidadMaximaConversaciones)
                 {
                     var idMenosReciente = _ordenUso.Last!.Value;
                     _ordenUso.RemoveLast();
                     _nodosPorConversacion.Remove(idMenosReciente);
-                    _mensajesPorConversacion.TryRemove(idMenosReciente, out _);
+                    _cache.TryRemove(idMenosReciente, out _);
                 }
             }
         }

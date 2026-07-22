@@ -14,7 +14,9 @@
 @inject IUsuarios informacionUsuario
 @inject IObtenerConversaciones obtenerConversaciones
 @inject IObtenerMensajesConversacion obtenerMensajes
+@inject IEnviarMensaje enviarMensaje
 @inject ICacheConversaciones cacheConversaciones
+@inject ICacheMensajes cacheMensajes
 @inject IHttpContextAccessor HttpContextAccessor
 
 @inject IJSRuntime JS
@@ -48,7 +50,7 @@
 						   DebeIrAlFinal="@_debeIrAlFinal"
 						   OnLlegoAlTope="CargarMensajesAntiguos">
 			</VisorMensajes>
-			<CuadroDeTexto EsMovil="@esMovil"></CuadroDeTexto>
+			<CuadroDeTexto EsMovil="@esMovil" OnEnviarMensaje="ManejarEnvioMensaje"></CuadroDeTexto>
 		</RadzenStack>
 
 
@@ -186,15 +188,31 @@
 
 		contactoConversacionSeleccionado = await obtenerConversaciones.ObtenerDatosContactoConversacionSeleccionada(conversacion.IdTicket);
 
-		mensajesIniciales = await obtenerMensajes.MensajesConversacion(conversacionSeleccionada.IdConversacion, 10, "NULL");
+		// 1. Intentar obtener desde la memoria RAM
+		var mensajesCache = cacheMensajes.ObtenerDeCache(conversacion.IdConversacion);
 
+		if (mensajesCache != null && mensajesCache.Any())
+		{
+			// Carga ultrarrápida desde RAM
+			mensajesIniciales = mensajesCache;
+		}
+		else
+		{
+			// Si no está en caché, consulta BD y llena el caché inicial
+			mensajesIniciales = await obtenerMensajes.MensajesConversacion(conversacionSeleccionada.IdConversacion, 10, "NULL");
+			cacheMensajes.GuardarEnCache(conversacion.IdConversacion, mensajesIniciales);
+		}
+
+		// 2. Reseteamos los punteros de paginación histórica
 		_cursorMensajeMasAntiguo = mensajesIniciales.Any()
 			? mensajesIniciales.Min(m => m.IdMensaje)
 			: null;
-		_hayMasMensajesAntiguos = mensajesIniciales.Count == 10;
+
+		// Si viene de caché, puede tener 10 o más mensajes; si viene de BD y trajo menos de 10, no hay más antiguos
+		_hayMasMensajesAntiguos = mensajesIniciales.Count >= 10;
 		_cargandoMensajesAntiguos = false;
 
-		// Forzamos ir al fondo al abrir el chat
+		// 3. Forzamos ir al fondo al abrir el chat
 		_debeIrAlFinal = true;
 
 		StateHasChanged();
@@ -213,8 +231,10 @@
 
 		try
 		{
+			// La paginación histórica SIEMPRE va a la BD para garantizar integridad
 			var mensajesAntiguos = await obtenerMensajes.MensajesConversacion(idConversacionActual, 10, _cursorMensajeMasAntiguo.ToString());
 
+			// Si el usuario cambió de chat mientras esperábamos la BD, descartamos el resultado
 			if (conversacionSeleccionada is null || conversacionSeleccionada.IdConversacion != idConversacionActual)
 				return;
 
@@ -224,7 +244,13 @@
 				return;
 			}
 
+			// 1. Insertamos al inicio de la lista visual de Blazor
 			mensajesIniciales.InsertRange(0, mensajesAntiguos);
+
+			// 2. IMPORTANTE: Sincronizamos los mensajes antiguos con el servicio de caché
+			cacheMensajes.AgregarMensajesAntiguos(idConversacionActual, mensajesAntiguos);
+
+			// 3. Actualizamos el cursor al mensaje ID más bajo que acabamos de recibir
 			_cursorMensajeMasAntiguo = mensajesAntiguos.Min(m => m.IdMensaje);
 			_hayMasMensajesAntiguos = mensajesAntiguos.Count == 10;
 		}
@@ -235,5 +261,45 @@
 		}
 	}
 
+	private async Task ManejarEnvioMensaje(string texto)
+	{
+		if (conversacionSeleccionada is null || conversacionSeleccionada.IdConversacion == 0)
+			return;
+
+		var idConversacionActual = conversacionSeleccionada.IdConversacion;
+
+		// 1. Crear el DTO del nuevo mensaje
+		var nuevoMensaje = new MensajeDTO
+		{
+			IdMensaje = 0, // Se actualizará tras guardar en BD
+			Texto = texto,
+			Fecha = DateTime.Now,
+			EsEntrante = false
+		};
+
+		// 2. Insertar inmediatamente en la UI (Respuesta instantánea)
+		mensajesIniciales.Add(nuevoMensaje);
+
+		// 3. Forzar el scroll hacia abajo
+		_debeIrAlFinal = true;
+		StateHasChanged();
+
+		// 4. Actualizar en el Caché Singleton
+		cacheMensajes.AgregarMensaje(idConversacionActual, nuevoMensaje);
+
+		try
+		{
+			// 5. Enviar al Servicio pasando el DTO e ID de conversación
+			var idGenerado = await enviarMensaje.EnviarMensajeAsync(idConversacionActual, userName, contactoConversacionSeleccionado?.Celular, nuevoMensaje);
+
+			// 6. Actualizamos el ID real generado por la Base de Datos
+			nuevoMensaje.IdMensaje = idGenerado;
+		}
+		catch (Exception ex)
+		{
+			// Si falla la BD, opcionalmente puedes removerlo de la UI/Caché
+			Console.WriteLine($"Error guardando mensaje: {ex.Message}");
+		}
+	}
 
 }

@@ -132,16 +132,27 @@
 
     private int _idConversacionAnterior = -1;
     private bool _pendienteRestaurarScroll = false;
+    private int _totalMensajesAnterior = 0;
 
     protected override void OnParametersSet()
     {
-        // Si cambió el id de conversación, obligamos ir al final
+        // Detectar si cambió la conversación
         if (IdConversacion != _idConversacionAnterior && IdConversacion > 0)
         {
             _idConversacionAnterior = IdConversacion;
+            _totalMensajesAnterior = Mensajes.Count;
             DebeIrAlFinal = true;
             _pendienteRestaurarScroll = false;
+            return;
         }
+
+        // Si se agregó un mensaje nuevo AL FINAL (por envío o tiempo real), forzamos bajar el scroll
+        if (Mensajes.Count > _totalMensajesAnterior && !_pendienteRestaurarScroll)
+        {
+            DebeIrAlFinal = true;
+        }
+
+        _totalMensajesAnterior = Mensajes.Count;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

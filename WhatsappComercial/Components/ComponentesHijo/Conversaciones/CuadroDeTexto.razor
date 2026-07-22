@@ -75,6 +75,7 @@
 </style>
 @code {
 	[Parameter] public bool EsMovil { get; set; }
+	[Parameter] public EventCallback<string> OnEnviarMensaje { get; set; } // <-- Evento hacia el padre
 	private string mensaje = string.Empty;
 
 	private async Task EnviarMensaje()
@@ -82,9 +83,13 @@
 		if (string.IsNullOrWhiteSpace(mensaje))
 			return;
 
-		Console.WriteLine(mensaje);
+		var textoAEnviar = mensaje;
+		mensaje = string.Empty; // Limpiamos la caja de texto de inmediato
 
-		mensaje = string.Empty;
+		if (OnEnviarMensaje.HasDelegate)
+		{
+			await OnEnviarMensaje.InvokeAsync(textoAEnviar);
+		}
 	}
 
 	private async Task AdjuntarArchivo()
