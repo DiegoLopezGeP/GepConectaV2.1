@@ -290,7 +290,7 @@
 		try
 		{
 			// 5. Enviar al Servicio pasando el DTO e ID de conversación
-			var idGenerado = await enviarMensaje.EnviarMensajeAsync(idConversacionActual, userName, contactoConversacionSeleccionado?.Celular, nuevoMensaje);
+			var idGenerado = await enviarMensaje.EnviarMensajeTextoAsync(idConversacionActual, userName, contactoConversacionSeleccionado?.Celular, nuevoMensaje);
 
 			// 6. Actualizamos el ID real generado por la Base de Datos
 			nuevoMensaje.IdMensaje = idGenerado;

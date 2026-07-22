@@ -16,7 +16,7 @@ namespace WhatsappComercial.Servicios.Mensajes
         }
 
 
-        public async Task<int> EnviarMensajeAsync(int idConversacion, string nombreUsuario, string celular, MensajeDTO nuevoMensaje)
+        public async Task<int> EnviarMensajeTextoAsync(int idConversacion, string nombreUsuario, string celular, MensajeDTO nuevoMensaje)
         {
             var entidadMensaje = new Modelos.Mensajes
             {
