@@ -1,4 +1,6 @@
-﻿@using WhatsappComercial.Modelos.DTOs
+﻿@using WhatsappComercial.Interfaces.Cache
+@using WhatsappComercial.Modelos.DTOs
+@inject ICacheConversaciones cacheConversaciones
 
 @foreach (var item in datosTarjetaConversacion)
 {
@@ -54,6 +56,7 @@
 	{
 		if (tarjeta.esNuevaConversacion)
 			tarjeta.esNuevaConversacion = false;
+		//Implementar Actualizacion de cache cacheConversaciones.(tarjeta);
 		await OnSeleccionar.InvokeAsync(tarjeta);
 	}
 }

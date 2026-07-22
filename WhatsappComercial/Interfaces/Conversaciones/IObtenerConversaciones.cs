@@ -7,5 +7,6 @@ namespace WhatsappComercial.Interfaces.Conversaciones
     {
         Task<List<DatosTarjetaConversacionDTO>> ObtenerDatosConversacionContacto(GrupoUser informacionUsuarioAutenticado);
         Task<List<DatosTarjetaConversacionDTO>> ObtenerConversacionesActivas();
+        Task<DatosContactoConversacionDTO> ObtenerDatosContactoConversacionSeleccionada(int idTicket);
     }
 }

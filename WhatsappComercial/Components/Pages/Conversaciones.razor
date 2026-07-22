@@ -3,6 +3,7 @@
 @using WhatsappComercial.Enums
 @using WhatsappComercial.Interfaces.Usuarios
 @using WhatsappComercial.Interfaces.Cache
+@using WhatsappComercial.Interfaces.Conversaciones
 @using WhatsappComercial.Modelos
 @using WhatsappComercial.Modelos.DTOs
 @using Microsoft.AspNetCore.SignalR
@@ -10,6 +11,7 @@
 @inject NavigationManager Navigation
 
 @inject IUsuarios informacionUsuario
+@inject IObtenerConversaciones obtenerConversaciones
 @inject ICacheConversaciones cacheConversaciones
 @inject IHttpContextAccessor HttpContextAccessor
 
@@ -37,7 +39,7 @@
                           class="btn-volver" /> *@
 		}
 		<RadzenStack Gap="2%">
-			<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver"></TarjetaDatosConversación>
+			<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado"></TarjetaDatosConversación>
 			<VisorMensajes></VisorMensajes>
 			<CuadroDeTexto EsMovil="@esMovil"></CuadroDeTexto>
 		</RadzenStack>
@@ -79,6 +81,7 @@
 	private HubConnection? conexionHubGepConecta;
 	private VistaConversaciones vistaActual = VistaConversaciones.Lista;
 	private DatosTarjetaConversacionDTO? conversacionSeleccionada;
+	private DatosContactoConversacionDTO? contactoConversacionSeleccionado = new();
 	private string ClaseVista =>
 		vistaActual == VistaConversaciones.Lista
 			? "mostrar-lista"
@@ -168,6 +171,8 @@
 		{
 			vistaActual = VistaConversaciones.Conversacion;
 		}
+
+		contactoConversacionSeleccionado = await obtenerConversaciones.ObtenerDatosContactoConversacionSeleccionada(conversacion.IdTicket);
 
 		// Aquí luego cargarás los mensajes
 		// await CargarMensajes(conversacion.IdConversacion);

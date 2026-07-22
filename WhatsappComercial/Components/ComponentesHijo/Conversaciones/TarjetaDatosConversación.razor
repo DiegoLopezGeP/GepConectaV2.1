@@ -1,4 +1,5 @@
-﻿@inject TooltipService tooltipService
+﻿@using WhatsappComercial.Modelos.DTOs
+@inject TooltipService tooltipService
 @inject DialogService dialogService
 <RadzenCard Style="padding:20px; border-radius:12px;">
 
@@ -14,13 +15,13 @@
                     </div>
 
                     <span class="ticket">
-                        Ticket: #@IdTicket
+                        Ticket: #@datosContactoConversacion.IdTicket
                     </span>
 
                 </div>
 
                 <div class="nombre-movil">
-                    @Usuario
+                    @datosContactoConversacion.NombreCliente
                 </div>
 
             </div>
@@ -65,12 +66,12 @@
 
                 <div class="campo-info">
                     <label>Usuario</label>
-                    <RadzenText Text="@Usuario" />
+                    <RadzenText Text="@datosContactoConversacion.NombreCliente" />
                 </div>
 
                 <div class="campo-info">
                     <label>Celular</label>
-                    <RadzenText Text="@Celular" />
+                    <RadzenText Text="@datosContactoConversacion.Celular" />
                 </div>
 
             </RadzenColumn>
@@ -79,15 +80,15 @@
 
                 <div class="campo-info">
                     <label>Identificación</label>
-                    <RadzenText Text="@Identificacion" />
+                    <RadzenText Text="@datosContactoConversacion.Identificacion" />
                 </div>
 
                 <div class="campo-info">
                     <label>Estado / Ticket</label>
 
                     <div class="estado-ticket">
-                        <span class="estado">@Estado</span>
-                        <span class="ticket">#@IdTicket</span>
+                        <span class="estado">@datosContactoConversacion.EstadoConversacion</span>
+                        <span class="ticket">#@datosContactoConversacion.IdTicket</span>
                     </div>
 
                 </div>
@@ -98,12 +99,12 @@
 
                 <div class="campo-info">
                     <label>Fecha inicio</label>
-                    <RadzenText Text="@FechaInicio.ToString("dd/MM/yyyy HH:mm")" />
+                    <RadzenText Text="@datosContactoConversacion.FechaInicioConversacion?.ToString("dd/MM/yyyy HH:mm")" />
                 </div>
 
                 <div class="campo-info">
                     <label>Fecha finalización</label>
-                    <RadzenText Text="@(FechaFinalizacion?.ToString("dd/MM/yyyy HH:mm") ?? "En curso")" />
+                    <RadzenText Text="@(datosContactoConversacion.FechaFinConversacion?.ToString("dd/MM/yyyy HH:mm") ?? "En curso")" />
                 </div>
 
             </RadzenColumn>
@@ -188,13 +189,8 @@
 </style>
 @code
 {
-    [Parameter] public string Usuario { get; set; } = "Diego Alexander Lopez Calderon";
-    [Parameter] public string Celular { get; set; } = "573026149993";
-    [Parameter] public string Identificacion { get; set; } = "1022414000";
-    [Parameter] public string Estado { get; set; } = "Activa";
-    [Parameter] public DateTime FechaInicio { get; set; }
-    [Parameter] public DateTime? FechaFinalizacion { get; set; }
-    [Parameter] public string IdTicket { get; set; } = "000101411";
+
+    [Parameter] public DatosContactoConversacionDTO datosContactoConversacion { get; set; }
 
     [Parameter] public EventCallback OnVolver { get; set; }
 
@@ -212,13 +208,7 @@
             "Información de la conversación",
             new Dictionary<string, object?>
             {
-                { nameof(Usuario), Usuario },
-                { nameof(Celular), Celular },
-                { nameof(Identificacion), Identificacion },
-                { nameof(Estado), Estado },
-                { nameof(FechaInicio), FechaInicio },
-                { nameof(FechaFinalizacion), FechaFinalizacion },
-                { nameof(IdTicket), IdTicket }
+                 { nameof(DetallesConversacionMovil.datosContactoConversacion), datosContactoConversacion }
             },
             new DialogOptions
             {

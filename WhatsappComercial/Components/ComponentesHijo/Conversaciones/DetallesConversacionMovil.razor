@@ -1,40 +1,37 @@
-﻿<RadzenStack Gap="15px" Style="margin: 30px 15px;">
+﻿@using WhatsappComercial.Modelos.DTOs
+<RadzenStack Gap="15px" Style="margin: 30px 15px;">
 
-    <RadzenText Text="@Usuario" TextStyle="TextStyle.H6"/>
+    <RadzenText Text="@datosContactoConversacion.NombreCliente" TextStyle="TextStyle.H6"/>
 
     <RadzenText>
-        <strong>Identificación:</strong> @Identificacion
+        <strong>Identificación:</strong> @datosContactoConversacion.Identificacion
     </RadzenText>
 
     <RadzenText>
-        <strong>Celular:</strong> @Celular
+        <strong>Celular:</strong> @datosContactoConversacion.Celular
     </RadzenText>
 
     <RadzenText>
-        <strong>Estado:</strong> @Estado
+        <strong>Estado:</strong> @datosContactoConversacion.EstadoConversacion
     </RadzenText>
 
     <RadzenText>
-        <strong>Ticket:</strong> #@IdTicket
+        <strong>Ticket:</strong> #@datosContactoConversacion.IdTicket
     </RadzenText>
 
     <RadzenText>
-        <strong>Fecha inicio:</strong> @FechaInicio.ToString("dd/MM/yyyy HH:mm")
+        <strong>Fecha inicio:</strong> @datosContactoConversacion.FechaInicioConversacion?.ToString("dd/MM/yyyy HH:mm")
     </RadzenText>
 
     <RadzenText>
         <strong>Fecha finalización:</strong>
-        @(FechaFinalizacion?.ToString("dd/MM/yyyy HH:mm") ?? "En curso")
+        @(datosContactoConversacion.FechaFinConversacion?.ToString("dd/MM/yyyy HH:mm") ?? "En curso")
     </RadzenText>
 
 </RadzenStack>
 
 @code{
-    [Parameter] public string Usuario { get; set; } = "";
-    [Parameter] public string Celular { get; set; } = "";
-    [Parameter] public string Identificacion { get; set; } = "";
-    [Parameter] public string Estado { get; set; } = "";
-    [Parameter] public DateTime FechaInicio { get; set; }
-    [Parameter] public DateTime? FechaFinalizacion { get; set; }
-    [Parameter] public string IdTicket { get; set; } = "";
+
+
+    [Parameter] public DatosContactoConversacionDTO datosContactoConversacion { get; set; }
 }

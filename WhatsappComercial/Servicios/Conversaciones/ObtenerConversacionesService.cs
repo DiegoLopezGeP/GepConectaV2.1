@@ -46,6 +46,27 @@ namespace WhatsappComercial.Servicios.Conversaciones
             }
         }
 
+        public async Task<DatosContactoConversacionDTO?> ObtenerDatosContactoConversacionSeleccionada(int idTicket)
+        {
+            DataTable dtDatosContacto = await _servicioAccesoDatos.TraerTablaConArregloAsincrono(59, [idTicket.ToString()]);
+
+            if (dtDatosContacto.Rows.Count == 0)
+                return null;
+
+            DataRow row = dtDatosContacto.Rows[0];
+
+            return new DatosContactoConversacionDTO
+            {
+                NombreCliente = row["NombreCliente"]?.ToString(),
+                IdTicket = Convert.ToInt32(row["IdTicket"]),
+                FechaInicioConversacion = row["FechaInicio"] == DBNull.Value ? null : Convert.ToDateTime(row["FechaInicio"]),
+                FechaFinConversacion = row["FechaFin"] == DBNull.Value ? null : Convert.ToDateTime(row["FechaFin"]),
+                EstadoConversacion = Enum.TryParse<EstadoConversacionEnum>(row["EstadoConversacion"]?.ToString(), true, out var estado) ? estado : EstadoConversacionEnum.Activo,
+                Celular = row["Celular"]?.ToString(),
+               Identificacion = row["Identificacion"]?.ToString()
+            };
+        }
+
         public async Task<List<DatosTarjetaConversacionDTO>> ObtenerDatosConversacionContacto(GrupoUser informacionUsuarioAutenticado)
         {
             List<DatosTarjetaConversacionDTO> listaConversaciones = new List<DatosTarjetaConversacionDTO>();
