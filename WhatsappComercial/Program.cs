@@ -40,6 +40,8 @@ namespace WhatsappComercial
             builder.Services.AddRadzenComponents();
 
             builder.Services.AddHttpContextAccessor();
+
+            builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
             builder.Services.Configure<ConfiguracionApp>(builder.Configuration.GetSection("AppSettings"));
   
             builder.Services.AddApplicationServices();
@@ -50,9 +52,6 @@ namespace WhatsappComercial
             builder.Services.AddHttpClient();
             builder.Services.AddServerSideBlazor();
 
-            builder.Services.AddScoped<AccesoDatosSoapClient>(sp =>
-                new AccesoDatosSoapClient(
-                    AccesoDatosSoapClient.EndpointConfiguration.AccesoDatosSoap12));
 
             var app = builder.Build();
 

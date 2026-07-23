@@ -1,7 +1,9 @@
-﻿using WhatsappComercial.HostedService;
+﻿using AccesoDatos;
+using WhatsappComercial.HostedService;
 using WhatsappComercial.Interfaces.Cache;
 using WhatsappComercial.Interfaces.Contactos;
 using WhatsappComercial.Interfaces.Conversaciones;
+using WhatsappComercial.Interfaces.GestionArchivos;
 using WhatsappComercial.Interfaces.Mensajes;
 using WhatsappComercial.Interfaces.ProcesarMensajeEntrante;
 using WhatsappComercial.Interfaces.Tickets;
@@ -13,8 +15,10 @@ using WhatsappComercial.Servicios.Cache;
 using WhatsappComercial.Servicios.ConfiguracionEstatica;
 using WhatsappComercial.Servicios.Contactos;
 using WhatsappComercial.Servicios.Conversaciones;
+using WhatsappComercial.Servicios.GestionArchivos;
 using WhatsappComercial.Servicios.Mensajes;
 using WhatsappComercial.Servicios.ProcesarMensaje;
+using WhatsappComercial.Servicios.SystemServicio;
 using WhatsappComercial.Servicios.Tickets;
 using WhatsappComercial.Servicios.Usuarios;
 using WhatsappComercial.Servicios.WebSocketService;
@@ -26,11 +30,16 @@ namespace WhatsappComercial.Extensions
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
+
+
+            //osterService para iniciar Servicio WebSocket
+            services.AddHostedService<WebSocketServicio>();
             //HosterService para iniciar la carga de conversacionesActivas
             services.AddHostedService<InicializadorCacheConversaciones>();
 
             //Servicio Web Acceso Datos
             services.AddScoped<ServicioAccesoDatos>();
+            services.AddScoped<AccesoDatosSoapClient>(sp => new AccesoDatosSoapClient(AccesoDatosSoapClient.EndpointConfiguration.AccesoDatosSoap12));
             //Autenticacion Usuario
             services.AddScoped<ObtenerNombreUsuario>();
             //Informacion Usuario Conectado
@@ -50,16 +59,18 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<IEnviarMensaje, EnviarMensajeService>();
             //ProcesarMensajes
             services.AddScoped<IProcesarMensajeEntrante, ProcesarMensajeService>();
-            //Servicio WebSocket
-            services.AddScoped<WebSocketServicio>();
+            //Servicio de Gestion de Archivos
+            services.AddScoped<IGestionArchivos, GestionArchivoService>();
             //Constructor de objeto Tarjeta Conversaciones
             services.AddScoped<IUtilidades, ConstruirObjetoTarjetaConversacion>();
             //Servicio para gestionar los mensajes desde DB
             services.AddScoped<IObtenerMensajesConversacion, ObtenerMensajesConversacionService>();
+            // Servicio systemServicio
+            services.AddScoped<SystemService>();
 
             //Servicios Estaticos
             //Configuracion Aplicacion
-            services.AddSingleton<ConfiguracionApp>();
+            services.AddSingleton<ConfiguracionEstaticaApp>();
             //Servicio para gestionar el cache de conversaciones
             services.AddSingleton<ICacheConversaciones, CacheConversacionesService>();
             //Servicio para gestionar el cache de mensajes

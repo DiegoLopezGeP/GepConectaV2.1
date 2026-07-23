@@ -1,48 +1,116 @@
-﻿@inject IJSRuntime JS
+﻿@using Microsoft.AspNetCore.Components.Forms
+@inject IJSRuntime JS
 
-<div class="barra-mensaje">
+<div class="contenedor-barra-mensaje">
 
-	<div class="acciones-izquierda @(EsMovil ? "movil" : "")">
+	@* VISTA PREVIA DEL ARCHIVO ADJUNTADO *@
+	@if (archivoSeleccionado != null)
+	{
+		<div class="vista-previa-adjunto">
+			<div class="info-adjunto">
+				<RadzenIcon Icon="@ObtenerIconoArchivo(archivoSeleccionado.ContentType)" Style="font-size: 24px;" />
+				<div class="detalles-archivo">
+					<span class="nombre-archivo">@archivoSeleccionado.Name</span>
+					<span class="tamano-archivo">@ObtenerTamanoLegible(archivoSeleccionado.Size)</span>
+				</div>
+			</div>
+			<RadzenButton Icon="close"
+						  Variant="Variant.Text"
+						  ButtonStyle="ButtonStyle.Danger"
+						  Size="ButtonSize.Small"
+						  Click="QuitarArchivo" />
+		</div>
+	}
 
-		<RadzenButton Icon="attach_file"
-					  Variant="Variant.Text"
-					  ButtonStyle="ButtonStyle.Light"
-					  Click="AdjuntarArchivo" />
+	<div class="barra-mensaje">
 
-		<RadzenButton Icon="mood"
-					  Variant="Variant.Text"
-					  ButtonStyle="ButtonStyle.Light"
-					  Click="MostrarEmojis" />
+		<div class="acciones-izquierda @(EsMovil ? "movil" : "")">
+
+			<InputFile @ref="inputFile"
+					   OnChange="OnInputFileChange"
+					   style="display: none;"
+					   id="fileInput"
+					   accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx" />
+
+			<RadzenButton Icon="attach_file"
+						  Variant="Variant.Text"
+						  ButtonStyle="ButtonStyle.Light"
+						  Click="AbrirSelectorArchivos" />
+
+			<RadzenButton Icon="mood"
+						  Variant="Variant.Text"
+						  ButtonStyle="ButtonStyle.Light"
+						  Click="MostrarEmojis" />
+
+		</div>
+
+		<RadzenTextArea @bind-Value="mensaje"
+						Placeholder="@(archivoSeleccionado != null ? "Añade un comentario..." : "Escribe un mensaje...")"
+						Rows="2"
+						Class="texto-mensaje" />
+
+		@if (string.IsNullOrWhiteSpace(mensaje) && archivoSeleccionado == null)
+		{
+			<RadzenButton Icon="mic"
+						  Variant="Variant.Text"
+						  ButtonStyle="ButtonStyle.Info"
+						  Click="GrabarAudio" />
+		}
+		else
+		{
+			<RadzenButton Icon="send"
+						  Variant="Variant.Filled"
+						  ButtonStyle="ButtonStyle.Primary"
+						  Click="Enviar" />
+		}
 
 	</div>
-
-	<RadzenTextArea @bind-Value="mensaje"
-					Placeholder="Escribe un mensaje..."
-					Rows="2"
-					Class="texto-mensaje" />
-
-	@if (string.IsNullOrWhiteSpace(mensaje))
-	{
-		<RadzenButton Icon="mic"
-					  Variant="Variant.Text"
-					  ButtonStyle="ButtonStyle.Info"
-					  Click="GrabarAudio" />
-	}
-	else
-	{
-		<RadzenButton Icon="send"
-					  Variant="Variant.Filled"
-					  ButtonStyle="ButtonStyle.Primary"
-					  Click="EnviarMensaje" />
-	}
-
 </div>
 
 <style>
-	.editor-mensaje {
-		padding: 10px;
-		border-radius: 16px;
-		box-shadow: none;
+	.contenedor-barra-mensaje {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		width: 100%;
+	}
+
+	.vista-previa-adjunto {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		background: #f0f2f5;
+		border-left: 4px solid #128c7e;
+		padding: 8px 12px;
+		border-radius: 8px;
+		margin-bottom: 4px;
+	}
+
+	.info-adjunto {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		overflow: hidden;
+	}
+
+	.detalles-archivo {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.nombre-archivo {
+		font-size: 13px;
+		font-weight: 600;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 250px;
+	}
+
+	.tamano-archivo {
+		font-size: 11px;
+		color: #666;
 	}
 
 	.barra-mensaje {
@@ -73,38 +141,108 @@
 			padding: 10px 15px;
 		}
 </style>
+
 @code {
 	[Parameter] public bool EsMovil { get; set; }
-	[Parameter] public EventCallback<string> OnEnviarMensaje { get; set; } // <-- Evento hacia el padre
+
+	// EVENTOS SEPARADOS
+	[Parameter] public EventCallback<string> OnEnviarTexto { get; set; }
+	[Parameter] public EventCallback<(int, DatosAdjuntoOutDTO)> OnEnviarArchivo { get; set; }
+	[Parameter] public int IdTicket { get; set; }
+
 	private string mensaje = string.Empty;
+	private IBrowserFile? archivoSeleccionado;
+	private InputFile? inputFile;
 
-	private async Task EnviarMensaje()
+	private async Task AbrirSelectorArchivos()
 	{
-		if (string.IsNullOrWhiteSpace(mensaje))
-			return;
+		await JS.InvokeVoidAsync("eval", "document.getElementById('fileInput').click()");
+	}
 
-		var textoAEnviar = mensaje;
-		mensaje = string.Empty; // Limpiamos la caja de texto de inmediato
+	private void OnInputFileChange(InputFileChangeEventArgs e)
+	{
+		const long maxFileSize = 10 * 1024 * 1024; // 10 MB
 
-		if (OnEnviarMensaje.HasDelegate)
+		if (e.File.Size > maxFileSize)
 		{
-			await OnEnviarMensaje.InvokeAsync(textoAEnviar);
+			Console.WriteLine("El archivo supera los 10MB autorizados.");
+			return;
+		}
+
+		archivoSeleccionado = e.File;
+		StateHasChanged();
+	}
+
+	private void QuitarArchivo()
+	{
+		archivoSeleccionado = null;
+	}
+
+	private async Task Enviar()
+	{
+		// CASO 1: Envío de Archivo Adjunto (con o sin comentario)
+		if (archivoSeleccionado != null)
+		{
+			var datosAdjunto = new DatosAdjuntoOutDTO
+			{
+				Archivo = archivoSeleccionado,
+				Comentario = mensaje // Texto opcional como pie de foto/archivo
+			};
+
+			mensaje = string.Empty;
+			archivoSeleccionado = null;
+
+			if (OnEnviarArchivo.HasDelegate)
+			{
+				await OnEnviarArchivo.InvokeAsync((IdTicket, datosAdjunto));
+			}
+			return;
+		}
+
+		// CASO 2: Envío exclusivo de Texto Plano
+		if (!string.IsNullOrWhiteSpace(mensaje))
+		{
+			var textoAEnviar = mensaje;
+			mensaje = string.Empty;
+
+			if (OnEnviarTexto.HasDelegate)
+			{
+				await OnEnviarTexto.InvokeAsync(textoAEnviar);
+			}
 		}
 	}
 
-	private async Task AdjuntarArchivo()
+	private string ObtenerIconoArchivo(string contentType)
 	{
-		// Abrir selector de archivos
+		if (contentType.StartsWith("image/")) return "image";
+		if (contentType.StartsWith("video/")) return "videocam";
+		if (contentType.StartsWith("audio/")) return "audiotrack";
+		if (contentType.Contains("pdf")) return "picture_as_pdf";
+		return "insert_drive_file";
 	}
 
-	private async Task GrabarAudio()
+	private string ObtenerTamanoLegible(long bytes)
 	{
-		// Iniciar grabación
+		string[] sufijos = { "B", "KB", "MB", "GB" };
+		int i = 0;
+		double dblSuf = bytes;
+
+		while (bytes >= 1024 && i < sufijos.Length - 1)
+		{
+			i++;
+			bytes /= 1024;
+			dblSuf /= 1024;
+		}
+
+		return $"{dblSuf:0.##} {sufijos[i]}";
 	}
 
-	private async Task MostrarEmojis()
-	{
-		// Mostrar selector de emojis
-	}
+	private async Task GrabarAudio() { }
+	private async Task MostrarEmojis() { }
 
+	public class DatosAdjuntoOutDTO
+	{
+		public required IBrowserFile Archivo { get; set; }
+		public string Comentario { get; set; } = string.Empty;
+	}
 }

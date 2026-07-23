@@ -2,12 +2,18 @@
 
 namespace WhatsappComercial.Servicios.ConfiguracionEstatica
 {
-    public class ConfiguracionApp
+    public class ConfiguracionEstaticaApp
     {
+        public ConfiguracionEstaticaApp()
+        {
+
+        }
+
         private static DataTable? Configuracion;
         private static DataTable? EsquemaMensaje;
         public void EstablecerConfiguracion(DataTable configuracion)
         {
+
             Configuracion = configuracion;
         }
         public DataTable TraerConfiguracion() => Configuracion;

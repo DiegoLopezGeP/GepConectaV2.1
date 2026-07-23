@@ -11,30 +11,33 @@ namespace WhatsappComercial.Servicios.WebSocketService
     public class WebSocketServicio : BackgroundService
     {
 
-        private readonly ServicioAccesoDatos _servicioAccesoDatos;
         private string _webSocketUri;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private ConfiguracionApp setGetConfiguracion = new ConfiguracionApp();
+        private ConfiguracionEstaticaApp _configuracionEstatica = new ConfiguracionEstaticaApp();
+        private readonly IHostApplicationLifetime _applicationLifetime;
         private static DataTable? configuracion;
 
-        public WebSocketServicio(ServicioAccesoDatos servicioAccesoDatos, IServiceScopeFactory serviceScope, IHttpContextAccessor httpContextAccessor)
+        public WebSocketServicio(IServiceScopeFactory serviceScope, IHttpContextAccessor httpContextAccessor, IHostApplicationLifetime applicationLifetime)
         {
-            _servicioAccesoDatos = servicioAccesoDatos;
+
             _scopeFactory = serviceScope;
             _httpContextAccessor = httpContextAccessor;
+            _applicationLifetime = applicationLifetime;
+            _applicationLifetime.ApplicationStarted.Register(OnInit);
         }
 
         public async void OnInit()
         {
             using (var scope = _scopeFactory.CreateScope())
             {
-                configuracion = _servicioAccesoDatos.TraerTablaNombre("Configuracion");
-                setGetConfiguracion.EstablecerConfiguracion(configuracion);
-                _webSocketUri = setGetConfiguracion.TraerConfiguracionPorCondicion("UrlWebSocket");
+                var _servicioAccesoDatos = scope.ServiceProvider.GetRequiredService<ServicioAccesoDatos>();
+                configuracion = _servicioAccesoDatos.TraerTablaNombre("Configuraciones");
+                _configuracionEstatica.EstablecerConfiguracion(configuracion);
+                _webSocketUri = _configuracionEstatica.TraerConfiguracionPorCondicion("UrlWebSocket");
 
                 DataTable esquemaMensaje = _servicioAccesoDatos.EsquemaTabla("Mensajes");
-                setGetConfiguracion.EstablecerEsquema(esquemaMensaje);
+                _configuracionEstatica.EstablecerEsquema(esquemaMensaje);
             }
         }
 

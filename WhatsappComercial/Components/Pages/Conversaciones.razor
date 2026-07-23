@@ -50,7 +50,10 @@
 						   DebeIrAlFinal="@_debeIrAlFinal"
 						   OnLlegoAlTope="CargarMensajesAntiguos">
 			</VisorMensajes>
-			<CuadroDeTexto EsMovil="@esMovil" OnEnviarMensaje="ManejarEnvioMensaje"></CuadroDeTexto>
+			<CuadroDeTexto EsMovil="@esMovil"
+						   OnEnviarTexto="ManejarEnvioTexto"
+						   OnEnviarArchivo="ManejarEnvioArchivo" 
+						   IdTicket="@conversacionSeleccionada.IdTicket"/>
 		</RadzenStack>
 
 
@@ -261,44 +264,87 @@
 		}
 	}
 
-	private async Task ManejarEnvioMensaje(string texto)
+	// MÉTODO 1: Exclusivo para mensajes de Texto Plano
+	private async Task ManejarEnvioTexto(string texto)
 	{
 		if (conversacionSeleccionada is null || conversacionSeleccionada.IdConversacion == 0)
 			return;
 
 		var idConversacionActual = conversacionSeleccionada.IdConversacion;
 
-		// 1. Crear el DTO del nuevo mensaje
 		var nuevoMensaje = new MensajeDTO
 		{
-			IdMensaje = 0, // Se actualizará tras guardar en BD
+			IdMensaje = 0,
 			Texto = texto,
 			Fecha = DateTime.Now,
 			EsEntrante = false
 		};
 
-		// 2. Insertar inmediatamente en la UI (Respuesta instantánea)
+		// Actualización optimista de UI y Caché
 		mensajesIniciales.Add(nuevoMensaje);
-
-		// 3. Forzar el scroll hacia abajo
 		_debeIrAlFinal = true;
 		StateHasChanged();
 
-		// 4. Actualizar en el Caché Singleton
 		cacheMensajes.AgregarMensaje(idConversacionActual, nuevoMensaje);
 
 		try
 		{
-			// 5. Enviar al Servicio pasando el DTO e ID de conversación
-			var idGenerado = await enviarMensaje.EnviarMensajeTextoAsync(idConversacionActual, userName, contactoConversacionSeleccionado?.Celular, nuevoMensaje);
+			var idGenerado = await enviarMensaje.EnviarMensajeTextoAsync(idConversacionActual,
+				userName,
+				contactoConversacionSeleccionado?.Celular,
+				nuevoMensaje
+			);
 
-			// 6. Actualizamos el ID real generado por la Base de Datos
 			nuevoMensaje.IdMensaje = idGenerado;
 		}
 		catch (Exception ex)
 		{
-			// Si falla la BD, opcionalmente puedes removerlo de la UI/Caché
-			Console.WriteLine($"Error guardando mensaje: {ex.Message}");
+			Console.WriteLine($"Error guardando mensaje de texto: {ex.Message}");
+		}
+	}
+
+	// MÉTODO 2: Exclusivo para mensajes con Archivos Adjuntos
+	private async Task ManejarEnvioArchivo((int idTicket, CuadroDeTexto.DatosAdjuntoOutDTO datos) parametrosEnvioArchivo)
+	{
+		if (conversacionSeleccionada is null || conversacionSeleccionada.IdConversacion == 0)
+			return;
+
+		var idConversacionActual = conversacionSeleccionada.IdConversacion;
+
+		var nuevoMensaje = new MensajeDTO
+		{
+			IdMensaje = 0,
+			Texto = parametrosEnvioArchivo.datos.Comentario,
+			Fecha = DateTime.Now,
+			EsEntrante = false,
+			NombreArchivo = parametrosEnvioArchivo.datos.Archivo.Name,
+			TipoArchivo = parametrosEnvioArchivo.datos.Archivo.ContentType,
+			TamanoArchivo = parametrosEnvioArchivo.datos.Archivo.Size
+		};
+
+		// Actualización optimista de UI y Caché
+		mensajesIniciales.Add(nuevoMensaje);
+		_debeIrAlFinal = true;
+		StateHasChanged();
+
+		cacheMensajes.AgregarMensaje(idConversacionActual, nuevoMensaje);
+
+		try
+		{
+			var idGenerado = await enviarMensaje.EnviarMensajeArchivoAsync(
+				idConversacionActual,
+				parametrosEnvioArchivo.idTicket,
+				userName,
+				contactoConversacionSeleccionado?.Celular,
+				nuevoMensaje,
+				parametrosEnvioArchivo.datos.Archivo // Pasamos el IBrowserFile al servicio especializado en archivos
+			);
+
+			nuevoMensaje.IdMensaje = idGenerado;
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Error guardando mensaje de archivo: {ex.Message}");
 		}
 	}
 
