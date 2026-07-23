@@ -1,0 +1,55 @@
+﻿<div class="contenedor-video">
+    <video controls preload="metadata" class="reproductor-video">
+        <source src="@RutaArchivo" type="@ObtenerTipoMime(RutaArchivo)" />
+        Tu navegador no soporta la reproducción de video.
+    </video>
+
+    @if (!string.IsNullOrWhiteSpace(Texto))
+    {
+        <div class="texto-pie">@Texto</div>
+    }
+</div>
+
+<style>
+    .contenedor-video {
+        max-width: 320px;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .reproductor-video {
+        width: 100%;
+        max-height: 280px;
+        border-radius: 8px;
+        background-color: #000000;
+        display: block;
+        object-fit: contain;
+    }
+
+    .texto-pie {
+        padding: 6px 0 0 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 14.2px;
+        line-height: 19px;
+        color: #111b21;
+    }
+</style>
+
+@code {
+    [Parameter] public string? RutaArchivo { get; set; }
+    [Parameter] public string? Texto { get; set; }
+
+    private string ObtenerTipoMime(string? ruta)
+    {
+        var extension = System.IO.Path.GetExtension(ruta)?.ToLower();
+        return extension switch
+        {
+            ".mp4" => "video/mp4",
+            ".webm" => "video/webm",
+            ".ogg" or ".ogv" => "video/ogg",
+            ".mov" => "video/quicktime",
+            _ => "video/mp4"
+        };
+    }
+}

@@ -1,0 +1,48 @@
+﻿@using WhatsappComercial.Modelos.DTOs
+
+@if (Mensaje.TipoArchivo?.ToLower() == "image" || EsImagen(Mensaje.Texto))
+{
+    <MensajeImagen RutaArchivo="@Mensaje.Texto" Texto="@Mensaje.Texto" />
+}
+else if (Mensaje.TipoArchivo?.ToLower() == "audio" || EsAudio(Mensaje.Texto))
+{
+    <MensajeAudio RutaArchivo="@Mensaje.Texto" />
+}
+else if (Mensaje.TipoArchivo?.ToLower() == "video" || EsVideo(Mensaje.Texto))
+{
+    <MensajeVideo RutaArchivo="@Mensaje.Texto" Texto="@Mensaje.Texto" />
+}
+else if (Mensaje.TipoArchivo?.ToLower() == "document" || EsDocumento(Mensaje.Texto))
+{
+    <MensajeDocumento RutaArchivo="@Mensaje.Texto" NombreArchivo="@Mensaje.NombreArchivo" />
+}
+else
+{
+    <div class="texto-mensaje">@Mensaje.Texto</div>
+}
+
+<style>
+    .texto-mensaje {
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 14.2px;
+        line-height: 19px;
+        color: #111b21;
+    }
+</style>
+
+@code {
+    [Parameter, EditorRequired] public MensajeDTO Mensaje { get; set; } = default!;
+
+    private bool EsImagen(string? ruta) => 
+        new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" }.Any(ext => ruta?.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ?? false);
+
+    private bool EsAudio(string? ruta) => 
+        new[] { ".mp3", ".ogg", ".wav", ".m4a", ".aac" }.Any(ext => ruta?.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ?? false);
+
+    private bool EsVideo(string? ruta) => 
+        new[] { ".mp4", ".webm", ".avi" }.Any(ext => ruta?.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ?? false);
+
+    private bool EsDocumento(string? ruta) => 
+        new[] { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".zip", ".rar", ".csv" }.Any(ext => ruta?.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ?? false);
+}

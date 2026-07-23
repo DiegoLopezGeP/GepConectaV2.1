@@ -1,0 +1,121 @@
+﻿@using System.IO
+
+<div class="contenedor-imagen">
+    <div class="wrapper-foto">
+        <img src="@ObtenerUrlWeb(RutaArchivo)" alt="Imagen del chat" class="imagen-chat" loading="lazy" />
+
+        @if (!string.IsNullOrEmpty(RutaArchivo))
+        {
+            <a href="@ObtenerUrlWeb(RutaArchivo)"
+               download="@ObtenerNombreArchivo(RutaArchivo)"
+               target="_blank"
+               class="btn-descargar-imagen"
+               title="Descargar imagen">
+                <RadzenIcon Icon="download"></RadzenIcon>
+            </a>
+        }
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Texto))
+    {
+        <div class="texto-pie">@Texto</div>
+    }
+</div>
+
+<style>
+    .contenedor-imagen {
+        max-width: 280px;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .wrapper-foto {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .imagen-chat {
+        width: 100%;
+        height: auto;
+        display: block;
+        cursor: pointer;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    .btn-descargar-imagen {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        font-size: 16px;
+        opacity: 0;
+        transition: opacity 0.2s ease, background 0.2s ease;
+    }
+
+    .wrapper-foto:hover .btn-descargar-imagen {
+        opacity: 1;
+    }
+
+    .btn-descargar-imagen:hover {
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+    }
+
+    .texto-pie {
+        padding: 6px 0 0 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 14.2px;
+        line-height: 19px;
+        color: #111b21;
+    }
+</style>
+
+@code {
+    [Parameter] public string? RutaArchivo { get; set; }
+    [Parameter] public string? Texto { get; set; }
+
+    private string ObtenerUrlWeb(string? rutaFisica)
+    {
+        if (string.IsNullOrWhiteSpace(rutaFisica)) return string.Empty;
+
+        // Si ya es una URL web o data URI, la dejamos pasar
+        if (rutaFisica.StartsWith("/") || rutaFisica.StartsWith("http") || rutaFisica.StartsWith("data:"))
+            return rutaFisica;
+
+        // Si viene una ruta absoluta de Windows (C:\...\wwwroot\uploads\foto.png)
+        // buscamos la carpeta pública (ej. wwwroot o Multimedia) para convertirla a ruta relativa
+        int indiceWwwroot = rutaFisica.IndexOf("wwwroot", StringComparison.OrdinalIgnoreCase);
+        if (indiceWwwroot >= 0)
+        {
+            string relativa = rutaFisica.Substring(indiceWwwroot + 7); // Remueve "wwwroot"
+            return relativa.Replace("\\", "/");
+        }
+
+        // Si se guardó dentro de una carpeta local en el proyecto
+        int indiceMultimedia = rutaFisica.IndexOf("Multimedia", StringComparison.OrdinalIgnoreCase);
+        if (indiceMultimedia >= 0)
+        {
+            string relativa = rutaFisica.Substring(indiceMultimedia);
+            return "/" + relativa.Replace("\\", "/");
+        }
+
+        return rutaFisica.Replace("\\", "/");
+    }
+
+    private string ObtenerNombreArchivo(string? ruta)
+    {
+        if (string.IsNullOrWhiteSpace(ruta)) return "imagen.png";
+        return Path.GetFileName(ruta);
+    }
+}

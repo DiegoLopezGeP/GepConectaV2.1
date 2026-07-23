@@ -1,0 +1,66 @@
+﻿<div class="tarjeta-documento">
+    <div class="icono-doc">
+        <i class="@ObtenerIcono(NombreArchivo)"></i>
+    </div>
+    <div class="detalles-doc">
+        <span class="nombre-doc">@(NombreArchivo ?? "Documento")</span>
+        <a href="@RutaArchivo" download target="_blank" class="btn-descargar">
+            <RadzenIcon Icon="download"></RadzenIcon>
+        </a>
+    </div>
+</div>
+
+<style>
+    .tarjeta-documento {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(0, 0, 0, 0.05);
+        padding: 8px 12px;
+        border-radius: 8px;
+        min-width: 200px;
+    }
+
+    .icono-doc {
+        font-size: 24px;
+        color: #54656f;
+    }
+
+    .detalles-doc {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .nombre-doc {
+        font-weight: 600;
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .btn-descargar {
+        font-size: 11px;
+        color: #00a884;
+        text-decoration: none;
+        font-weight: bold;
+    }
+</style>
+
+@code {
+    [Parameter] public string? RutaArchivo { get; set; }
+    [Parameter] public string? NombreArchivo { get; set; }
+
+    private string ObtenerIcono(string? nombre)
+    {
+        var ext = Path.GetExtension(nombre)?.ToLower();
+        return ext switch
+        {
+            ".pdf" => "rzi rzi-file-pdf",
+            ".doc" or ".docx" => "rzi rzi-file-word",
+            ".xls" or ".xlsx" => "rzi rzi-file-excel",
+            _ => "rzi rzi-file"
+        };
+    }
+}

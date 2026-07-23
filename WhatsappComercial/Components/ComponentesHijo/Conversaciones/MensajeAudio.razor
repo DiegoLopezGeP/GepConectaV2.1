@@ -1,0 +1,17 @@
+﻿<div class="contenedor-audio">
+    <audio controls preload="metadata" class="reproductor-audio">
+        <source src="@RutaArchivo" />
+        Tu navegador no soporta el reproductor de audio.
+    </audio>
+</div>
+
+<style>
+    .reproductor-audio {
+        max-width: 220px;
+        height: 36px;
+    }
+</style>
+
+@code {
+    [Parameter] public string? RutaArchivo { get; set; }
+}

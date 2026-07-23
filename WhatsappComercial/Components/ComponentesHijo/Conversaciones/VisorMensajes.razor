@@ -28,14 +28,16 @@
 
 			<div class="@(mensaje.EsEntrante ? "mensaje-entrante" : "mensaje-saliente")">
 				<div class="burbuja">
-					<div class="texto">@mensaje.Texto</div>
+
+					@* Componente encargado de renderizar Texto, Imagen, Audio, Video o Documento *@
+					<MensajeContenido Mensaje="mensaje" />
+
 					<div class="hora">@mensaje.Fecha.ToString("hh:mm tt")</div>
 				</div>
 			</div>
 		}
 
 	</div>
-
 </RadzenCard>
 
 <style>
@@ -44,26 +46,27 @@
 		padding: 15px;
 		border-radius: 12px;
 		overflow: hidden;
+		background: aliceblue;
 	}
 
-    .lista-mensajes {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        height: 100%;
-        overflow-y: auto;
-        /* IMPORTANTE: Desactivar animaciones nativas de scroll para evitar saltos */
-        scroll-behavior: auto !important;
-    }
+	.lista-mensajes {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		height: 100%;
+		overflow-y: auto;
+		/* IMPORTANTE: Desactivar animaciones nativas de scroll para evitar saltos */
+		scroll-behavior: auto !important;
+	}
 
-    /* Evita que el indicador de "Cargando..." descoloque el anclaje del scroll */
-    .cargando-antiguos {
-        overflow-anchor: none;
-        text-align: center;
-        padding: 8px;
-        font-size: 13px;
-        color: #666;
-    }
+	/* Evita que el indicador de "Cargando..." descoloque el anclaje del scroll */
+	.cargando-antiguos {
+		overflow-anchor: none;
+		text-align: center;
+		padding: 8px;
+		font-size: 13px;
+		color: #666;
+	}
 
 	.mensaje-entrante {
 		display: flex;
@@ -76,145 +79,143 @@
 	}
 
 	.burbuja {
-		max-width: 70%;
-		padding: 10px 14px;
-		border-radius: 16px;
+		max-width: 75%;
+		padding: 8px 12px;
+		border-radius: 12px;
 		word-break: break-word;
 		position: relative;
+		box-shadow: 0 1px 0.5px rgba(11, 20, 26, .13);
 	}
 
 	.mensaje-entrante .burbuja {
-		background: #f1f1f1;
-		color: #222;
-		border-bottom-left-radius: 4px;
+		background: #ffffff;
+		color: #111b21;
+		border-top-left-radius: 0px;
 	}
 
 	.mensaje-saliente .burbuja {
 		background: #d9fdd3;
-		color: #222;
-		border-bottom-right-radius: 4px;
-	}
-
-	.texto {
-		white-space: pre-wrap;
+		color: #111b21;
+		border-top-right-radius: 0px;
 	}
 
 	.hora {
-		margin-top: 6px;
+		margin-top: 4px;
 		text-align: right;
-		font-size: 11px;
-		color: #777;
+		font-size: 10px;
+		color: #667781;
+		user-select: none;
 	}
 
 	.separador-fecha {
 		align-self: center;
-		background: #e9edef;
+		background: #ffffff;
 		color: #54656f;
-		padding: 6px 14px;
+		padding: 5px 12px;
 		border-radius: 8px;
 		font-size: 12px;
-		font-weight: 600;
-		margin: 10px 0;
-		box-shadow: 0 1px 2px rgba(0,0,0,.08);
+		font-weight: 500;
+		margin: 8px 0;
+		box-shadow: 0 1px 1px rgba(11, 20, 26, .12);
 	}
 </style>
 
 @code {
-    [Parameter] public int IdConversacion { get; set; } = 0;
-    [Parameter] public List<MensajeDTO> Mensajes { get; set; } = new();
-    [Parameter] public bool CargandoMensajesAntiguos { get; set; }
-    [Parameter] public EventCallback OnLlegoAlTope { get; set; }
-    [Parameter] public bool DebeIrAlFinal { get; set; }
+	[Parameter] public int IdConversacion { get; set; } = 0;
+	[Parameter] public List<MensajeDTO> Mensajes { get; set; } = new();
+	[Parameter] public bool CargandoMensajesAntiguos { get; set; }
+	[Parameter] public EventCallback OnLlegoAlTope { get; set; }
+	[Parameter] public bool DebeIrAlFinal { get; set; }
 
-    private ElementReference _elementoLista;
-    private IJSObjectReference? _modulo;
-    private DotNetObjectReference<VisorMensajes>? _referenciaDotNet;
+	private ElementReference _elementoLista;
+	private IJSObjectReference? _modulo;
+	private DotNetObjectReference<VisorMensajes>? _referenciaDotNet;
 
-    private int _idConversacionAnterior = -1;
-    private bool _pendienteRestaurarScroll = false;
-    private int _totalMensajesAnterior = 0;
+	private int _idConversacionAnterior = -1;
+	private bool _pendienteRestaurarScroll = false;
+	private int _totalMensajesAnterior = 0;
 
-    protected override void OnParametersSet()
-    {
-        // Detectar si cambió la conversación
-        if (IdConversacion != _idConversacionAnterior && IdConversacion > 0)
-        {
-            _idConversacionAnterior = IdConversacion;
-            _totalMensajesAnterior = Mensajes.Count;
-            DebeIrAlFinal = true;
-            _pendienteRestaurarScroll = false;
-            return;
-        }
+	protected override void OnParametersSet()
+	{
+		// Detectar si cambió la conversación
+		if (IdConversacion != _idConversacionAnterior && IdConversacion > 0)
+		{
+			_idConversacionAnterior = IdConversacion;
+			_totalMensajesAnterior = Mensajes.Count;
+			DebeIrAlFinal = true;
+			_pendienteRestaurarScroll = false;
+			return;
+		}
 
-        // Si se agregó un mensaje nuevo AL FINAL (por envío o tiempo real), forzamos bajar el scroll
-        if (Mensajes.Count > _totalMensajesAnterior && !_pendienteRestaurarScroll)
-        {
-            DebeIrAlFinal = true;
-        }
+		// Si se agregó un mensaje nuevo AL FINAL (por envío o tiempo real), forzamos bajar el scroll
+		if (Mensajes.Count > _totalMensajesAnterior && !_pendienteRestaurarScroll)
+		{
+			DebeIrAlFinal = true;
+		}
 
-        _totalMensajesAnterior = Mensajes.Count;
-    }
+		_totalMensajesAnterior = Mensajes.Count;
+	}
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/scrollInfinito.js");
-            _referenciaDotNet = DotNetObjectReference.Create(this);
-            await _modulo.InvokeVoidAsync("inicializar", _elementoLista, _referenciaDotNet);
-        }
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
+			_modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/scrollInfinito.js");
+			_referenciaDotNet = DotNetObjectReference.Create(this);
+			await _modulo.InvokeVoidAsync("inicializar", _elementoLista, _referenciaDotNet);
+		}
 
-        if (_modulo is null) return;
+		if (_modulo is null) return;
 
-        // ESCENARIO A: Si acabamos de insertar mensajes antiguos
-        if (_pendienteRestaurarScroll)
-        {
-            _pendienteRestaurarScroll = false;
-            await _modulo.InvokeVoidAsync("restaurarPosicionScroll");
-            return;
-        }
+		// ESCENARIO A: Si acabamos de insertar mensajes antiguos
+		if (_pendienteRestaurarScroll)
+		{
+			_pendienteRestaurarScroll = false;
+			await _modulo.InvokeVoidAsync("restaurarPosicionScroll");
+			return;
+		}
 
-        // ESCENARIO B: Si abrimos el chat por primera vez
-        if (DebeIrAlFinal)
-        {
-            DebeIrAlFinal = false;
-            await _modulo.InvokeVoidAsync("irAlFinal", _elementoLista);
-        }
-    }
+		// ESCENARIO B: Si abrimos el chat por primera vez o llegó un mensaje nuevo
+		if (DebeIrAlFinal)
+		{
+			DebeIrAlFinal = false;
+			await _modulo.InvokeVoidAsync("irAlFinal", _elementoLista);
+		}
+	}
 
-    [JSInvokable]
-    public async Task NotificarScrollArriba()
-    {
-        if (CargandoMensajesAntiguos) return;
+	[JSInvokable]
+	public async Task NotificarScrollArriba()
+	{
+		if (CargandoMensajesAntiguos) return;
 
-        // Marcamos que en el próximo renderizado del DOM debemos compensar la altura
-        _pendienteRestaurarScroll = true;
+		// Marcamos que en el próximo renderizado del DOM debemos compensar la altura
+		_pendienteRestaurarScroll = true;
 
-        if (OnLlegoAlTope.HasDelegate)
-        {
-            await OnLlegoAlTope.InvokeAsync();
-        }
-    }
+		if (OnLlegoAlTope.HasDelegate)
+		{
+			await OnLlegoAlTope.InvokeAsync();
+		}
+	}
 
-    private string ObtenerTextoFecha(DateTime fecha)
-    {
-        var hoy = DateTime.Today;
-        var dia = fecha.Date;
+	private string ObtenerTextoFecha(DateTime fecha)
+	{
+		var hoy = DateTime.Today;
+		var dia = fecha.Date;
 
-        if (dia == hoy) return "Hoy";
-        if (dia == hoy.AddDays(-1)) return "Ayer";
-        if (dia >= hoy.AddDays(-7)) return fecha.ToString("dddd");
-        return fecha.ToString("dd 'de' MMMM 'de' yyyy");
-    }
+		if (dia == hoy) return "Hoy";
+		if (dia == hoy.AddDays(-1)) return "Ayer";
+		if (dia >= hoy.AddDays(-7)) return fecha.ToString("dddd");
+		return fecha.ToString("dd 'de' MMMM 'de' yyyy");
+	}
 
-    public async ValueTask DisposeAsync()
-    {
-        _referenciaDotNet?.Dispose();
+	public async ValueTask DisposeAsync()
+	{
+		_referenciaDotNet?.Dispose();
 
-        if (_modulo is not null)
-        {
-            try { await _modulo.DisposeAsync(); }
-            catch (JSDisconnectedException) { }
-        }
-    }
+		if (_modulo is not null)
+		{
+			try { await _modulo.DisposeAsync(); }
+			catch (JSDisconnectedException) { }
+		}
+	}
 }
