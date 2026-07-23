@@ -1,8 +1,23 @@
-﻿<div class="contenedor-video">
-    <video controls preload="metadata" class="reproductor-video">
-        <source src="@RutaArchivo" type="@ObtenerTipoMime(RutaArchivo)" />
-        Tu navegador no soporta la reproducción de video.
-    </video>
+﻿@using System.IO
+
+<div class="contenedor-video">
+    <div class="wrapper-video">
+        <video controls preload="metadata" class="reproductor-video">
+            <source src="@ObtenerUrlWeb(RutaArchivo)" type="@ObtenerTipoMime(RutaArchivo)" />
+            Tu navegador no soporta la reproducción de video.
+        </video>
+
+        @if (!string.IsNullOrEmpty(RutaArchivo))
+        {
+            <a href="@ObtenerUrlWeb(RutaArchivo)"
+               download="@ObtenerNombreArchivo(RutaArchivo)"
+               target="_blank"
+               class="btn-descargar-video"
+               title="Descargar video">
+                <i class="rzi rzi-download"></i>
+            </a>
+        }
+    </div>
 
     @if (!string.IsNullOrWhiteSpace(Texto))
     {
@@ -17,6 +32,14 @@
         overflow: hidden;
     }
 
+    .wrapper-video {
+        position: relative;
+        display: block;
+        width: 100%;
+        background-color: #000000;
+        border-radius: 8px;
+    }
+
     .reproductor-video {
         width: 100%;
         max-height: 280px;
@@ -24,6 +47,34 @@
         background-color: #000000;
         display: block;
         object-fit: contain;
+    }
+
+    .btn-descargar-video {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        font-size: 16px;
+        opacity: 0;
+        transition: opacity 0.2s ease, background 0.2s ease;
+        z-index: 2; /* Asegura que quede por encima del reproductor */
+    }
+
+    .wrapper-video:hover .btn-descargar-video {
+        opacity: 1;
+    }
+
+    .btn-descargar-video:hover {
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
     }
 
     .texto-pie {
@@ -40,9 +91,42 @@
     [Parameter] public string? RutaArchivo { get; set; }
     [Parameter] public string? Texto { get; set; }
 
+    private string ObtenerUrlWeb(string? rutaFisica)
+    {
+        if (string.IsNullOrWhiteSpace(rutaFisica)) return string.Empty;
+
+        // Si ya es una URL web o data URI, la dejamos pasar
+        if (rutaFisica.StartsWith("/") || rutaFisica.StartsWith("http") || rutaFisica.StartsWith("data:"))
+            return rutaFisica;
+
+        // Si viene una ruta absoluta de Windows con wwwroot
+        int indiceWwwroot = rutaFisica.IndexOf("wwwroot", StringComparison.OrdinalIgnoreCase);
+        if (indiceWwwroot >= 0)
+        {
+            string relativa = rutaFisica.Substring(indiceWwwroot + 7);
+            return relativa.Replace("\\", "/");
+        }
+
+        // Si viene con carpeta Multimedia
+        int indiceMultimedia = rutaFisica.IndexOf("Multimedia", StringComparison.OrdinalIgnoreCase);
+        if (indiceMultimedia >= 0)
+        {
+            string relativa = rutaFisica.Substring(indiceMultimedia);
+            return "/" + relativa.Replace("\\", "/");
+        }
+
+        return rutaFisica.Replace("\\", "/");
+    }
+
+    private string ObtenerNombreArchivo(string? ruta)
+    {
+        if (string.IsNullOrWhiteSpace(ruta)) return "video.mp4";
+        return Path.GetFileName(ruta);
+    }
+
     private string ObtenerTipoMime(string? ruta)
     {
-        var extension = System.IO.Path.GetExtension(ruta)?.ToLower();
+        var extension = Path.GetExtension(ruta)?.ToLower();
         return extension switch
         {
             ".mp4" => "video/mp4",
