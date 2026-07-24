@@ -22,4 +22,7 @@
   <ItemGroup>
     <Folder Include="wwwroot\Images\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GepConecta.WhatsAppCloud\GepConecta.WhatsAppCloud.csproj" />
+  </ItemGroup>
 </Project>

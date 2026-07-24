@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using AccesoDatos;
+using GepConecta.WhatsAppCloud.Services;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.Extensions.FileProviders;
 using Radzen;
@@ -55,6 +56,16 @@ namespace WhatsappComercial
 
             builder.Services.AddRazorPages();
             builder.Services.AddHttpClient();
+
+            builder.Services.AddHttpClient<IWhatsAppCloudClient, WhatsAppCloudClient>(client =>
+            {
+                var config = builder.Configuration.GetSection("WhatsAppSettings");
+                string accessToken = config["AccessToken"]!;
+                string phoneNumberId = config["PhoneNumberId"]!;
+
+                return new WhatsAppCloudClient(client, accessToken, phoneNumberId);
+            });
+
             builder.Services.AddServerSideBlazor();
 
 

@@ -1,5 +1,8 @@
-﻿@using Microsoft.AspNetCore.Components.Forms
-@using System.IO
+﻿@using System.IO
+@using GepConecta.WhatsAppCloud.Models.Enums
+@using GepConecta.WhatsAppCloud.Services
+@using Microsoft.AspNetCore.Components.Forms
+@inject IWhatsAppCloudClient WhatsAppClient
 @implements IDisposable
 @inject IJSRuntime JS
 
@@ -222,6 +225,9 @@
 	[Parameter] public EventCallback<(int, DatosAdjuntoOutDTO)> OnEnviarArchivo { get; set; }
 	[Parameter] public int IdTicket { get; set; }
 
+	// NÚMERO DE TELÉFONO DESTINO PARA WHATSAPP (Ej: "573001234567")
+	[Parameter] public string TelefonoDestino { get; set; } = string.Empty;
+
 	private string mensaje = string.Empty;
 	private IBrowserFile? archivoSeleccionado;
 	private InputFile? inputFile;
@@ -267,12 +273,71 @@
 			var datosAdjunto = new DatosAdjuntoOutDTO
 			{
 				Archivo = archivoSeleccionado,
-				Comentario = mensaje // Texto opcional como pie de foto/archivo
+				Comentario = mensaje
 			};
 
+			// 1. Convertir archivo a bytes
+			using var stream = archivoSeleccionado.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+			using var ms = new MemoryStream();
+			await stream.CopyToAsync(ms);
+			byte[] bytesArchivo = ms.ToArray();
+
+			// 2. Subir archivo a Meta
+			if (!string.IsNullOrWhiteSpace(TelefonoDestino))
+			{
+				try
+				{
+					var uploadResult = await WhatsAppClient.UploadMediaAsync(
+						fileBytes: bytesArchivo,
+						fileName: archivoSeleccionado.Name,
+						contentType: archivoSeleccionado.ContentType
+					);
+
+					if (uploadResult != null && !string.IsNullOrEmpty(uploadResult.Id))
+					{
+						string contentType = archivoSeleccionado.ContentType.ToLower();
+						string mediaId = uploadResult.Id;
+
+						// 3. Enviar según el MIME Type del archivo seleccionado
+						if (contentType.StartsWith("audio/"))
+						{
+							// Nota: Meta no soporta caption/comentario en audios
+							await WhatsAppClient.SendAudioAsync(TelefonoDestino, mediaId, isUrl: false);
+						}
+						else if (contentType.StartsWith("image/"))
+						{
+							await WhatsAppClient.SendImageAsync(TelefonoDestino, mediaId, caption: mensaje, isUrl: false);
+						}
+						else if (contentType.StartsWith("video/"))
+						{
+							await WhatsAppClient.SendVideoAsync(TelefonoDestino, mediaId, caption: mensaje, isUrl: false);
+						}
+						else
+						{
+							// Cualquier otro tipo (PDF, Excel, Word, Zip, etc.) se envía como documento
+							await WhatsAppClient.SendDocumentAsync(
+								to: TelefonoDestino,
+								mediaIdOrUrl: mediaId,
+								fileName: archivoSeleccionado.Name,
+								caption: mensaje,
+								isUrl: false
+							);
+						}
+
+						Console.WriteLine($"[WHATSAPP]: Archivo {archivoSeleccionado.Name} enviado correctamente.");
+					}
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"[WHATSAPP ERROR]: Error al enviar archivo: {ex.Message}");
+				}
+			}
+
+			// Limpiar controles de UI
 			mensaje = string.Empty;
 			archivoSeleccionado = null;
 
+			// Notificar al componente padre de Blazor (para guardar en BD local, refrescar chat, etc.)
 			if (OnEnviarArchivo.HasDelegate)
 			{
 				await OnEnviarArchivo.InvokeAsync((IdTicket, datosAdjunto));
@@ -286,6 +351,26 @@
 			var textoAEnviar = mensaje;
 			mensaje = string.Empty;
 
+			// 1. Enviar vía WhatsApp Cloud API
+			if (!string.IsNullOrWhiteSpace(TelefonoDestino))
+			{
+				try
+				{
+					var respuestaWA = await WhatsAppClient.SendTextMessageAsync(
+						TelefonoDestino,
+						TipoMensajeWhatsAppEnum.text.ToString(),
+						textoAEnviar
+					);
+
+					Console.WriteLine($"[WHATSAPP]: Mensaje de texto enviado. ID: {respuestaWA?.Messages?.FirstOrDefault()?.Id}");
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"[WHATSAPP ERROR]: {ex.Message}");
+				}
+			}
+
+			// 2. Notificar al evento interno de Blazor
 			if (OnEnviarTexto.HasDelegate)
 			{
 				await OnEnviarTexto.InvokeAsync(textoAEnviar);
@@ -344,27 +429,76 @@
 				return;
 			}
 
-			// Obtenemos una referencia al blob como stream, sin pasarlo
-			// completo por el mensaje de SignalR
-			var streamRef = await JS.InvokeAsync<IJSStreamReference>(
-				"grabadorAudio.obtenerStreamAudio");
+			// Obtenemos el stream de audio del JS
+			var streamRef = await JS.InvokeAsync<IJSStreamReference>("grabadorAudio.obtenerStreamAudio");
 
-			// maxAllowedSize debe ser >= al tamaño real del audio esperado
 			await using Stream stream = await streamRef.OpenReadStreamAsync(
-				maxAllowedSize: 20 * 1024 * 1024, // 20 MB tope de seguridad
+				maxAllowedSize: 20 * 1024 * 1024,
 				cancellationToken: cts.Token);
 
 			using var memoryStream = new MemoryStream();
 			await stream.CopyToAsync(memoryStream, cts.Token);
 			byte[] bytesAudio = memoryStream.ToArray();
 
-			string extension = resultado.ContentType.Contains("ogg") ? ".ogg" : ".webm";
-			string nombreArchivo = $"{IdTicket}_audio_note_{DateTime.Now:yyyyMMdd_HHmmss}{extension}";
+			// ---------------------------------------------------------------------------------------
+			// APLICACIÓN DE LA OPCIÓN 2: Determinar extensión válida sin fallback a .webm
+			// ---------------------------------------------------------------------------------------
+			string contentType = resultado.ContentType?.ToLower().Trim() ?? "audio/ogg";
 
+			// Mapeamos el tipo MIME recibido a una extensión compatible con Meta y con tu reproductor
+			string extension = contentType switch
+			{
+				var c when c.Contains("mp4") => ".mp4",
+				var c when c.Contains("aac") => ".aac",
+				_ => ".ogg" // Forzamos OGG por defecto para notas de voz
+			};
+
+			// Aseguramos que el contentType que va a Meta sea un MIMEType limpio de la Cloud API
+			string contentTypeMeta = extension switch
+			{
+				".mp4" => "audio/mp4",
+				".aac" => "audio/aac",
+				_ => "audio/ogg"
+			};
+
+			string nombreArchivo = $"{IdTicket}_audio_note_{DateTime.Now:yyyyMMdd_HHmmss}{extension}";
+			// ---------------------------------------------------------------------------------------
+
+			// 1. SUBIR AUDIO A META Y ENVIAR A WHATSAPP
+			if (!string.IsNullOrWhiteSpace(TelefonoDestino))
+			{
+				try
+				{
+					// Subir nota de voz (.ogg / .mp4 / .aac)
+					var uploadResult = await WhatsAppClient.UploadMediaAsync(
+						fileBytes: bytesAudio,
+						fileName: nombreArchivo,
+						contentType: contentTypeMeta
+					);
+
+					if (uploadResult != null && !string.IsNullOrEmpty(uploadResult.Id))
+					{
+						// Enviar mensaje de audio
+						var respuestaWA = await WhatsAppClient.SendAudioAsync(
+							to: TelefonoDestino,
+							mediaIdOrUrl: uploadResult.Id,
+							isUrl: false
+						);
+
+						Console.WriteLine($"[WHATSAPP]: Nota de voz enviada. ID: {respuestaWA?.Messages?.FirstOrDefault()?.Id}");
+					}
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"[WHATSAPP AUDIO ERROR]: {ex.Message}");
+				}
+			}
+
+			// 2. CREAR OBJETO PARA USO LOCAL EN BLAZOR (BD / CHAT UI)
 			IBrowserFile audioBrowserFile = new MemoryBrowserFile(
 				nombreArchivo,
 				bytesAudio,
-				resultado.ContentType
+				contentTypeMeta
 			);
 
 			var datosAdjunto = new DatosAdjuntoOutDTO

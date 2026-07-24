@@ -4,26 +4,52 @@
     dotNetHelper: null,
     timerInterval: null,
     segundos: 0,
+    ultimoBlobGrabado: null,
+
+    // Método para consultar estado previo sin abrir micrófono
+    verificarPermiso: async function () {
+        try {
+            if (!navigator.permissions || !navigator.permissions.query) return "prompt";
+            const result = await navigator.permissions.query({ name: 'microphone' });
+            return result.state; // 'granted', 'denied', 'prompt'
+        } catch (e) {
+            return "prompt";
+        }
+    },
 
     iniciar: async function (dotNetRef) {
         try {
             this.dotNetHelper = dotNetRef;
             this.audioChunks = [];
             this.segundos = 0;
+            this.ultimoBlobGrabado = null;
 
+            // 1. Pedir micrófono
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-            // Determinar formato soportado
-            let mime = 'audio/webm;codecs=opus';
-            if (!MediaRecorder.isTypeSupported(mime)) {
-                mime = 'audio/ogg;codecs=opus';
-            }
-            if (!MediaRecorder.isTypeSupported(mime)) {
-                mime = ''; // Usa el formato por defecto del navegador
-            }
+            // 2. Si la librería OpusMediaRecorder está cargada
+            if (typeof OpusMediaRecorder !== 'undefined') {
 
-            const options = mime ? { mimeType: mime } : {};
-            this.mediaRecorder = new MediaRecorder(stream, options);
+                // TRUCO SEGURIDAD: Convertimos la URL remota del Worker en un Blob local para evitar SecurityError/CORS
+                const workerUrl = 'https://cdn.jsdelivr.net/npm/opus-media-recorder@latest/encoderWorker.umd.js';
+                const workerScript = `importScripts('${workerUrl}');`;
+                const workerBlob = new Blob([workerScript], { type: 'text/javascript' });
+                const workerBlobUrl = URL.createObjectURL(workerBlob);
+
+                const workerOptions = {
+                    encoderWorkerFactory: function () {
+                        return new Worker(workerBlobUrl);
+                    },
+                    OggOpusEncoderWasmPath: 'https://cdn.jsdelivr.net/npm/opus-media-recorder@latest/OggOpusEncoder.wasm'
+                };
+
+                window.MediaRecorder = OpusMediaRecorder;
+                this.mediaRecorder = new OpusMediaRecorder(stream, { mimeType: 'audio/ogg' }, workerOptions);
+
+            } else {
+                console.warn("OpusMediaRecorder no encontrado, usando MediaRecorder nativo.");
+                this.mediaRecorder = new MediaRecorder(stream);
+            }
 
             this.mediaRecorder.ondataavailable = (event) => {
                 if (event.data && event.data.size > 0) {
@@ -31,7 +57,6 @@
                 }
             };
 
-            // Pedir fragmentos de audio cada 250ms para asegurar que los chunks se llenen
             this.mediaRecorder.start(250);
 
             // Cronómetro
@@ -45,9 +70,18 @@
             }, 1000);
 
             return true;
+
         } catch (err) {
             console.error("Error al acceder al micrófono:", err);
-            alert("No se pudo acceder al micrófono. Verifica los permisos de tu navegador.");
+
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                alert("Permiso denegado. Permite el uso del micrófono en el navegador.");
+            } else if (err.name === 'NotFoundError') {
+                alert("No se detectó ningún micrófono conectado.");
+            } else {
+                alert("No se pudo iniciar la grabación de audio. Revisa la consola.");
+            }
+
             return false;
         }
     },
@@ -56,9 +90,6 @@
         return new Promise((resolve) => {
             clearInterval(this.timerInterval);
 
-            // Bandera para evitar llamar resolve() más de una vez
-            // (podría pasar si, por ejemplo, onstop y un timeout de seguridad
-            // se disparan casi al mismo tiempo)
             let yaResuelto = false;
             const resolverUnaVez = (valor) => {
                 if (yaResuelto) return;
@@ -71,9 +102,6 @@
                 return;
             }
 
-            // Salvavidas: si por cualquier razón onstop nunca dispara
-            // (o el navegador se cuelga procesando el blob), no dejamos
-            // la promesa colgada para siempre esperando el timeout de .NET.
             const timeoutSeguridad = setTimeout(() => {
                 console.warn("Timeout de seguridad: no se recibió onstop a tiempo.");
                 resolverUnaVez(null);
@@ -83,9 +111,16 @@
                 clearTimeout(timeoutSeguridad);
 
                 try {
-                    const mimeType = this.mediaRecorder.mimeType || 'audio/webm';
-                    const blob = new Blob(this.audioChunks, { type: mimeType });
+                    let mimeType = this.mediaRecorder.mimeType || 'audio/ogg';
+                    let cleanContentType = mimeType.split(';')[0].toLowerCase().trim();
 
+                    if (cleanContentType.includes('webm')) {
+                        cleanContentType = 'audio/ogg';
+                    }
+
+                    const blob = new Blob(this.audioChunks, { type: cleanContentType });
+
+                    // Apagar los tracks del micrófono para liberar el hardware inmediatamente
                     if (this.mediaRecorder.stream) {
                         this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
                     }
@@ -96,14 +131,16 @@
                         return;
                     }
 
-                    // En vez de convertir a Base64, guardamos el blob y devolvemos
-                    // metadata + el tipo de contenido. El blob se recupera después
-                    // vía streaming con obtenerStreamAudio().
                     this.ultimoBlobGrabado = blob;
 
+                    let extension = '.ogg';
+                    if (cleanContentType.includes('mp4')) extension = '.mp4';
+                    if (cleanContentType.includes('aac')) extension = '.aac';
+
                     resolverUnaVez({
-                        contentType: mimeType.split(';')[0],
-                        tamano: blob.size
+                        contentType: cleanContentType,
+                        tamano: blob.size,
+                        nombreSugerido: `nota_voz_${Date.now()}${extension}`
                     });
 
                 } catch (err) {
@@ -125,7 +162,9 @@
             }
         }
         this.audioChunks = [];
+        this.ultimoBlobGrabado = null;
     },
+
     obtenerStreamAudio: function () {
         return this.ultimoBlobGrabado;
     }

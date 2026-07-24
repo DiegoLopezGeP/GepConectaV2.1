@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="@Assets["WhatsappComercial.styles.css"]" />
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <script src="https://cdn.jsdelivr.net/npm/opus-media-recorder@latest/OpusMediaRecorder.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/opus-media-recorder@latest/encoderWorker.umd.js"></script>
     <HeadOutlet />
     <RadzenTheme Theme="material"/>
 </head>
@@ -21,6 +23,7 @@
     <script src="js/site.js"></script>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
+
     <!-- Tu archivo de grabación de audio aquí -->
     <script src="js/grabadorAudio.js"></script>
 </body>

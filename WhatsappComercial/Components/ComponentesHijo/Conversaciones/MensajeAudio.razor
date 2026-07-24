@@ -86,8 +86,17 @@
 
     private string ObtenerNombreArchivo(string? ruta)
     {
-        if (string.IsNullOrWhiteSpace(ruta)) return "audio.mp3";
-        return Path.GetFileName(ruta);
+        if (string.IsNullOrWhiteSpace(ruta)) return "audio.ogg";
+
+        string nombreOriginal = Path.GetFileName(ruta);
+
+        // Si el archivo viene con extensión .webm, la forzamos a .ogg
+        if (Path.GetExtension(nombreOriginal).Equals(".webm", StringComparison.OrdinalIgnoreCase))
+        {
+            return Path.ChangeExtension(nombreOriginal, ".ogg");
+        }
+
+        return nombreOriginal;
     }
 
     private string ObtenerTipoMime(string? ruta)
