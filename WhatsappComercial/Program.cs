@@ -38,6 +38,11 @@ namespace WhatsappComercial
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
             builder.Services.AddRadzenComponents();
+            //builder.Services.AddServerSideBlazor()
+            //.AddHubOptions(options =>
+            //{
+            //    options.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10 MB
+            //});
 
             builder.Services.AddHttpContextAccessor();
 

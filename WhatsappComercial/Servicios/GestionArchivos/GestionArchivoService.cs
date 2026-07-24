@@ -26,7 +26,7 @@ namespace WhatsappComercial.Servicios.GestionArchivos
             string carpetaUploads = _staticConfiguracion.TraerConfiguracionPorCondicion("CarpetaMultimedia");
 
             // 1. Obtener el tipo de archivo ("document", "image", etc.)
-            string tipoArchivo = await ObtenerTipoArchivo(archivo.Name);
+            string tipoArchivo = ObtenerTipoArchivo(archivo.Name);
 
             // 2. Construir la carpeta final (incluyendo la subcarpeta "document")
             string carpetaFinalDestino = Path.Combine(_systemServicio.PathDocument(), carpetaUploads, tipoArchivo);
@@ -64,16 +64,29 @@ namespace WhatsappComercial.Servicios.GestionArchivos
             return (rutaFisicaCompleta, sha256Hash);
         }
 
-        public async Task<string> ObtenerTipoArchivo(string fileName)
+        public string ObtenerTipoArchivo(string fileName)
         {
+            if (string.IsNullOrWhiteSpace(fileName)) return "unknown";
+
             string extension = System.IO.Path.GetExtension(fileName).ToLower();
 
             return extension switch
             {
-                ".jpeg" or ".jpg" or ".png" or ".gif" or ".bmp" or ".webp" => "image",
-                ".mp4" or ".avi" or ".mov" => "video",
-                ".mp3" or ".wav" or ".m4a" or ".ogg" => "audio",
-                ".pdf" or ".doc" or ".docx" or ".xls" or ".xlsx" or ".ppt" or ".pptx" or ".txt" or ".csv" => "document",
+                // Imágenes
+                ".jpeg" or ".jpg" or ".png" or ".gif" or ".bmp" or ".webp" or ".svg" or ".ico" or ".tiff" => "image",
+
+                // Videos
+                ".mp4" or ".avi" or ".mov" or ".mkv" or ".flv" or ".wmv" or ".m4v" or ".3gp" => "video",
+
+                // Audios (Incluyendo .webm y .opus provenientes del grabador de voz)
+                ".mp3" or ".wav" or ".m4a" or ".ogg" or ".opus" or ".webm" or ".aac" or ".wma" or ".flac" => "audio",
+
+                // Documentos
+                ".pdf" or ".doc" or ".docx" or ".xls" or ".xlsx" or ".ppt" or ".pptx" or ".txt" or ".csv" or ".rtf" => "document",
+
+                // Comprimidos (Opcional)
+                ".zip" or ".rar" or ".7z" or ".tar" or ".gz" => "compressed",
+
                 _ => "unknown"
             };
         }

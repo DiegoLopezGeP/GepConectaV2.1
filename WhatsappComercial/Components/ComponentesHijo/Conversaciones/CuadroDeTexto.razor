@@ -1,10 +1,12 @@
 ﻿@using Microsoft.AspNetCore.Components.Forms
+@using System.IO
+@implements IDisposable
 @inject IJSRuntime JS
 
 <div class="contenedor-barra-mensaje">
 
 	@* VISTA PREVIA DEL ARCHIVO ADJUNTADO *@
-	@if (archivoSeleccionado != null)
+	@if (archivoSeleccionado != null && !grabandoAudio)
 	{
 		<div class="vista-previa-adjunto">
 			<div class="info-adjunto">
@@ -24,44 +26,70 @@
 
 	<div class="barra-mensaje">
 
-		<div class="acciones-izquierda @(EsMovil ? "movil" : "")">
-
-			<InputFile @ref="inputFile"
-					   OnChange="OnInputFileChange"
-					   style="display: none;"
-					   id="fileInput"
-					   accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx" />
-
-			<RadzenButton Icon="attach_file"
-						  Variant="Variant.Text"
-						  ButtonStyle="ButtonStyle.Light"
-						  Click="AbrirSelectorArchivos" />
-
-			<RadzenButton Icon="mood"
-						  Variant="Variant.Text"
-						  ButtonStyle="ButtonStyle.Light"
-						  Click="MostrarEmojis" />
-
-		</div>
-
-		<RadzenTextArea @bind-Value="mensaje"
-						Placeholder="@(archivoSeleccionado != null ? "Añade un comentario..." : "Escribe un mensaje...")"
-						Rows="2"
-						Class="texto-mensaje" />
-
-		@if (string.IsNullOrWhiteSpace(mensaje) && archivoSeleccionado == null)
+		@if (grabandoAudio)
 		{
-			<RadzenButton Icon="mic"
-						  Variant="Variant.Text"
-						  ButtonStyle="ButtonStyle.Info"
-						  Click="GrabarAudio" />
+			@* MODO GRABACIÓN DE AUDIO (TIPO WHATSAPP) *@
+			<div class="panel-grabacion">
+				<RadzenButton Icon="delete"
+							  Variant="Variant.Text"
+							  ButtonStyle="ButtonStyle.Danger"
+							  Click="CancelarGrabacion"
+							  title="Descartar grabación" />
+
+				<div class="indicador-grabacion">
+					<span class="punto-rojo"></span>
+					<span class="tiempo-grabacion">@tiempoGrabacion</span>
+				</div>
+
+				<RadzenButton Icon="send"
+							  Variant="Variant.Filled"
+							  ButtonStyle="ButtonStyle.Success"
+							  Click="FinalizarYEnviarAudio"
+							  title="Enviar audio" />
+			</div>
 		}
 		else
 		{
-			<RadzenButton Icon="send"
-						  Variant="Variant.Filled"
-						  ButtonStyle="ButtonStyle.Primary"
-						  Click="Enviar" />
+			@* MODO NORMAL DE TEXTO/ADJUNTO *@
+			<div class="acciones-izquierda @(EsMovil ? "movil" : "")">
+
+				<InputFile @ref="inputFile"
+						   OnChange="OnInputFileChange"
+						   style="display: none;"
+						   id="fileInput"
+						   accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx" />
+
+				<RadzenButton Icon="attach_file"
+							  Variant="Variant.Text"
+							  ButtonStyle="ButtonStyle.Light"
+							  Click="AbrirSelectorArchivos" />
+
+				<RadzenButton Icon="mood"
+							  Variant="Variant.Text"
+							  ButtonStyle="ButtonStyle.Light"
+							  Click="MostrarEmojis" />
+
+			</div>
+
+			<RadzenTextArea @bind-Value="mensaje"
+							Placeholder="@(archivoSeleccionado != null ? "Añade un comentario..." : "Escribe un mensaje...")"
+							Rows="2"
+							Class="texto-mensaje" />
+
+			@if (string.IsNullOrWhiteSpace(mensaje) && archivoSeleccionado == null)
+			{
+				<RadzenButton Icon="mic"
+							  Variant="Variant.Text"
+							  ButtonStyle="ButtonStyle.Info"
+							  Click="GrabarAudio" />
+			}
+			else
+			{
+				<RadzenButton Icon="send"
+							  Variant="Variant.Filled"
+							  ButtonStyle="ButtonStyle.Primary"
+							  Click="Enviar" />
+			}
 		}
 
 	</div>
@@ -140,6 +168,50 @@
 			border-radius: 20px;
 			padding: 10px 15px;
 		}
+
+	/* ESTILOS DEL PANEL DE GRABACIÓN DE AUDIO */
+	.panel-grabacion {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		background: #f0f2f5;
+		border-radius: 25px;
+		padding: 4px 12px;
+	}
+
+	.indicador-grabacion {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.punto-rojo {
+		width: 12px;
+		height: 12px;
+		background-color: #ea4335;
+		border-radius: 50%;
+		animation: titilar 1s infinite alternate;
+	}
+
+	.tiempo-grabacion {
+		font-weight: 600;
+		font-size: 14px;
+		color: #3b4a54;
+		font-family: monospace;
+	}
+
+	@@keyframes titilar {
+		0% {
+			opacity: 1;
+			transform: scale(1);
+		}
+
+		100% {
+			opacity: 0.3;
+			transform: scale(0.85);
+		}
+	}
 </style>
 
 @code {
@@ -154,6 +226,16 @@
 	private IBrowserFile? archivoSeleccionado;
 	private InputFile? inputFile;
 
+	// ESTADOS DE GRABACIÓN DE AUDIO
+	private bool grabandoAudio = false;
+	private string tiempoGrabacion = "00:00";
+	private DotNetObjectReference<CuadroDeTexto>? objRef;
+
+	protected override void OnInitialized()
+	{
+		objRef = DotNetObjectReference.Create(this);
+	}
+
 	private async Task AbrirSelectorArchivos()
 	{
 		await JS.InvokeVoidAsync("eval", "document.getElementById('fileInput').click()");
@@ -162,7 +244,6 @@
 	private void OnInputFileChange(InputFileChangeEventArgs e)
 	{
 		const long maxFileSize = 10 * 1024 * 1024; // 10 MB
-
 		if (e.File.Size > maxFileSize)
 		{
 			Console.WriteLine("El archivo supera los 10MB autorizados.");
@@ -212,6 +293,97 @@
 		}
 	}
 
+	// LÓGICA DE GRABACIÓN DE AUDIO
+	private async Task GrabarAudio()
+	{
+		bool ok = await JS.InvokeAsync<bool>("grabadorAudio.iniciar", objRef);
+		if (ok)
+		{
+			grabandoAudio = true;
+			tiempoGrabacion = "00:00";
+		}
+	}
+
+	[JSInvokable]
+	public void ActualizarTiempoJS(string tiempo)
+	{
+		tiempoGrabacion = tiempo;
+		StateHasChanged();
+	}
+
+	private async Task CancelarGrabacion()
+	{
+		grabandoAudio = false;
+		await JS.InvokeVoidAsync("grabadorAudio.cancelar");
+	}
+
+	private async Task FinalizarYEnviarAudio()
+	{
+		try
+		{
+			grabandoAudio = false;
+
+			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+
+			ResultadoGrabacion? resultado;
+			try
+			{
+				resultado = await JS.InvokeAsync<ResultadoGrabacion>(
+					"grabadorAudio.detenerYObtenerData",
+					cts.Token);
+			}
+			catch (TaskCanceledException)
+			{
+				Console.WriteLine("[AUDIO]: Tiempo de espera agotado al detener la grabación.");
+				return;
+			}
+
+			if (resultado == null || resultado.Tamano == 0)
+			{
+				Console.WriteLine("[AUDIO]: No se obtuvieron datos de audio.");
+				return;
+			}
+
+			// Obtenemos una referencia al blob como stream, sin pasarlo
+			// completo por el mensaje de SignalR
+			var streamRef = await JS.InvokeAsync<IJSStreamReference>(
+				"grabadorAudio.obtenerStreamAudio");
+
+			// maxAllowedSize debe ser >= al tamaño real del audio esperado
+			await using Stream stream = await streamRef.OpenReadStreamAsync(
+				maxAllowedSize: 20 * 1024 * 1024, // 20 MB tope de seguridad
+				cancellationToken: cts.Token);
+
+			using var memoryStream = new MemoryStream();
+			await stream.CopyToAsync(memoryStream, cts.Token);
+			byte[] bytesAudio = memoryStream.ToArray();
+
+			string extension = resultado.ContentType.Contains("ogg") ? ".ogg" : ".webm";
+			string nombreArchivo = $"{IdTicket}_audio_note_{DateTime.Now:yyyyMMdd_HHmmss}{extension}";
+
+			IBrowserFile audioBrowserFile = new MemoryBrowserFile(
+				nombreArchivo,
+				bytesAudio,
+				resultado.ContentType
+			);
+
+			var datosAdjunto = new DatosAdjuntoOutDTO
+			{
+				Archivo = audioBrowserFile,
+				Comentario = string.Empty
+			};
+
+			if (OnEnviarArchivo.HasDelegate)
+			{
+				await OnEnviarArchivo.InvokeAsync((IdTicket, datosAdjunto));
+			}
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"[ERROR ENVIAR AUDIO]: {ex.Message}");
+		}
+	}
+
 	private string ObtenerIconoArchivo(string contentType)
 	{
 		if (contentType.StartsWith("image/")) return "image";
@@ -237,12 +409,47 @@
 		return $"{dblSuf:0.##} {sufijos[i]}";
 	}
 
-	private async Task GrabarAudio() { }
 	private async Task MostrarEmojis() { }
 
+	public void Dispose()
+	{
+		objRef?.Dispose();
+	}
+
+	// CLASES DTO / WRAPPERS AUXILIARES
 	public class DatosAdjuntoOutDTO
 	{
 		public required IBrowserFile Archivo { get; set; }
 		public string Comentario { get; set; } = string.Empty;
+	}
+
+	public class ResultadoGrabacion
+	{
+		public string ContentType { get; set; } = string.Empty;
+		public long Tamano { get; set; }
+	}
+
+	// Wrapper para convertir los bytes del micrófono a un IBrowserFile compatible
+	public class MemoryBrowserFile : IBrowserFile
+	{
+		private readonly byte[] _bytes;
+		public MemoryBrowserFile(string name, byte[] bytes, string contentType)
+		{
+			Name = name;
+			_bytes = bytes;
+			ContentType = contentType;
+			Size = bytes.Length;
+			LastModified = DateTimeOffset.Now;
+		}
+
+		public string Name { get; }
+		public DateTimeOffset LastModified { get; }
+		public long Size { get; }
+		public string ContentType { get; }
+
+		public Stream OpenReadStream(long maxAllowedSize = 512000, CancellationToken cancellationToken = default)
+		{
+			return new MemoryStream(_bytes);
+		}
 	}
 }

@@ -44,7 +44,7 @@ namespace WhatsappComercial.Servicios.Mensajes
 
 
             // 3. Determinar la categoría (image, video, audio, document) para la lógica de mensajes
-            string TipoMensaje = await _gestionArchivos.ObtenerTipoArchivo(archivo.Name);
+            string TipoMensaje = _gestionArchivos.ObtenerTipoArchivo(archivo.Name);
 
             // 4. Crear el modelo para la Base de Datos
             var entidadMensaje = new Modelos.Mensajes
