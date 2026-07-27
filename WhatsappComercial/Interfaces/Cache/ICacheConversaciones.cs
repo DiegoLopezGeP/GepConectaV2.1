@@ -22,9 +22,9 @@ namespace WhatsappComercial.Interfaces.Cache
         IEnumerable<DatosTarjetaConversacionDTO> ObtenerActivasPorArea(int areaId);
 
         /// <summary>
-        /// Obtiene una conversación puntual por su Id.
+        /// Obtiene una conversación puntual por numero de telefono del mensaje
         /// </summary>
-        DatosTarjetaConversacionDTO? ObtenerPorId(int conversacionId);
+        Task<DatosTarjetaConversacionDTO?> ObtenerConversacionPorNumeroTelefono(string conversacionId);
 
         /// <summary>
         /// Crea o actualiza una conversación tanto en BD como en cache de forma atómica.

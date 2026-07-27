@@ -5,6 +5,7 @@ using WhatsappComercial.Interfaces.Contactos;
 using WhatsappComercial.Interfaces.Conversaciones;
 using WhatsappComercial.Interfaces.GestionArchivos;
 using WhatsappComercial.Interfaces.Mensajes;
+using WhatsappComercial.Interfaces.NotificarUI;
 using WhatsappComercial.Interfaces.ProcesarMensajeEntrante;
 using WhatsappComercial.Interfaces.Tickets;
 using WhatsappComercial.Interfaces.Usuarios;
@@ -17,6 +18,7 @@ using WhatsappComercial.Servicios.Contactos;
 using WhatsappComercial.Servicios.Conversaciones;
 using WhatsappComercial.Servicios.GestionArchivos;
 using WhatsappComercial.Servicios.Mensajes;
+using WhatsappComercial.Servicios.NotificarUI;
 using WhatsappComercial.Servicios.ProcesarMensaje;
 using WhatsappComercial.Servicios.SystemServicio;
 using WhatsappComercial.Servicios.Tickets;
@@ -31,6 +33,8 @@ namespace WhatsappComercial.Extensions
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
 
+            // Registrar el servicio de memoria en el contenedor DI
+            services.AddMemoryCache();
 
             //osterService para iniciar Servicio WebSocket
             services.AddHostedService<WebSocketServicio>();
@@ -65,6 +69,16 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<IUtilidades, ConstruirObjetoTarjetaConversacion>();
             //Servicio para gestionar los mensajes desde DB
             services.AddScoped<IObtenerMensajesConversacion, ObtenerMensajesConversacionService>();
+            //Servicio para procesar el mensaje entrante proveniente del webhook
+            services.AddScoped<IProcesarMensajeEntrante, ProcesarMensajeService>();
+            //Servicio para procesar los mensajes de tipo texto entrantes
+            services.AddScoped<IManejadorMensajeTexto, ManejadorMensajeTexto>();
+            //Servicio para procesar los mensajes de tipo Multimedia
+            services.AddScoped<IManejadorMensajeArchivo, ManejadorMensajeArchivo>();
+            //Servicio para procesar los estados de lectura enviados por el webhook
+            services.AddScoped<IManejadorEstadoLectura, ManejadorEstadoLectura>();
+            //Servicio para validar Existencia de una conversacion
+            services.AddScoped<IValidarExistenciaConversacion, ValidarExistenciaConversacionService>();
             // Servicio systemServicio
             services.AddScoped<SystemService>();
 
@@ -73,8 +87,13 @@ namespace WhatsappComercial.Extensions
             services.AddSingleton<ConfiguracionEstaticaApp>();
             //Servicio para gestionar el cache de conversaciones
             services.AddSingleton<ICacheConversaciones, CacheConversacionesService>();
+            //Servicio para validar mensajes Duplicados
+            services.AddSingleton<IServicioValidadorDuplicados, ServicioValidadorDuplicados>();
             //Servicio para gestionar el cache de mensajes
             services.AddSingleton<ICacheMensajes, CacheMensajes>();
+            //Servicio para notificar a la UI
+            services.AddSingleton<INotificarUI, NotificarUIService>();
+
 
 
 

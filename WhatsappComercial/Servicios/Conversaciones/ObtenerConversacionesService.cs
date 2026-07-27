@@ -31,6 +31,7 @@ namespace WhatsappComercial.Servicios.Conversaciones
                     {
                         IdConversacion = Convert.ToInt32(row["IdConversacion"]),
                         NombreCliente = row["NombreCliente"].ToString(),
+                        NumeroCelular = row["NumeroCelular"].ToString(),
                         IdTicket = Convert.ToInt32(row["IdTicket"]),
                         Fecha = DateTime.Parse(row?["Fecha"]?.ToString()),
                         EstadoConversacion = Enum.TryParse<EstadoConversacionEnum>(row["EstadoConversacion"]?.ToString(), true, out var estadoConversacion) ? estadoConversacion : EstadoConversacionEnum.Activo,

@@ -35,5 +35,7 @@ namespace WhatsappComercial.Interfaces.Cache
         /// Elimina una conversación del cache (ej. al finalizarla).
         /// </summary>
         void RemoverDeCache(int idConversacion);
+
+
     }
 }

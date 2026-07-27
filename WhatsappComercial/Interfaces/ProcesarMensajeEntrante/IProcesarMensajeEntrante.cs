@@ -2,6 +2,6 @@
 {
     public interface IProcesarMensajeEntrante
     {
-        Task<bool> ProcesarMensajeEntrante(string mensaje, string usuario);
+        Task ProcesarMensajeEntrante(string mensaje, string usuario);
     }
 }

@@ -9,6 +9,7 @@
 @using WhatsappComercial.Modelos.DTOs
 @using Microsoft.AspNetCore.SignalR
 @using Microsoft.AspNetCore.SignalR.Client
+@using WhatsappComercial.Interfaces.NotificarUI
 @inject NavigationManager Navigation
 
 @inject IUsuarios informacionUsuario
@@ -18,6 +19,8 @@
 @inject ICacheConversaciones cacheConversaciones
 @inject ICacheMensajes cacheMensajes
 @inject IHttpContextAccessor HttpContextAccessor
+@inject INotificarUI NotificadorUI
+@implements IDisposable
 
 @inject IJSRuntime JS
 
@@ -131,9 +134,17 @@
 		userName = HttpContextAccessor.HttpContext?.User?.Identity?.Name?.Split("\\").Last() ?? "Desconocido";
 		infoUsuarioConectado = await informacionUsuario.ObtenerInformacionUsuario(userName);
 		await FiltrarConversacionesPorUsuario();
+		// Se suscribe al evento cuando la pantalla se abre
+		NotificadorUI.OnNuevoMensajeEntrante += ManejarNuevoMensaje;
 
 	}
 
+
+	public void Dispose()
+	{
+		// MUY IMPORTANTE: Desuscribirse para evitar fugas de memoria (Memory Leaks)
+		NotificadorUI.OnNuevoMensajeEntrante -= ManejarNuevoMensaje;
+	}
 	private HubConnection CrearConexionHub(string endpoint)
 	{
 		return new HubConnectionBuilder()
@@ -348,5 +359,32 @@
 			Console.WriteLine($"Error guardando mensaje de archivo: {ex.Message}");
 		}
 	}
+
+	#region Metodos de comunicacion Servicios con UI
+	private async Task ManejarNuevoMensaje(int idConversacion, MensajeDTO nuevoMensaje)
+	{
+		// Solo actualizamos la UI si el mensaje pertenece a la conversación activa en pantalla
+		if (conversacionSeleccionada != null && idConversacion == conversacionSeleccionada.IdConversacion)
+		{
+			await InvokeAsync(() =>
+			{
+				// 1. Agregar el nuevo mensaje a la lista local del componente
+				mensajesIniciales.Add(nuevoMensaje);
+
+				// 2. Indicarle al VisorMensajes que debe hacer scroll al final
+				_debeIrAlFinal = true;
+
+				// 3. Renderizar la UI con el nuevo mensaje en pantalla
+				StateHasChanged();
+			});
+		}
+		else
+		{
+			// OPCIONAL: Si el mensaje es de OTRA conversación, podrías refrescar la lista de tarjetas
+			// para que se actualice el contador o el último mensaje recibido en el panel izquierdo.
+			await InvokeAsync(StateHasChanged);
+		}
+	}
+	#endregion
 
 }
