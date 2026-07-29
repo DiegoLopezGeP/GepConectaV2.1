@@ -277,7 +277,7 @@
 	}
 
 	// MÉTODO 1: Exclusivo para mensajes de Texto Plano
-	private async Task ManejarEnvioTexto(string texto)
+	private async Task ManejarEnvioTexto((string texto, string waid) infoMensajeSaliente)
 	{
 		if (conversacionSeleccionada is null || conversacionSeleccionada.IdConversacion == 0)
 			return;
@@ -287,7 +287,8 @@
 		var nuevoMensaje = new MensajeDTO
 		{
 			IdMensaje = 0,
-			Texto = texto,
+			Texto = infoMensajeSaliente.texto,
+			Waid = infoMensajeSaliente.waid,
 			Fecha = DateTime.Now,
 			EsEntrante = false
 		};

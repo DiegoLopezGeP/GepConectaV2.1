@@ -79,6 +79,7 @@ namespace WhatsappComercial.Servicios.Mensajes
             var entidadMensaje = new Modelos.Mensajes
             {
                 IdConversacion = idConversacion,
+                IdMensajeWhatsApp = nuevoMensaje.Waid,
                 ContenidoMensaje = nuevoMensaje.Texto,
                 FechaEnvioMensaje = nuevoMensaje.Fecha,
                 MensajeEntranteMensaje = nuevoMensaje.EsEntrante,

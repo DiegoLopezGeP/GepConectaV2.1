@@ -221,7 +221,7 @@
 	[Parameter] public bool EsMovil { get; set; }
 
 	// EVENTOS SEPARADOS
-	[Parameter] public EventCallback<string> OnEnviarTexto { get; set; }
+	[Parameter] public EventCallback<(string, string)> OnEnviarTexto { get; set; }
 	[Parameter] public EventCallback<(int, DatosAdjuntoOutDTO)> OnEnviarArchivo { get; set; }
 	[Parameter] public int IdTicket { get; set; }
 
@@ -350,6 +350,7 @@
 		{
 			var textoAEnviar = mensaje;
 			mensaje = string.Empty;
+			string? waid = string.Empty;
 
 			// 1. Enviar vía WhatsApp Cloud API
 			if (!string.IsNullOrWhiteSpace(TelefonoDestino))
@@ -362,6 +363,7 @@
 						textoAEnviar
 					);
 
+					waid = respuestaWA?.Messages?.FirstOrDefault()?.Id;
 					Console.WriteLine($"[WHATSAPP]: Mensaje de texto enviado. ID: {respuestaWA?.Messages?.FirstOrDefault()?.Id}");
 				}
 				catch (Exception ex)
@@ -373,7 +375,7 @@
 			// 2. Notificar al evento interno de Blazor
 			if (OnEnviarTexto.HasDelegate)
 			{
-				await OnEnviarTexto.InvokeAsync(textoAEnviar);
+				await OnEnviarTexto.InvokeAsync((textoAEnviar, waid));
 			}
 		}
 	}
