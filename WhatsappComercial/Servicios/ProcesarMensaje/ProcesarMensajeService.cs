@@ -39,19 +39,12 @@ namespace WhatsappComercial.Servicios.ProcesarMensaje
 
                 if (value == null) return;
 
-
-                int idConversacion = await _validarExistenciaConversacion.ExisteConversacion(value.Messages?.FirstOrDefault()?.From ?? string.Empty);
-                // Si no existe la conversación, se puede crear una nueva o manejarlo según la lógica de negocio
-                if (idConversacion == 0)
-                {
-                    //Crear Nueva Conversación // Aqui se manejara la logica de creacion de conversacion por bot y arbol de desición
-                }
-
                 // -------------------------------------------------------------------
                 // CASO A: VIENE UN MENSAJE ENTRANTE (Texto o Archivo)
                 // -------------------------------------------------------------------
                 if (value.Messages != null && value.Messages.Any())
                 {
+                    int idConversacion = await _validarExistenciaConversacion.ExisteConversacion(value.Messages?.FirstOrDefault()?.From ?? string.Empty);
                     var mensajeWA = value.Messages.First();
                     var contactoWA = value.Contacts?.FirstOrDefault();
 
@@ -82,8 +75,10 @@ namespace WhatsappComercial.Servicios.ProcesarMensaje
                 // -------------------------------------------------------------------
                 if (value.Statuses != null && value.Statuses.Any())
                 {
+                    string? telefono = value.Statuses?.FirstOrDefault()?.RecipientId;
+                    int idConversacion = await _validarExistenciaConversacion.ExisteConversacion(telefono);
                     var estadoWA = value.Statuses.First();
-                    await _manejadorEstado.ProcesarEstadoAsync(estadoWA, usuario);
+                    await _manejadorEstado.ProcesarEstadoAsync(idConversacion,estadoWA, usuario);
                 }
             }
             catch (Exception ex)

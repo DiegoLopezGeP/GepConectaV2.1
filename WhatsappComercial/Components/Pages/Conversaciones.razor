@@ -28,23 +28,9 @@
 
 	<div class="panel-lista">
 		<ListaConversaciones NombreUsuarioDA="@userName" InformacionUsuarioAutenticado="@infoUsuarioConectado" ListaDatosTarjeta="@ListaConversaciones" esMovil="@esMovil" OnAbrirConversacion="AbrirConversacion"></ListaConversaciones>
-		@*
-        <RadzenButton Text="Abrir conversación"
-                      Click="@(()=>AbrirConversacion(1))" /> *@
-
 	</div>
 
 	<div class="panel-chat">
-
-		@if (esMovil)
-		{
-			
-
-			@* <RadzenButton Icon="arrow_back"
-                          Text="Volver"
-                          Click="Volver"
-                          class="btn-volver" /> *@
-		}
 		<RadzenStack Gap="2%">
 			<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado" ></TarjetaDatosConversación>
 			<VisorMensajes IdConversacion="@(conversacionSeleccionada?.IdConversacion ?? 0)"
@@ -58,12 +44,7 @@
 						   OnEnviarArchivo="ManejarEnvioArchivo" 
 						   IdTicket="@conversacionSeleccionada.IdTicket"
 						   TelefonoDestino="@contactoConversacionSeleccionado.Celular"/>
-		</RadzenStack>
-
-
-        
-		<!-- Conversación -->
-
+		</RadzenStack>        
 	</div>
 
 </div>
@@ -136,6 +117,8 @@
 		await FiltrarConversacionesPorUsuario();
 		// Se suscribe al evento cuando la pantalla se abre
 		NotificadorUI.OnNuevoMensajeEntrante += ManejarNuevoMensaje;
+		NotificadorUI.CambiodeEstadoMensaje += ManejarCambioEstado;
+
 
 	}
 
@@ -144,7 +127,9 @@
 	{
 		// MUY IMPORTANTE: Desuscribirse para evitar fugas de memoria (Memory Leaks)
 		NotificadorUI.OnNuevoMensajeEntrante -= ManejarNuevoMensaje;
+		NotificadorUI.CambiodeEstadoMensaje -= ManejarCambioEstado;
 	}
+
 	private HubConnection CrearConexionHub(string endpoint)
 	{
 		return new HubConnectionBuilder()
@@ -190,7 +175,6 @@
 	{
 		vistaActual = VistaConversaciones.Lista;
 	}
-
 
 	private async Task AbrirConversacion(DatosTarjetaConversacionDTO conversacion)
 	{
@@ -384,6 +368,20 @@
 			// OPCIONAL: Si el mensaje es de OTRA conversación, podrías refrescar la lista de tarjetas
 			// para que se actualice el contador o el último mensaje recibido en el panel izquierdo.
 			await InvokeAsync(StateHasChanged);
+		}
+	}
+
+	private async Task ManejarCambioEstado(int idConversacion, string idMensaje, string nuevoEstado)
+	{
+		// Verificar si la notificación corresponde al chat que el usuario tiene abierto
+		if (conversacionSeleccionada?.IdConversacion == idConversacion)
+		{
+			var mensaje = mensajesIniciales.FirstOrDefault(m => m.Waid == idMensaje);
+			if (mensaje != null)
+			{
+				mensaje.EstadoLectura = nuevoEstado; // Actualizamos el estado
+				await InvokeAsync(StateHasChanged); // Forzamos el renderizado seguro de Blazor
+			}
 		}
 	}
 	#endregion

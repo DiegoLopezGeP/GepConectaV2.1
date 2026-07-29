@@ -36,6 +36,13 @@ namespace WhatsappComercial.Interfaces.Cache
         /// </summary>
         void RemoverDeCache(int idConversacion);
 
+        /// <summary>
+        /// Actualiza el estado del mensaje en cache
+        /// </summary>
+        /// <param name="waid"></param>
+        /// <param name="nuevoEstado"></param>
+        /// <returns></returns>
+        Task<bool> ActualizarEstadoPorWaidAsync(string waid, string nuevoEstado);
 
     }
 }

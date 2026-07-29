@@ -7,6 +7,28 @@ namespace WhatsappComercial.Servicios.NotificarUI
     {
         // Evento asíncrono para Blazor
         public event Func<int, MensajeDTO, Task>? OnNuevoMensajeEntrante;
+        public event Func<int, string, string, Task>? CambiodeEstadoMensaje;
+
+        public async Task NotificarEstadoMensajeCambiado(int idConversacion, string wamid, string nuevoEstado)
+        {
+            if (CambiodeEstadoMensaje != null)
+            {
+                var delegados = CambiodeEstadoMensaje.GetInvocationList();
+
+                foreach (var delegado in delegados)
+                {
+                    try
+                    {
+                        var handler = (Func<int, string, string, Task>)delegado;
+                        await handler.Invoke(idConversacion, wamid, nuevoEstado);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[ERROR NOTIFICADOR UI]: Fallo al notificar cambio de estado: {ex.Message}");
+                    }
+                }
+            }
+        }
 
         public async Task NotificarNuevoMensajeEntrante(int idConversacion, MensajeDTO nuevoMensajeUI)
         {

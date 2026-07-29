@@ -7,6 +7,7 @@
         public string Texto { get; set; } = string.Empty;
         public DateTime Fecha { get; set; }
         public bool EsEntrante { get; set; }
+        public string? EstadoLectura { get; set; }
         // Propiedades del Adjunto
         public string? NombreArchivo { get; set; }
         public string? TipoArchivo { get; set; }   // p. ej. "video/mp4" o "application/pdf" (MIME Type)

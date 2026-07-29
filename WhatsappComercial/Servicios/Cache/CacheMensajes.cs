@@ -34,7 +34,7 @@ namespace WhatsappComercial.Servicios.Cache
                 // Hacemos una copia thread-safe para que la UI de Blazor no colisione con SignalR
                 lock (contenedor.CandadoInterno)
                 {
-                    return contenedor.Mensajes.ToList();
+                    return contenedor.Mensajes.OrderByDescending(x => x.IdMensaje).ToList();
                 }
             }
 
@@ -122,6 +122,56 @@ namespace WhatsappComercial.Servicios.Cache
                     _cache.TryRemove(idMenosReciente, out _);
                 }
             }
+        }
+
+        public async Task<bool> ActualizarEstadoPorWaidAsync(string wamid, string nuevoEstado)
+        {
+            if (string.IsNullOrEmpty(wamid)) return false;
+
+            // 1. Definimos el peso de cada estado (Jerarquía)
+            int ObtenerPesoEstado(string estado) => estado?.ToLower() switch
+            {
+                "sent" => 1,
+                "delivered" => 2,
+                "read" => 3,
+                "failed" => 4,
+                _ => 0
+            };
+
+            int nuevoPeso = ObtenerPesoEstado(nuevoEstado);
+
+            // Intentamos buscar hasta 3 veces con breves pausas si el mensaje aún no se ha guardado en caché
+            for (int intento = 0; intento < 3; intento++)
+            {
+                foreach (var contenedor in _cache.Values)
+                {
+                    lock (contenedor.CandadoInterno)
+                    {
+                        // Buscamos el mensaje por su WAMID de Meta
+                        var mensaje = contenedor.Mensajes.FirstOrDefault(m => m.Waid == wamid);
+
+                        if (mensaje != null)
+                        {
+                            int pesoActual = ObtenerPesoEstado(mensaje.EstadoLectura);
+
+                            // SOLO actualizamos si el nuevo estado es superior al que ya tiene
+                            if (nuevoPeso > pesoActual)
+                            {
+                                mensaje.EstadoLectura = nuevoEstado;
+                                return true; // Actualizado con éxito
+                            }
+
+                            return false; // Ya tenía un estado igual o superior (evita degradar de "read" a "sent")
+                        }
+                    }
+                }
+
+                // Si no lo encontró en la primera iteración, esperamos 150ms a que el hilo de envío termine de guardar
+                await Task.Delay(150);
+            }
+
+            Console.WriteLine($"[CACHE WARN]: No se encontró el mensaje con WAID '{wamid}' en caché para actualizar a '{nuevoEstado}'.");
+            return false;
         }
     }
 }

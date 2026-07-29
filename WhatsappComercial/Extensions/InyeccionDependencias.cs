@@ -12,6 +12,7 @@ using WhatsappComercial.Interfaces.Usuarios;
 using WhatsappComercial.Interfaces.Utilidades;
 using WhatsappComercial.Servicios.AccesoADatos;
 using WhatsappComercial.Servicios.AutenticacionUsuario;
+using WhatsappComercial.Servicios.BackgroundServiceCache;
 using WhatsappComercial.Servicios.Cache;
 using WhatsappComercial.Servicios.ConfiguracionEstatica;
 using WhatsappComercial.Servicios.Contactos;
@@ -36,10 +37,13 @@ namespace WhatsappComercial.Extensions
             // Registrar el servicio de memoria en el contenedor DI
             services.AddMemoryCache();
 
-            //osterService para iniciar Servicio WebSocket
+            //HosterService para iniciar Servicio WebSocket
             services.AddHostedService<WebSocketServicio>();
             //HosterService para iniciar la carga de conversacionesActivas
             services.AddHostedService<InicializadorCacheConversaciones>();
+            //HosterService para iniciar el worker de persistencia de estados de mensajes
+            services.AddHostedService<WorkerPersistenciaEstados>();
+
 
             //Servicio Web Acceso Datos
             services.AddScoped<ServicioAccesoDatos>();
@@ -79,6 +83,8 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<IManejadorEstadoLectura, ManejadorEstadoLectura>();
             //Servicio para validar Existencia de una conversacion
             services.AddScoped<IValidarExistenciaConversacion, ValidarExistenciaConversacionService>();
+            // Servicio para Modificar el estado de un mensaje en la base de datos
+            services.AddScoped<IModificarEstadoMensaje, ModificarEstadoMensaje>();
             // Servicio systemServicio
             services.AddScoped<SystemService>();
 
@@ -93,6 +99,7 @@ namespace WhatsappComercial.Extensions
             services.AddSingleton<ICacheMensajes, CacheMensajes>();
             //Servicio para notificar a la UI
             services.AddSingleton<INotificarUI, NotificarUIService>();
+            services.AddSingleton<IColaEstadoMensajes, ColaEstadoMensajesService>();
 
 
 

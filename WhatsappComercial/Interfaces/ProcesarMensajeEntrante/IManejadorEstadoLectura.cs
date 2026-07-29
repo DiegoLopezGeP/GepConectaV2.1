@@ -4,6 +4,6 @@ namespace WhatsappComercial.Interfaces.ProcesarMensajeEntrante
 {
     public interface IManejadorEstadoLectura
     {
-        Task ProcesarEstadoAsync(WebhookStatus estadoWA, string usuario);
+        Task ProcesarEstadoAsync(int idConversacion, WebhookStatus estadoWA, string usuario);
     }
 }

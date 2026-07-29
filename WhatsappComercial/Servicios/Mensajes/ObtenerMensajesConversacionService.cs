@@ -30,9 +30,11 @@ namespace WhatsappComercial.Servicios.Mensajes
                 .Select(row => new MensajeDTO
                 {
                     IdMensaje = row.Field<int>("IdMensaje"),
+                    Waid = row.Field<string>("IdMensajeWhatsApp"),
                     Texto = row.Field<string>("Texto"),
                     Fecha = row.Field<DateTime>("Fecha"),
                     EsEntrante = row.Field<bool>("EsEntrante"),
+                    EstadoLectura = row.Field<string>("EstadoLectura"),
                     TipoArchivo = row.Field<string>("TipoMensaje"),
                     HashSha256 = row.Field<string>("HashSHA256")
                 })
