@@ -51,7 +51,7 @@ namespace WhatsappComercial.Servicios.ProcesarMensaje
                 Texto = contenidoTexto,
                 Fecha = fechaMensaje,
                 EsEntrante = true,
-                
+
             };
 
             // C. Agregar a la Caché UI y notificar a Blazor
@@ -64,6 +64,7 @@ namespace WhatsappComercial.Servicios.ProcesarMensaje
                 var entidadMensaje = new Modelos.Mensajes
                 {
                     IdConversacion = idConversacion,
+                    IdMensajeWhatsApp = wamid,
                     ContenidoMensaje = contenidoTexto,
                     FechaEnvioMensaje = fechaMensaje,
                     MensajeEntranteMensaje = true,
