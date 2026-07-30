@@ -43,8 +43,8 @@ namespace WhatsappComercial.Servicios.ProcesarMensaje
             string telefono = mensajeWA.From ?? string.Empty;
             string nombreContacto = contactoWA?.Profile?.Name ?? "Cliente";
             string contenidoTexto = mensajeWA.Text?.Body ?? string.Empty;
-            DateTime fechaMensaje = DateTimeOffset.FromUnixTimeSeconds(long.Parse(mensajeWA.Timestamp ?? "0")).LocalDateTime;
-
+            //DateTime fechaMensaje = DateTimeOffset.FromUnixTimeSeconds(long.Parse(mensajeWA.Timestamp ?? "0")).LocalDateTime;
+            DateTime fechaMensaje = DateTime.Now;
             // B. Crear objeto DTO para la pantalla (Sin WAID)
             var nuevoMensajeUI = new MensajeDTO
             {

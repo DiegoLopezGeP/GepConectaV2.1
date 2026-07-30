@@ -279,6 +279,7 @@
 
 		// Actualización optimista de UI y Caché
 		mensajesIniciales.Add(nuevoMensaje);
+		mensajesIniciales.OrderBy(x => x.Fecha);
 		_debeIrAlFinal = true;
 		StateHasChanged();
 
@@ -352,14 +353,23 @@
 		if (conversacionSeleccionada != null && idConversacion == conversacionSeleccionada.IdConversacion)
 		{
 			await InvokeAsync(() =>
+
 			{
-				// 1. Agregar el nuevo mensaje a la lista local del componente
+				// 1. Agregar el nuevo mensaje
 				mensajesIniciales.Add(nuevoMensaje);
 
-				// 2. Indicarle al VisorMensajes que debe hacer scroll al final
-				_debeIrAlFinal = true;
+				// 2. ORDENAR LA LISTA LOCAL:
+				// Dependiendo de cómo muestres el chat en pantalla:
+				// - Si el mensaje MÁS RECIENTE va ABAJO (Chat estilo WhatsApp clásico):
+				mensajesIniciales = mensajesIniciales
+					.OrderBy(m => m.Fecha)
+					.ThenBy(m => m.IdMensaje)
+					.ToList();
 
-				// 3. Renderizar la UI con el nuevo mensaje en pantalla
+				// - NOTA: Si tu chat renderiza el más reciente arriba, usa OrderByDescending
+
+				// 3. Notificar scroll y re-renderizar
+				_debeIrAlFinal = true;
 				StateHasChanged();
 			});
 		}

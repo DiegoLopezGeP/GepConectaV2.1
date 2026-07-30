@@ -65,6 +65,7 @@ namespace WhatsappComercial.Servicios.Cache
                     if (!contenedor.Mensajes.Any(m => m.IdMensaje == mensaje.IdMensaje && m.IdMensaje > 0))
                     {
                         contenedor.Mensajes.Add(mensaje);
+                        contenedor.Mensajes.OrderBy(x => x.Fecha);
                     }
                 }
                 MarcarComoUsadaRecientemente(idConversacion);

@@ -15,7 +15,7 @@
 			DateTime? ultimoDia = null;
 		}
 
-		@foreach (var mensaje in Mensajes.OrderBy(m => m.IdMensaje))
+		@foreach (var mensaje in Mensajes.OrderBy(m => m.Fecha))
 		{
 			if (ultimoDia != mensaje.Fecha.Date)
 			{
