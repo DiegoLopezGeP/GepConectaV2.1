@@ -318,6 +318,7 @@
 		var nuevoMensaje = new MensajeDTO
 		{
 			IdMensaje = 0,
+			Waid = parametrosEnvioArchivo.respuestaHttp?.Messages?.FirstOrDefault()?.Id,
 			Texto = rutaRelativa,
 			Fecha = DateTime.Now,
 			EsEntrante = false,
