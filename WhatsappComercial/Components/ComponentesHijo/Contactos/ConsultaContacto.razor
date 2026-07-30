@@ -76,7 +76,8 @@
 					  Disabled="@(contactoSeleccionado is null)"
 					  ButtonStyle="ButtonStyle.Warning"
 					  Variant="Variant.Text"
-					  Shade="Shade.Light" />
+					  Shade="Shade.Light" 
+					  Click="EditarContacto" />
 
 		<RadzenButton Text="Crear Conversacion"
 					  Icon="check"
@@ -328,6 +329,47 @@
 			default:
 				contactosFiltrados = new List<Contacto>();
 				break;
+		}
+	}
+
+	private async Task EditarContacto()
+	{
+		if (contactoSeleccionado is null) return;
+
+		// 1. Determinar el tipo de componente según el enum
+		Type tipoDialogo = tipoContactoEnum switch
+		{
+			TipoContactoEnum.Titular => typeof(EditarContactoDialog),
+			TipoContactoEnum.Beneficiario => typeof(EditarContactoDialog),
+			TipoContactoEnum.Relacionista => typeof(EditarContactoDialog),
+			TipoContactoEnum.Pagadurias => typeof(EditarContactoDialog),
+			TipoContactoEnum.Cobranzas => typeof(EditarContactoDialog),
+			_ => throw new ArgumentOutOfRangeException()
+		};
+
+		// 2. Definir parámetros a enviar al diálogo modal
+		var parametros = new Dictionary<string, object>
+	{
+		{ "ContactoModel", contactoSeleccionado }
+	};
+
+		// 3. Abrir el modal usando DialogService
+		var resultado = await dialogService.OpenAsync(
+			$"Editar {tipoContactoEnum}",
+			tipoDialogo,
+			parametros,
+			new DialogOptions() { Width = "600px", Resizable = true, Draggable = true }
+		);
+
+		// 4. Si el diálogo retorna true (indica actualización exitosa), refrescamos la lista
+		if (resultado is bool seActualizo && seActualizo)
+		{
+			notificacion.Notify(
+				NotificationSeverity.Success,
+				"Éxito",
+				"Contacto actualizado correctamente.");
+
+			await BuscarContacto(); // Recarga la lista para ver los datos frescos
 		}
 	}
 }
