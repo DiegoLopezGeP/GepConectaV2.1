@@ -21,7 +21,7 @@ namespace WhatsappComercial.Servicios.Contactos
             if (dtContacto.Rows.Count > 0)
             {
                 int idClienteTitular = Convert.ToInt32(dtContacto.Rows[0]["IdCliente"]);
-                dtBeneficiario = _servicioAccesoDatos.TraerTablaParametros("Beneficiarios", "IdBeneficiario, NombreCompleto, Telefono", $"IdCliente = {idClienteTitular}");
+                dtBeneficiario = _servicioAccesoDatos.TraerTablaParametros("Beneficiarios", "IdBeneficiario, NombreCompleto, Telefono, Identificacion", $"IdCliente = {idClienteTitular}");
 
             }
 
@@ -36,8 +36,8 @@ namespace WhatsappComercial.Servicios.Contactos
                 {
                     IdContacto = row.Field<int>("IdBeneficiario"),
                     NombreContacto = row.Field<string>("NombreCompleto") ?? string.Empty,
-                    CelularContacto = row.Field<string>("Telefono") ?? string.Empty
-                    // Agrega aquí las demás propiedades
+                    CelularContacto = row.Field<string>("Telefono") ?? string.Empty,
+                    Identificacion = row.Field<string>("Identificacion") ?? string.Empty
                 });
             }
 
@@ -59,8 +59,8 @@ namespace WhatsappComercial.Servicios.Contactos
                 {
                     IdContacto = row.Field<int>("IdRegistro"),
                     NombreContacto = row.Field<string>("Nombre") ?? string.Empty,
-                    CelularContacto = row.Field<string>("Telefonos") ?? string.Empty
-                    // Agrega aquí las demás propiedades
+                    CelularContacto = row.Field<string>("Telefonos") ?? string.Empty,
+                    Identificacion = row.Field<string>("cedula") ?? string.Empty
                 });
             }
 
@@ -69,7 +69,7 @@ namespace WhatsappComercial.Servicios.Contactos
 
         public Task<List<Contacto>> ObtenerClientePagaduriasAsync(string filtroBusqueda)
         {
-            DataTable dtClienteTitular = _servicioAccesoDatos.TraerTablaParametros("BaseTelemercadeo", "IdBaseTelemercadeo, Nombre, Celular", $"Celular like '%{filtroBusqueda}%' or Identificacion like '%{filtroBusqueda}%'");
+            DataTable dtClienteTitular = _servicioAccesoDatos.TraerTablaParametros("BaseTelemercadeo", "IdBaseTelemercadeo, Nombre, Celular, Identificacion", $"Celular like '%{filtroBusqueda}%' or Identificacion like '%{filtroBusqueda}%'");
 
             List<Contacto> contactos = new();
 
@@ -82,8 +82,8 @@ namespace WhatsappComercial.Servicios.Contactos
                 {
                     IdContacto = row.Field<int>("IdBaseTelemercadeo"),
                     NombreContacto = row.Field<string>("Nombre") ?? string.Empty,
-                    CelularContacto = row.Field<string>("Celular") ?? string.Empty
-                    // Agrega aquí las demás propiedades
+                    CelularContacto = row.Field<string>("Celular") ?? string.Empty,
+                    Identificacion = row.Field<string>("Identificacion") ?? string.Empty
                 });
             }
 
@@ -93,7 +93,7 @@ namespace WhatsappComercial.Servicios.Contactos
         public Task<List<Contacto>> ObtenerClienteTitularAsync(string filtroBusqueda)
         {
 
-            DataTable dtClienteTitular = _servicioAccesoDatos.TraerTablaParametros("Clientes", "IdCliente, NombreCompletoCliente, NumCelularCliente", $"numCelularcliente like '%{filtroBusqueda}%' or NumIdentificacionCliente like '%{filtroBusqueda}%'");
+            DataTable dtClienteTitular = _servicioAccesoDatos.TraerTablaParametros("Clientes", "IdCliente, NombreCompletoCliente, NumCelularCliente, NumIdentificacionCliente, Profesion, correoElectronico", $"numCelularcliente like '%{filtroBusqueda}%' or NumIdentificacionCliente like '%{filtroBusqueda}%'");
 
             List<Contacto> contactos = new();
 
@@ -106,7 +106,10 @@ namespace WhatsappComercial.Servicios.Contactos
                 {
                     IdContacto = row.Field<int>("IdCliente"),
                     NombreContacto = row.Field<string>("NombreCompletoCliente") ?? string.Empty,
-                    CelularContacto = row.Field<string>("numCelularCliente") ?? string.Empty
+                    CelularContacto = row.Field<string>("numCelularCliente") ?? string.Empty,
+                    Identificacion = row.Field<string>("NumIdentificacionCliente") ?? string.Empty,
+                    CorreoElectronico = row.Field<string>("CorreoElectronico") ?? string.Empty
+                    
                     // Agrega aquí las demás propiedades
                 });
             }
@@ -132,7 +135,6 @@ namespace WhatsappComercial.Servicios.Contactos
                         IdContacto = row.Field<int>("IdContacto"),
                         NombreContacto = row.Field<string>("NombreContacto") ?? string.Empty,
                         CelularContacto = row.Field<string>("CelularContacto") ?? string.Empty
-                        // Agrega aquí las demás propiedades
                     });
                 }
 

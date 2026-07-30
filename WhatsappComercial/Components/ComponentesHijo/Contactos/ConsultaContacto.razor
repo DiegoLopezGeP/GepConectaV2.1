@@ -21,304 +21,313 @@
 
 
 <RadzenCard Style="width:100%; margin-bottom:10px;">
-    <RadzenRadioButtonList TValue="TipoContactoEnum"
-                           Data="@tiposContacto"
-                           TextProperty="Texto"
-                           ValueProperty="Valor"
-                           @bind-Value="tipoContactoEnum" />
+	<RadzenRadioButtonList TValue="TipoContactoEnum"
+						   Data="@tiposContacto"
+						   TextProperty="Texto"
+						   ValueProperty="Valor"
+						   @bind-Value="tipoContactoEnum" />
 </RadzenCard>
 
 
 <RadzenStack Gap="1rem" Style="width:100%;">
 
-    <RadzenTextBox @bind-Value="textoBusqueda"
-                   Placeholder="Buscar por número de identificación o celular"
-                   Style="width:100%;"
-                   @onkeyup="OnKeyUp" />
+	<RadzenTextBox @bind-Value="textoBusqueda"
+				   Placeholder="Buscar por número de identificación o celular"
+				   Style="width:100%;"
+				   @onkeyup="OnKeyUp" />
 
-    <RadzenDataGrid TItem="Contacto"
-                    Data="@contactosFiltrados"
-                    AllowSorting="true"
-                    AllowPaging="true"
-                    PageSize="5"
-                    AllowColumnResize="true"
-                    AllowAlternatingRows="false"
-                    SelectionMode="DataGridSelectionMode.Single"
-                    RowSelect="OnRowSelect"
-                    ShowPagingSummary="true"
-                    PagerHorizontalAlign="HorizontalAlign.Left">
+	<RadzenDataGrid TItem="Contacto"
+					Data="@contactosFiltrados"
+					AllowSorting="true"
+					AllowPaging="true"
+					PageSize="5"
+					AllowColumnResize="true"
+					AllowAlternatingRows="false"
+					SelectionMode="DataGridSelectionMode.Single"
+					RowSelect="OnRowSelect"
+					ShowPagingSummary="true"
+					PagerHorizontalAlign="HorizontalAlign.Left">
 
-        <Columns>
+		<Columns>
 
-            <RadzenDataGridColumn TItem="Contacto"
-                                  Property="@nameof(Contacto.NombreContacto)"
-                                  Title="Nombre" />
+			<RadzenDataGridColumn TItem="Contacto"
+								  Property="@nameof(Contacto.NombreContacto)"
+								  Title="Nombre" />
+			<RadzenDataGridColumn TItem="Contacto"
+								  Property="@nameof(Contacto.CelularContacto)"
+								  Title="Celular" />
+			<RadzenDataGridColumn TItem="Contacto"
+								  Property="@nameof(Contacto.Identificacion)"
+								  Title="Identificacion" />
+			<RadzenDataGridColumn TItem="Contacto"
+								  Property="@nameof(Contacto.CorreoElectronico)"
+								  Title="Email" />
 
-            <RadzenDataGridColumn TItem="Contacto"
-                                  Property="@nameof(Contacto.CelularContacto)"
-                                  Title="Celular" />
 
-        </Columns>
+		</Columns>
 
-    </RadzenDataGrid>
+	</RadzenDataGrid>
 
-    <RadzenStack Orientation="Orientation.Horizontal"
-                 JustifyContent="JustifyContent.End">
+	<RadzenStack Orientation="Orientation.Horizontal"
+				 JustifyContent="JustifyContent.End">
 
-        <RadzenButton Text="Editar Contacto"
-                      Icon="close"
-                      Disabled="@(contactoSeleccionado is null)"
-                      ButtonStyle="ButtonStyle.Light" />
+		<RadzenButton Text="Editar"
+					  Icon="edit"
+					  Disabled="@(contactoSeleccionado is null)"
+					  ButtonStyle="ButtonStyle.Warning"
+					  Variant="Variant.Text"
+					  Shade="Shade.Light" />
 
-        <RadzenButton Text="Crear Conversacion"
-                      Icon="check"
-                      ButtonStyle="ButtonStyle.Primary"
-                      Disabled="@(contactoSeleccionado is null)"
-                      Click="CrearNuevaConversacion" />
+		<RadzenButton Text="Crear Conversacion"
+					  Icon="check"
+					  ButtonStyle="ButtonStyle.Success" Variant="Variant.Text"
+					  Shade="Shade.Light"
+					  Disabled="@(contactoSeleccionado is null)"
+					  Click="CrearNuevaConversacion" />
 
-    </RadzenStack>
+	</RadzenStack>
 
 </RadzenStack>
 
 @code
 {
-    [Parameter] public string? NombreUsuarioDA { get; set; }
-    [Parameter] public GrupoUser InformacionUsuarioAutenticado { get; set; } = new();
-    private string? textoBusqueda;
-    private TipoContactoEnum tipoContactoEnum = TipoContactoEnum.Titular;
-    private List<OpcionTipoContacto> tiposContacto = new()
-    {
-        new()
-        {
-            Valor = TipoContactoEnum.Titular,
-            Texto = "Titular"
-        },
-        new()
-        {
-            Valor = TipoContactoEnum.Beneficiario,
-            Texto = "Beneficiario"
-        },
-        new()
-        {
-            Valor = TipoContactoEnum.Relacionista,
-            Texto = "Relacionista"
-        }, 
-        new()
-        {
-            Valor = TipoContactoEnum.Pagadurias,
-            Texto = "Pagadurias"
-        },
-        new()
-        {
-            Valor = TipoContactoEnum.Cobranzas,
-            Texto = "Cobranzas"
-        }
-    };
+	[Parameter] public string? NombreUsuarioDA { get; set; }
+	[Parameter] public GrupoUser InformacionUsuarioAutenticado { get; set; } = new();
+	private string? textoBusqueda;
+	private TipoContactoEnum tipoContactoEnum = TipoContactoEnum.Titular;
+	private List<OpcionTipoContacto> tiposContacto = new()
+	{
+		new()
+		{
+			Valor = TipoContactoEnum.Titular,
+			Texto = "Titular"
+		},
+		new()
+		{
+			Valor = TipoContactoEnum.Beneficiario,
+			Texto = "Beneficiario"
+		},
+		new()
+		{
+			Valor = TipoContactoEnum.Relacionista,
+			Texto = "Relacionista"
+		},
+		new()
+		{
+			Valor = TipoContactoEnum.Pagadurias,
+			Texto = "Pagadurias"
+		},
+		new()
+		{
+			Valor = TipoContactoEnum.Cobranzas,
+			Texto = "Cobranzas"
+		}
+	};
 
 
 
-    private Contacto? contactoSeleccionado;
+	private Contacto? contactoSeleccionado;
 
-    private List<Contacto> contactos = new();
+	private List<Contacto> contactos = new();
 
-    private List<Contacto> contactosFiltrados = new();
+	private List<Contacto> contactosFiltrados = new();
 
-    protected override void OnInitialized()
-    {
+	protected override void OnInitialized()
+	{
 
-    }
+	}
 
-    private void OnRowSelect(Contacto contacto)
-    {
-        contactoSeleccionado = contacto;
-    }
+	private void OnRowSelect(Contacto contacto)
+	{
+		contactoSeleccionado = contacto;
+	}
 
-    private async Task CrearNuevaConversacion()
-    {
-        try
-        {
-            // Validaciones
-            if (contactoSeleccionado is null)
-            {
-                notificacion.Notify(
-                    NotificationSeverity.Warning,
-                    "Atención",
-                    "Debe seleccionar un contacto.");
+	private async Task CrearNuevaConversacion()
+	{
+		try
+		{
+			// Validaciones
+			if (contactoSeleccionado is null)
+			{
+				notificacion.Notify(
+					NotificationSeverity.Warning,
+					"Atención",
+					"Debe seleccionar un contacto.");
 
-                return;
-            }
+				return;
+			}
 
-            if (InformacionUsuarioAutenticado is null)
-            {
-                throw new InvalidOperationException("No fue posible obtener la información del usuario autenticado.");
-            }
+			if (InformacionUsuarioAutenticado is null)
+			{
+				throw new InvalidOperationException("No fue posible obtener la información del usuario autenticado.");
+			}
 
-            if (InformacionUsuarioAutenticado.IdGrupoUser <= 0)
-            {
-                notificacion.Notify(
-                    NotificationSeverity.Warning,
-                    "Atención",
-                    "El usuario no pertenece a un grupo de trabajo.");
+			if (InformacionUsuarioAutenticado.IdGrupoUser <= 0)
+			{
+				notificacion.Notify(
+					NotificationSeverity.Warning,
+					"Atención",
+					"El usuario no pertenece a un grupo de trabajo.");
 
-                return;
-            }
+				return;
+			}
 
-            // Crear ticket
-            Ticket nuevoTicket = new()
-            {
-                IdGrupoUser = InformacionUsuarioAutenticado.IdGrupoUser
-            };
+			// Crear ticket
+			Ticket nuevoTicket = new()
+			{
+				IdGrupoUser = InformacionUsuarioAutenticado.IdGrupoUser
+			};
 
-            int idTicket = await crearTicket.CrearTicketAsync(nuevoTicket);
+			int idTicket = await crearTicket.CrearTicketAsync(nuevoTicket);
 
-            if (idTicket <= 0)
-            {
-                throw new Exception("No fue posible crear el ticket.");
-            }
+			if (idTicket <= 0)
+			{
+				throw new Exception("No fue posible crear el ticket.");
+			}
 
-            var fechaActual = DateTime.Now;
+			var fechaActual = DateTime.Now;
 
-            // Crear conversación
-            Conversacion nuevaConversacion = new()
-            {
-                FechaFinConversacion = null,
-                FechaInicioConversacion = fechaActual,
-                FechaUltimoMensaje = fechaActual,
-                EstadoConversacion = EstadoConversacionEnum.Activo.ToString(),
-                ActivaConAsesor = true,
-                FechaEnvioUltimaPlantilla = null,
-                EsPrimeraInteraccion = true,
-                IntentosInactividad = 0,
-                IdTicket = idTicket,
-                IdTipificacion = 0,
-                NumeroTelefonoConversacion = contactoSeleccionado.CelularContacto
-            };
+			// Crear conversación
+			Conversacion nuevaConversacion = new()
+			{
+				FechaFinConversacion = null,
+				FechaInicioConversacion = fechaActual,
+				FechaUltimoMensaje = fechaActual,
+				EstadoConversacion = EstadoConversacionEnum.Activo.ToString(),
+				ActivaConAsesor = true,
+				FechaEnvioUltimaPlantilla = null,
+				EsPrimeraInteraccion = true,
+				IntentosInactividad = 0,
+				IdTicket = idTicket,
+				IdTipificacion = 0,
+				NumeroTelefonoConversacion = contactoSeleccionado.CelularContacto
+			};
 
-            AsignarTipoContacto(nuevaConversacion, tipoContactoEnum, contactoSeleccionado.IdContacto);
+			AsignarTipoContacto(nuevaConversacion, tipoContactoEnum, contactoSeleccionado.IdContacto);
 
-            int idConversacion = await crearConversacion.CrearNuevaConversaciones(nuevaConversacion);
+			int idConversacion = await crearConversacion.CrearNuevaConversaciones(nuevaConversacion);
 
-            if (idConversacion <= 0)
-            {
-                throw new Exception("No fue posible crear la conversación.");
-            }
+			if (idConversacion <= 0)
+			{
+				throw new Exception("No fue posible crear la conversación.");
+			}
 
-            // Asignar ticket
-            bool asignado = await asignarTicket.AsignarTicketNuevaConversacion(idTicket, idConversacion);
+			// Asignar ticket
+			bool asignado = await asignarTicket.AsignarTicketNuevaConversacion(idTicket, idConversacion);
 
-            if (!asignado)
-            {
-                throw new Exception("La conversación fue creada, pero no fue posible asignar el ticket.");
-            }
+			if (!asignado)
+			{
+				throw new Exception("La conversación fue creada, pero no fue posible asignar el ticket.");
+			}
 
-            notificacion.Notify(
-                NotificationSeverity.Success,
-                "Correcto",
-                "La conversación fue creada correctamente.");
+			notificacion.Notify(
+				NotificationSeverity.Success,
+				"Correcto",
+				"La conversación fue creada correctamente.");
 
 
-            // 2. Actualiza el cache — esto es lo que falta
+			// 2. Actualiza el cache — esto es lo que falta
 
         
-            DatosTarjetaConversacionDTO nuevaConversacionCache = await utilidades.ConstruirObjetoTarjetaConversacionAsync(idConversacion, idTicket, contactoSeleccionado.NombreContacto, EstadoConversacionEnum.Activo, nuevaConversacion.FechaUltimoMensaje, NombreUsuarioDA, true);
-            await cacheConversaciones.CrearOActualizarAsync(nuevaConversacionCache);
+			DatosTarjetaConversacionDTO nuevaConversacionCache = await utilidades.ConstruirObjetoTarjetaConversacionAsync(idConversacion, idTicket, contactoSeleccionado.NombreContacto, EstadoConversacionEnum.Activo, nuevaConversacion.FechaUltimoMensaje, NombreUsuarioDA, true);
+			await cacheConversaciones.CrearOActualizarAsync(nuevaConversacionCache);
 
-            var grupoDestino = NombreUsuarioDA.Trim().ToLowerInvariant();
+			var grupoDestino = NombreUsuarioDA.Trim().ToLowerInvariant();
 
-            await _hubGepConecta.Clients.Group(grupoDestino).SendAsync("ActualizarNuevaConversacion", grupoDestino, nuevaConversacionCache, false);
+			await _hubGepConecta.Clients.Group(grupoDestino).SendAsync("ActualizarNuevaConversacion", grupoDestino, nuevaConversacionCache, false);
 
-            dialogService.Close(idConversacion);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
+			dialogService.Close(idConversacion);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine(ex);
 
-            notificacion.Notify(
-                NotificationSeverity.Error,
-                "Error",
-                ex.Message);
-        }
-    }
+			notificacion.Notify(
+				NotificationSeverity.Error,
+				"Error",
+				ex.Message);
+		}
+	}
 
-    private void AsignarTipoContacto(
-    Conversacion conversacion,
-    TipoContactoEnum tipoContacto,
-    int id)
-    {
-        switch (tipoContacto)
-        {
-            case TipoContactoEnum.Titular:
-                conversacion.IdCliente = id;
-                break;
+	private void AsignarTipoContacto(
+	Conversacion conversacion,
+	TipoContactoEnum tipoContacto,
+	int id)
+	{
+		switch (tipoContacto)
+		{
+			case TipoContactoEnum.Titular:
+				conversacion.IdCliente = id;
+				break;
 
-            case TipoContactoEnum.Beneficiario:
-                conversacion.IdBeneficiario = id;
-                break;
+			case TipoContactoEnum.Beneficiario:
+				conversacion.IdBeneficiario = id;
+				break;
 
-            case TipoContactoEnum.Relacionista:
-                conversacion.IdContacto = id;
-                break;
+			case TipoContactoEnum.Relacionista:
+				conversacion.IdContacto = id;
+				break;
 
-            case TipoContactoEnum.Pagadurias:
-                conversacion.IdBaseTelemercadeo = id;
-                break;
+			case TipoContactoEnum.Pagadurias:
+				conversacion.IdBaseTelemercadeo = id;
+				break;
 
-            case TipoContactoEnum.Cobranzas:
-                conversacion.IdCliente = id;
-                break;
+			case TipoContactoEnum.Cobranzas:
+				conversacion.IdCliente = id;
+				break;
 
-            default:
-                conversacion.IdContacto = id;
-                break;
-        }
-    }
-    private async Task OnKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            await BuscarContacto();
-        }
-    }
+			default:
+				conversacion.IdContacto = id;
+				break;
+		}
+	}
+	private async Task OnKeyUp(KeyboardEventArgs e)
+	{
+		if (e.Key == "Enter")
+		{
+			await BuscarContacto();
+		}
+	}
 
-    private async Task BuscarContacto()
-    {
-        contactoSeleccionado = null;
+	private async Task BuscarContacto()
+	{
+		contactoSeleccionado = null;
 
-        if (string.IsNullOrWhiteSpace(textoBusqueda))
-        {
-            contactosFiltrados = contactos.ToList();
-            return;
-        }
+		if (string.IsNullOrWhiteSpace(textoBusqueda))
+		{
+			contactosFiltrados = contactos.ToList();
+			return;
+		}
 
 
 
-        var filtro = textoBusqueda.Trim();
+		var filtro = textoBusqueda.Trim();
 
-        switch (tipoContactoEnum)
-        {
-            case TipoContactoEnum.Titular:
-                contactosFiltrados = await busquedaContactos.ObtenerClienteTitularAsync(filtro);
-                break;
+		switch (tipoContactoEnum)
+		{
+			case TipoContactoEnum.Titular:
+				contactosFiltrados = await busquedaContactos.ObtenerClienteTitularAsync(filtro);
+				break;
 
-            case TipoContactoEnum.Beneficiario:
-                contactosFiltrados = await busquedaContactos.ObtenerBeneficiarioAsync(filtro);
-                break;
+			case TipoContactoEnum.Beneficiario:
+				contactosFiltrados = await busquedaContactos.ObtenerBeneficiarioAsync(filtro);
+				break;
 
-            case TipoContactoEnum.Relacionista:
-                contactosFiltrados = await busquedaContactos.ObtenerContactoAsync(filtro);
-                break;
+			case TipoContactoEnum.Relacionista:
+				contactosFiltrados = await busquedaContactos.ObtenerContactoAsync(filtro);
+				break;
 
-            case TipoContactoEnum.Pagadurias:
-                contactosFiltrados = await busquedaContactos.ObtenerClientePagaduriasAsync(filtro);
-                break;
+			case TipoContactoEnum.Pagadurias:
+				contactosFiltrados = await busquedaContactos.ObtenerClientePagaduriasAsync(filtro);
+				break;
 
-            case TipoContactoEnum.Cobranzas:
-                contactosFiltrados = await busquedaContactos.ObtenerClienteCobranzasAsync(filtro);
-                break;
+			case TipoContactoEnum.Cobranzas:
+				contactosFiltrados = await busquedaContactos.ObtenerClienteCobranzasAsync(filtro);
+				break;
 
-            default:
-                contactosFiltrados = new List<Contacto>();
-                break;
-        }
-    }
+			default:
+				contactosFiltrados = new List<Contacto>();
+				break;
+		}
+	}
 }
