@@ -4,6 +4,6 @@ namespace WhatsappComercial.Interfaces.ProcesarMensajeEntrante
 {
     public interface IManejadorMensajeArchivo
     {
-        Task ProcesarArchivoAsync(WebhookMessage mensajeWA, WebhookContact? contactoWA, string tipo, string usuario);
+        Task ProcesarArchivoAsync(WebhookMessage mensajeWA, WebhookContact? contactoWA, string tipo, int idConversacion, string usuario);
     }
 }

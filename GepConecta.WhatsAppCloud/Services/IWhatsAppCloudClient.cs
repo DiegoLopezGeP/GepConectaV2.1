@@ -19,5 +19,7 @@ namespace GepConecta.WhatsAppCloud.Services
         Task<EnviarRespuestaWhatsApp?> SendInteractiveButtonsAsync(string to, string bodyText, Dictionary<string, string> buttons);
 
         Task<EnviarRespuestaWhatsApp?> SendMediaMessageAsync(string to, string mediaType, string mediaIdOrUrl, string? caption = null, string? fileName = null, bool isUrl = false);
+
+        Task<byte[]> DescargarMediaAsync(string mediaId);
     }
 }

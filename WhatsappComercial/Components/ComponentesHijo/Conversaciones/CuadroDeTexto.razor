@@ -1,5 +1,6 @@
 ﻿@using System.IO
 @using GepConecta.WhatsAppCloud.Models.Enums
+@using GepConecta.WhatsAppCloud.Models.Responses
 @using GepConecta.WhatsAppCloud.Services
 @using Microsoft.AspNetCore.Components.Forms
 @inject IWhatsAppCloudClient WhatsAppClient
@@ -222,7 +223,7 @@
 
 	// EVENTOS SEPARADOS
 	[Parameter] public EventCallback<(string, string)> OnEnviarTexto { get; set; }
-	[Parameter] public EventCallback<(int, DatosAdjuntoOutDTO)> OnEnviarArchivo { get; set; }
+	[Parameter] public EventCallback<(int, DatosAdjuntoOutDTO, EnviarRespuestaWhatsApp?)> OnEnviarArchivo { get; set; }
 	[Parameter] public int IdTicket { get; set; }
 
 	// NÚMERO DE TELÉFONO DESTINO PARA WHATSAPP (Ej: "573001234567")
@@ -270,6 +271,7 @@
 		// CASO 1: Envío de Archivo Adjunto (con o sin comentario)
 		if (archivoSeleccionado != null)
 		{
+			EnviarRespuestaWhatsApp? respuestaHttpWhatsApp = new EnviarRespuestaWhatsApp();
 			var datosAdjunto = new DatosAdjuntoOutDTO
 			{
 				Archivo = archivoSeleccionado,
@@ -302,20 +304,20 @@
 						if (contentType.StartsWith("audio/"))
 						{
 							// Nota: Meta no soporta caption/comentario en audios
-							await WhatsAppClient.SendAudioAsync(TelefonoDestino, mediaId, isUrl: false);
+							respuestaHttpWhatsApp = await WhatsAppClient.SendAudioAsync(TelefonoDestino, mediaId, isUrl: false);
 						}
 						else if (contentType.StartsWith("image/"))
 						{
-							await WhatsAppClient.SendImageAsync(TelefonoDestino, mediaId, caption: mensaje, isUrl: false);
+							respuestaHttpWhatsApp = await WhatsAppClient.SendImageAsync(TelefonoDestino, mediaId, caption: mensaje, isUrl: false);
 						}
 						else if (contentType.StartsWith("video/"))
 						{
-							await WhatsAppClient.SendVideoAsync(TelefonoDestino, mediaId, caption: mensaje, isUrl: false);
+							respuestaHttpWhatsApp = await WhatsAppClient.SendVideoAsync(TelefonoDestino, mediaId, caption: mensaje, isUrl: false);
 						}
 						else
 						{
 							// Cualquier otro tipo (PDF, Excel, Word, Zip, etc.) se envía como documento
-							await WhatsAppClient.SendDocumentAsync(
+							respuestaHttpWhatsApp = await WhatsAppClient.SendDocumentAsync(
 								to: TelefonoDestino,
 								mediaIdOrUrl: mediaId,
 								fileName: archivoSeleccionado.Name,
@@ -340,7 +342,7 @@
 			// Notificar al componente padre de Blazor (para guardar en BD local, refrescar chat, etc.)
 			if (OnEnviarArchivo.HasDelegate)
 			{
-				await OnEnviarArchivo.InvokeAsync((IdTicket, datosAdjunto));
+				await OnEnviarArchivo.InvokeAsync((IdTicket, datosAdjunto, respuestaHttpWhatsApp));
 			}
 			return;
 		}
@@ -511,7 +513,7 @@
 
 			if (OnEnviarArchivo.HasDelegate)
 			{
-				await OnEnviarArchivo.InvokeAsync((IdTicket, datosAdjunto));
+				await OnEnviarArchivo.InvokeAsync((IdTicket, datosAdjunto, null));
 			}
 		}
 		catch (Exception ex)

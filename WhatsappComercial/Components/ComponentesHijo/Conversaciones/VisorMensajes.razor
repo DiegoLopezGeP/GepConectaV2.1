@@ -36,32 +36,27 @@
 
 						<div class="hora">@mensaje.Fecha.ToString("hh:mm tt")</div>
 
-						@switch (mensaje.EstadoLectura)
+						@* Se muestran los íconos de estado ÚNICAMENTE si el mensaje NO es entrante (saliente) *@
+						@if (!mensaje.EsEntrante)
 						{
-							case "sent":
-@* 								<i class="material-icons" style="color: gray; font-size: large;">check</i> *@
-								<RadzenIcon Icon="check" Style="color: gray; font-size: large;"></RadzenIcon>
-								break;
+							@switch (mensaje.EstadoLectura)
+							{
+								case "sent":
+									<RadzenIcon Icon="check" Style="color: gray; font-size: large;"></RadzenIcon>
+									break;
 
-							case "delivered":
-								//<i class="material-icons" style="color: gray; font-size: large;">done_all</i>
-								<RadzenIcon Icon="done_all" Style="color: gray; font-size: large;"></RadzenIcon>
+								case "delivered":
+									<RadzenIcon Icon="done_all" Style="color: gray; font-size: large;"></RadzenIcon>
+									break;
 
-								break;
+								case "read":
+									<RadzenIcon Icon="done_all" Style="color: dodgerblue; font-size: large;"></RadzenIcon>
+									break;
 
-							case "read":
-@* 								<i class="material-icons" style="color: dodgerblue; font-size: large;">done_all</i> *@
-								<RadzenIcon Icon="done_all" Style="color: dodgerblue; font-size: large;"></RadzenIcon>
-
-								break;
-
-							case "failed":
-								@* <i class="material-icons"
-								   style="color: #E7180B; font-size: large; cursor: pointer;"
-								   @onclick="() => MostrarError(msg)">
-									dangerous
-								</i> *@
-								break;
+								case "failed":
+									<RadzenIcon Icon="dangerous" Style="color: #E7180B; font-size: large; cursor: pointer;"></RadzenIcon>
+									break;
+							}
 						}
 
 					</RadzenStack>

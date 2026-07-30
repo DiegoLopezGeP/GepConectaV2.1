@@ -61,7 +61,7 @@ namespace WhatsappComercial.Servicios.ProcesarMensaje
                         case "document":
                         case "video":
                         case "sticker":
-                            await _manejadorArchivo.ProcesarArchivoAsync(mensajeWA, contactoWA, tipo, usuario);
+                            await _manejadorArchivo.ProcesarArchivoAsync(mensajeWA, contactoWA, tipo, idConversacion, usuario);
                             break;
 
                         default:

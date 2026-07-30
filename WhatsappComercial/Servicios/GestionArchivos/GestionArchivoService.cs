@@ -23,45 +23,10 @@ namespace WhatsappComercial.Servicios.GestionArchivos
 
         public async Task<(string RutaRelativa, string Sha256Hash)> GuardarArchivoYCalcularSha256Async(int idTicket, string mimeType, IBrowserFile archivo, long maxFileSize)
         {
-            string carpetaUploads = _staticConfiguracion.TraerConfiguracionPorCondicion("CarpetaMultimedia");
+            // Abrimos el stream de Blazor y reutilizamos la lógica unificada
+            await using var browserStream = archivo.OpenReadStream(maxFileSize);
 
-            // 1. Obtener el tipo de archivo ("document", "image", etc.)
-            string tipoArchivo = ObtenerTipoArchivo(archivo.Name);
-
-            // 2. Construir la carpeta final (incluyendo la subcarpeta "document")
-            string carpetaFinalDestino = Path.Combine(_systemServicio.PathDocument(), carpetaUploads, tipoArchivo);
-
-            // 3. ¡AQUÍ ESTÁ LA CLAVE! Crear la carpeta final si no existe
-            if (!Directory.Exists(carpetaFinalDestino))
-            {
-                Directory.CreateDirectory(carpetaFinalDestino);
-            }
-
-            // 4. Construir la ruta física completa del archivo
-            string extension = Path.GetExtension(archivo.Name);
-            string nombreUnico = $"{idTicket}_{archivo.Name}";
-            string rutaFisicaCompleta = Path.Combine(carpetaFinalDestino, nombreUnico);
-
-            string sha256Hash = string.Empty;
-
-            // 5. Instanciar algoritmo y procesar streams
-            using (var sha256 = SHA256.Create())
-            {
-                await using (var browserStream = archivo.OpenReadStream(maxFileSize))
-                await using (var fileStream = new FileStream(rutaFisicaCompleta, FileMode.Create, FileAccess.Write))
-                await using (var cryptoStream = new CryptoStream(fileStream, sha256, CryptoStreamMode.Write))
-                {
-                    // Copiar datos del navegador hacia el archivo en disco procesando el hash
-                    await browserStream.CopyToAsync(cryptoStream);
-                    await cryptoStream.FlushFinalBlockAsync();
-                }
-                // AL SALIR DE ESTE BLOQUE SE CIERRAN Y VACÍAN LOS STREAMS EN DISCO
-
-                // 6. Convertir el hash de bytes a cadena Hexadecimal minúscula
-                sha256Hash = Convert.ToHexString(sha256.Hash!).ToLowerInvariant();
-            }
-
-            return (rutaFisicaCompleta, sha256Hash);
+            return await GuardarStreamYCalcularSha256Async( idTicket, archivo.Name,  mimeType, browserStream);
         }
 
         public string ObtenerTipoArchivo(string fileName)
@@ -89,6 +54,47 @@ namespace WhatsappComercial.Servicios.GestionArchivos
 
                 _ => "unknown"
             };
+        }
+
+        public async Task<(string RutaRelativa, string Sha256Hash)> GuardarStreamYCalcularSha256Async(int idTicket, string nombreOriginal, string mimeType, Stream streamEntrante)
+        {
+            string carpetaUploads = _staticConfiguracion.TraerConfiguracionPorCondicion("CarpetaMultimedia");
+
+            // 1. Obtener el tipo de archivo ("document", "image", etc.)
+            string tipoArchivo = ObtenerTipoArchivo(nombreOriginal);
+
+            // 2. Construir la carpeta final
+            string carpetaFinalDestino = Path.Combine(_systemServicio.PathDocument(), carpetaUploads, tipoArchivo);
+
+            // 3. Crear la carpeta final si no existe
+            if (!Directory.Exists(carpetaFinalDestino))
+            {
+                Directory.CreateDirectory(carpetaFinalDestino);
+            }
+
+            // 4. Construir la ruta física completa del archivo
+            string extension = Path.GetExtension(nombreOriginal);
+            string nombreUnico = $"{idTicket}_{DateTime.Now:yyyyMMddHHmmssfff}{extension}";
+            string rutaFisicaCompleta = Path.Combine(carpetaFinalDestino, nombreUnico);
+
+            string sha256Hash = string.Empty;
+
+            // 5. Instanciar algoritmo y procesar streams
+            using (var sha256 = SHA256.Create())
+            {
+                await using (var fileStream = new FileStream(rutaFisicaCompleta, FileMode.Create, FileAccess.Write))
+                await using (var cryptoStream = new CryptoStream(fileStream, sha256, CryptoStreamMode.Write))
+                {
+                    // Copiar datos del stream de origen (ya sea de WhatsApp o de Blazor)
+                    await streamEntrante.CopyToAsync(cryptoStream);
+                    await cryptoStream.FlushFinalBlockAsync();
+                }
+
+                // 6. Convertir el hash
+                sha256Hash = Convert.ToHexString(sha256.Hash!).ToLowerInvariant();
+            }
+
+            return (rutaFisicaCompleta, sha256Hash);
         }
     }
 }

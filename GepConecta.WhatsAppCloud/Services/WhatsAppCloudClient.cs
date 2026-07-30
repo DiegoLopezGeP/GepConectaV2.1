@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net.Http.Headers;
+using System.Text;
 using GepConecta.WhatsAppCloud.Models.Requests;
 using GepConecta.WhatsAppCloud.Models.Responses;
 using Newtonsoft.Json;
@@ -319,7 +320,52 @@ namespace GepConecta.WhatsAppCloud.Services
             return EnviarPeticionMetaAsync<EnviarRespuestaWhatsApp>("messages", payload);
         }
 
-        
+        public async Task<byte[]> DescargarMediaAsync(string mediaId)
+        {
+            if (string.IsNullOrEmpty(mediaId))
+                return Array.Empty<byte>();
+
+            try
+            {
+                // PASO 1: Consultar a Meta por los metadatos del MediaId para obtener la URL de descarga
+                string requestUrl = $"https://graph.facebook.com/v18.0/{mediaId}";
+
+                using var requestMeta = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                requestMeta.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
+
+                var responseMeta = await _client.SendAsync(requestMeta);
+                responseMeta.EnsureSuccessStatusCode();
+
+                string jsonResponse = await responseMeta.Content.ReadAsStringAsync();
+                var mediaInfo = JsonConvert.DeserializeObject<MetaMediaResponse>(jsonResponse);
+
+                if (mediaInfo == null || string.IsNullOrEmpty(mediaInfo.Url))
+                {
+                    Console.WriteLine($"[ERROR MEDIA]: No se pudo obtener la URL para el MediaID '{mediaId}'.");
+                    return Array.Empty<byte>();
+                }
+
+                // PASO 2: Descargar el archivo binario usando la URL obtenida
+                using var requestDownload = new HttpRequestMessage(HttpMethod.Get, mediaInfo.Url);
+                requestDownload.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
+
+                // Importante: Agregar User-Agent para evitar que Meta rechace la petición de descarga
+                requestDownload.Headers.UserAgent.ParseAdd("WhatsAppCloudClient/1.0");
+
+                var responseDownload = await _client.SendAsync(requestDownload);
+                responseDownload.EnsureSuccessStatusCode();
+
+                // Retornar los bytes del archivo en memoria
+                return await responseDownload.Content.ReadAsByteArrayAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR DESCARGA MEDIA META]: {ex.Message}");
+                return Array.Empty<byte>();
+            }
+        }
+
+
 
         #endregion
     }

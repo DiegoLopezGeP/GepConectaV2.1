@@ -5,11 +5,13 @@
 @using WhatsappComercial.Interfaces.Cache
 @using WhatsappComercial.Interfaces.Conversaciones
 @using WhatsappComercial.Interfaces.Mensajes
+@using WhatsappComercial.Interfaces.GestionArchivos
 @using WhatsappComercial.Modelos
 @using WhatsappComercial.Modelos.DTOs
 @using Microsoft.AspNetCore.SignalR
 @using Microsoft.AspNetCore.SignalR.Client
 @using WhatsappComercial.Interfaces.NotificarUI
+@using GepConecta.WhatsAppCloud.Models.Responses
 @inject NavigationManager Navigation
 
 @inject IUsuarios informacionUsuario
@@ -19,7 +21,9 @@
 @inject ICacheConversaciones cacheConversaciones
 @inject ICacheMensajes cacheMensajes
 @inject IHttpContextAccessor HttpContextAccessor
+@inject IGestionArchivos gestionArchivos
 @inject INotificarUI NotificadorUI
+
 @implements IDisposable
 
 @inject IJSRuntime JS
@@ -302,22 +306,27 @@
 	}
 
 	// MÉTODO 2: Exclusivo para mensajes con Archivos Adjuntos
-	private async Task ManejarEnvioArchivo((int idTicket, CuadroDeTexto.DatosAdjuntoOutDTO datos) parametrosEnvioArchivo)
+	private async Task ManejarEnvioArchivo((int idTicket, CuadroDeTexto.DatosAdjuntoOutDTO datos, EnviarRespuestaWhatsApp? respuestaHttp) parametrosEnvioArchivo)
 	{
 		if (conversacionSeleccionada is null || conversacionSeleccionada.IdConversacion == 0)
 			return;
 
 		var idConversacionActual = conversacionSeleccionada.IdConversacion;
+		// 2. Guardar archivo en servidor y calcular SHA256 en un solo flujo
+		var (rutaRelativa, sha256Calculado) = await gestionArchivos.GuardarArchivoYCalcularSha256Async(idConversacionActual, parametrosEnvioArchivo.datos.Archivo.ContentType, parametrosEnvioArchivo.datos.Archivo, 15 * 1024 * 1024);
 
 		var nuevoMensaje = new MensajeDTO
 		{
 			IdMensaje = 0,
-			Texto = parametrosEnvioArchivo.datos.Comentario,
+			Texto = rutaRelativa,
 			Fecha = DateTime.Now,
 			EsEntrante = false,
 			NombreArchivo = parametrosEnvioArchivo.datos.Archivo.Name,
 			TipoArchivo = parametrosEnvioArchivo.datos.Archivo.ContentType,
-			TamanoArchivo = parametrosEnvioArchivo.datos.Archivo.Size
+			TamanoArchivo = parametrosEnvioArchivo.datos.Archivo.Size,
+			HashSha256 = sha256Calculado,
+			EstadoLectura = "sent"
+			
 		};
 
 		// Actualización optimista de UI y Caché
@@ -327,15 +336,19 @@
 
 		cacheMensajes.AgregarMensaje(idConversacionActual, nuevoMensaje);
 
+
+
+
 		try
 		{
+
 			var idGenerado = await enviarMensaje.EnviarMensajeArchivoAsync(
 				idConversacionActual,
 				parametrosEnvioArchivo.idTicket,
 				userName,
 				contactoConversacionSeleccionado?.Celular,
 				nuevoMensaje,
-				parametrosEnvioArchivo.datos.Archivo // Pasamos el IBrowserFile al servicio especializado en archivos
+				parametrosEnvioArchivo.datos.Archivo, parametrosEnvioArchivo.respuestaHttp // Pasamos el IBrowserFile al servicio especializado en archivos
 			);
 
 			nuevoMensaje.IdMensaje = idGenerado;

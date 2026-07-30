@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Security.Cryptography;
+using GepConecta.WhatsAppCloud.Models.Responses;
 using Microsoft.AspNetCore.Components.Forms;
 using WhatsappComercial.Interfaces.GestionArchivos;
 using WhatsappComercial.Interfaces.Mensajes;
@@ -28,19 +29,18 @@ namespace WhatsappComercial.Servicios.Mensajes
             _gestionArchivos = gestionArchivos;
         }
 
-        public async Task<int> EnviarMensajeArchivoAsync(int idConversacion, int idTicket, string userName, string? celular, MensajeDTO mensaje, IBrowserFile archivo)
+        public async Task<int> EnviarMensajeArchivoAsync(int idConversacion, int idTicket, string userName, string? celular, MensajeDTO mensaje, IBrowserFile archivo, EnviarRespuestaWhatsApp? respuestaHttp)
         {
             // Límite de tamaño permitido para el Stream (ej: 15 MB)
             long maxFileSize = 15 * 1024 * 1024;
 
-
+            string? waid = respuestaHttp?.Messages?.FirstOrDefault()?.Id;
             // 1. Obtener el MIME Type exacto proveniente del navegador/archivo
             string mimeType = string.IsNullOrWhiteSpace(archivo.ContentType)
                 ? "application/octet-stream"
                 : archivo.ContentType;
 
-            // 2. Guardar archivo en servidor y calcular SHA256 en un solo flujo
-            var (rutaRelativa, sha256Calculado) = await _gestionArchivos.GuardarArchivoYCalcularSha256Async(idTicket, mimeType, archivo, maxFileSize);
+            
 
 
             // 3. Determinar la categoría (image, video, audio, document) para la lógica de mensajes
@@ -50,7 +50,8 @@ namespace WhatsappComercial.Servicios.Mensajes
             var entidadMensaje = new Modelos.Mensajes
             {
                 IdConversacion = idConversacion,
-                ContenidoMensaje = rutaRelativa,
+                IdMensajeWhatsApp = waid,
+                ContenidoMensaje = mensaje.Texto,
                 FechaEnvioMensaje = mensaje.Fecha,
                 MensajeEntranteMensaje = mensaje.EsEntrante,
                 EsBot = mensaje.EsEntrante,
@@ -59,7 +60,7 @@ namespace WhatsappComercial.Servicios.Mensajes
                 // Metadata del archivo
                 TipoMensaje = TipoMensaje,     // "image", "video", "audio", "document"
                 MimeTypeMensaje = mimeType,                 // "image/png", "application/pdf", etc.
-                Sha256Mensaje = sha256Calculado,        // Cadena Hash hexadecimal
+                Sha256Mensaje = mensaje.HashSha256,        // Cadena Hash hexadecimal
                 Leido = false,
                 EstadoEnvio = "send"
             };
