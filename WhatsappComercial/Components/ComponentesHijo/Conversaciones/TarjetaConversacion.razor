@@ -4,7 +4,11 @@
 
 @foreach (var item in datosTarjetaConversacion)
 {
-	<RadzenCard Style="margin-bottom: 5px; border-radius: 12px; padding: 12px; cursor: pointer;" @onclick="() => SeleccionarTarjeta(item)">
+	bool estaSeleccionada = tarjetaSeleccionada?.IdConversacion == item.IdConversacion;
+
+	<RadzenCard Style="@ObtenerEstiloTarjeta(estaSeleccionada)"
+				class="@(estaSeleccionada ? "tarjeta-conversacion seleccionada" : "tarjeta-conversacion")"
+				@onclick="() => SeleccionarTarjeta(item)">
 
 		<div class="ticket-superior">
 
@@ -24,7 +28,7 @@
 		<div class="contenido-conversacion">
 
 			<RadzenImage Path="Images/Hombre.jpg"
-						 Style="    width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0;" />
+						 Style="width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0;" />
 
 			<div class="datos-conversacion">
 
@@ -52,12 +56,33 @@
 	[Parameter] public List<DatosTarjetaConversacionDTO> datosTarjetaConversacion { get; set; } = new();
 	[Parameter] public EventCallback<DatosTarjetaConversacionDTO> OnSeleccionar { get; set; }
 
+	// Variable para realizar el seguimiento del ítem seleccionado
+	private DatosTarjetaConversacionDTO? tarjetaSeleccionada;
+
 	private async Task SeleccionarTarjeta(DatosTarjetaConversacionDTO tarjeta)
 	{
+		tarjetaSeleccionada = tarjeta;
+
 		if (tarjeta.esNuevaConversacion)
+		{
 			tarjeta.esNuevaConversacion = false;
-		//Implementar Actualizacion de cache cacheConversaciones.(tarjeta);
+			// Implementar actualización de cache:
+			// await cacheConversaciones.CrearOActualizarAsync(tarjeta);
+		}
+
 		await OnSeleccionar.InvokeAsync(tarjeta);
 	}
-}
 
+	private string ObtenerEstiloTarjeta(bool seleccionada)
+	{
+		var baseStyle = "margin-bottom: 5px; border-radius: 12px; padding: 12px; cursor: pointer; transition: all 0.2s ease-in-out;";
+
+		if (seleccionada)
+		{
+			// Borde izquierdo o completo de color primario, fondo activo y sombra
+			return $"{baseStyle} border-left: 5px solid var(--rz-primary, #056162); background-color: var(--rz-primary-lighter, #e7f1f1); box-shadow: 0 4px 10px rgba(0,0,0,0.12);";
+		}
+
+		return $"{baseStyle} border: 1px solid #e0e0e0;";
+	}
+}

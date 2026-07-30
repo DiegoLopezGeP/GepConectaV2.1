@@ -281,10 +281,7 @@
 		}
 	}
 
-	private void AsignarTipoContacto(
-	Conversacion conversacion,
-	TipoContactoEnum tipoContacto,
-	int id)
+	private void AsignarTipoContacto(Conversacion conversacion, TipoContactoEnum tipoContacto, int id)
 	{
 		switch (tipoContacto)
 		{
@@ -313,6 +310,7 @@
 				break;
 		}
 	}
+
 	private async Task OnKeyUp(KeyboardEventArgs e)
 	{
 		if (e.Key == "Enter")
