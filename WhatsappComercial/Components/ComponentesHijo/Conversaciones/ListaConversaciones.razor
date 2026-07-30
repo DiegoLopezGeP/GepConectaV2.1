@@ -5,11 +5,14 @@
 @inject DialogService dialogService
 @inject ICacheConversaciones CacheConversaciones
 
-
 <div class="panel-conversaciones">
 
+	<!-- Acciones (Buscar cliente / Crear contacto) -->
 	<div class="acciones-conversaciones">
-		<RadzenStack Orientation="Orientation.Horizontal" Gap="10px" JustifyContent="@(esMovil ? JustifyContent.End : JustifyContent.Start)" Style="margin-bottom:20px;">
+		<RadzenStack Orientation="Orientation.Horizontal"
+					 Gap="10px"
+					 JustifyContent="@(esMovil ? JustifyContent.End : JustifyContent.Start)"
+					 Style="background-color:white; padding:5px; border-radius: 10px;">
 			<RadzenButton Icon="search"
 						  Variant="Variant.Filled"
 						  ButtonStyle="ButtonStyle.Info"
@@ -24,22 +27,29 @@
 		</RadzenStack>
 	</div>
 
-	<RadzenTextBox @bind-Value="TextoBusqueda"
-				   Placeholder="Buscar por ticket o celular"
-				   Style="width:100%;border-radius:10px;margin:15px 0;" />
+	<!-- Filtro de categorías (Chips) -->
+	<div class="filtro-categorias">
+		<RadzenStack Gap="0.5rem" Style="padding: 5px 0 10px 0;">
+			<RadzenChipList @bind-Value="@selectedCategory"
+							TValue="string"
+							Data="@categories"
+							TextProperty="Name"
+							ValueProperty="Name"
+							ChipStyle="BadgeStyle.Base"
+							Change="OnFiltroBotonConversaciones" />
+		</RadzenStack>
+	</div>
 
-	<RadzenStack Gap="0.5rem" Style="padding: 10px;">
-		<RadzenChipList @bind-Value="@selectedCategory"
-						TValue="string"
-						Data="@categories"
-						TextProperty="Name"
-						ValueProperty="Name"
-						ChipStyle="BadgeStyle.Base" 
-						Change="OnFiltroBotonConversaciones" />
-	</RadzenStack>
+	<!-- Caja de Búsqueda -->
+	<div class="caja-busqueda">
+		<RadzenTextBox @bind-Value="TextoBusqueda"
+					   Placeholder="Buscar por ticket o celular"
+					   Style="width:100%; border-radius:10px; margin-bottom:10px;" />
+	</div>
 
+	<!-- Lista de tarjetas de conversación -->
 	<div class="contenedor-tarjetas">
-		<TarjetaConversacion datosTarjetaConversacion="@ListaDatosTarjetaFiltrada" OnSeleccionar="AbrirConversacion"  />
+		<TarjetaConversacion datosTarjetaConversacion="@ListaDatosTarjetaFiltrada" OnSeleccionar="AbrirConversacion" />
 	</div>
 
 </div>

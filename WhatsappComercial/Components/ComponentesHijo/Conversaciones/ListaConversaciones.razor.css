@@ -5,27 +5,48 @@
     min-height: 0;
 }
 
+/* --- VISTA ESCRITORIO --- */
 .acciones-conversaciones {
     order: 1;
 }
 
-.contenedor-tarjetas {
+.filtro-categorias {
+    order: 2;
+}
+
+.caja-busqueda {
     order: 3;
+}
+
+.contenedor-tarjetas {
+    order: 4;
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     min-height: 0;
 }
 
+/* --- VISTA MÓVIL (<= 768px) --- */
 @media (max-width: 768px) {
+    .caja-busqueda {
+        order: 1;
+    }
 
-    .acciones-conversaciones {
-        order: 4;
-        margin-top: 15px;
-        align-items:flex-end;
+    .filtro-categorias {
+        order: 2;
     }
 
     .contenedor-tarjetas {
         order: 3;
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        min-height: 0;
+    }
+
+    .acciones-conversaciones {
+        order: 4;
+        margin-top: 10px;
+        background-color: transparent;
     }
 }
