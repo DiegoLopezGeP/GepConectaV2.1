@@ -147,13 +147,37 @@
 	{
 		try
 		{
-			// Validaciones
+			// 1. Validaciones básicas
 			if (contactoSeleccionado is null)
 			{
 				notificacion.Notify(
 					NotificationSeverity.Warning,
 					"Atención",
 					"Debe seleccionar un contacto.");
+
+				return;
+			}
+
+			if (string.IsNullOrWhiteSpace(contactoSeleccionado.CelularContacto))
+			{
+				notificacion.Notify(
+					NotificationSeverity.Warning,
+					"Atención",
+					"El contacto seleccionado no tiene un número de celular válido.");
+
+				return;
+			}
+
+			// 2. Verificación de existencia en Caché por número de teléfono
+			// (Ajusta 'ObtenerPorTelefonoAsync' o 'ExistePorTelefonoAsync' según la firma exacta de tu ICacheConversaciones)
+			var conversacionExistente = await cacheConversaciones.ObtenerConversacionPorNumeroTelefono(contactoSeleccionado.CelularContacto);
+
+			if (conversacionExistente is not null)
+			{
+				notificacion.Notify(
+					NotificationSeverity.Warning,
+					"Conversación Existente",
+					$"Ya existe una conversación activa para el número {contactoSeleccionado.CelularContacto}.");
 
 				return;
 			}
@@ -173,7 +197,7 @@
 				return;
 			}
 
-			// Crear ticket
+			// 3. Crear ticket
 			Ticket nuevoTicket = new()
 			{
 				IdGrupoUser = InformacionUsuarioAutenticado.IdGrupoUser
@@ -188,7 +212,7 @@
 
 			var fechaActual = DateTime.Now;
 
-			// Crear conversación
+			// 4. Crear conversación
 			Conversacion nuevaConversacion = new()
 			{
 				FechaFinConversacion = null,
@@ -210,10 +234,10 @@
 
 			if (idConversacion <= 0)
 			{
-				throw new Exception("No fue posible crear la conversación.");
+				throw new Exception("No fue posible consultar o crear la conversación.");
 			}
 
-			// Asignar ticket
+			// 5. Asignar ticket
 			bool asignado = await asignarTicket.AsignarTicketNuevaConversacion(idTicket, idConversacion);
 
 			if (!asignado)
@@ -226,16 +250,23 @@
 				"Correcto",
 				"La conversación fue creada correctamente.");
 
+			// 6. Actualización en Caché y SignalR
+			DatosTarjetaConversacionDTO nuevaConversacionCache = await utilidades.ConstruirObjetoTarjetaConversacionAsync(
+				idConversacion,
+				idTicket,
+				contactoSeleccionado.NombreContacto,
+				EstadoConversacionEnum.Activo,
+				nuevaConversacion.FechaUltimoMensaje,
+				NombreUsuarioDA,
+				true);
 
-			// 2. Actualiza el cache — esto es lo que falta
-
-        
-			DatosTarjetaConversacionDTO nuevaConversacionCache = await utilidades.ConstruirObjetoTarjetaConversacionAsync(idConversacion, idTicket, contactoSeleccionado.NombreContacto, EstadoConversacionEnum.Activo, nuevaConversacion.FechaUltimoMensaje, NombreUsuarioDA, true);
 			await cacheConversaciones.CrearOActualizarAsync(nuevaConversacionCache);
 
-			var grupoDestino = NombreUsuarioDA.Trim().ToLowerInvariant();
-
-			await _hubGepConecta.Clients.Group(grupoDestino).SendAsync("ActualizarNuevaConversacion", grupoDestino, nuevaConversacionCache, false);
+			if (!string.IsNullOrWhiteSpace(NombreUsuarioDA))
+			{
+				var grupoDestino = NombreUsuarioDA.Trim().ToLowerInvariant();
+				await _hubGepConecta.Clients.Group(grupoDestino).SendAsync("ActualizarNuevaConversacion", grupoDestino, nuevaConversacionCache, false);
+			}
 
 			dialogService.Close(idConversacion);
 		}
@@ -350,7 +381,8 @@
 		// 2. Definir parámetros a enviar al diálogo modal
 		var parametros = new Dictionary<string, object>
 	{
-		{ "ContactoModel", contactoSeleccionado }
+		{ "ContactoModel", contactoSeleccionado },
+		{ "TipoContacto", tipoContactoEnum },
 	};
 
 		// 3. Abrir el modal usando DialogService

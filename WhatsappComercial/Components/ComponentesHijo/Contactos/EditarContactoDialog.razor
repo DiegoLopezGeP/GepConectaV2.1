@@ -1,4 +1,5 @@
-﻿@using WhatsappComercial.Interfaces.Contactos
+﻿@using WhatsappComercial.Enums
+@using WhatsappComercial.Interfaces.Contactos
 @using WhatsappComercial.Modelos
 @inject DialogService DialogService
 @inject NotificationService NotificationService
@@ -6,32 +7,33 @@
 @inject IBusquedaContactos ServicioContactos
 
 <RadzenTemplateForm TItem="Contacto" Data="@ContactoModel" Submit="@Guardar">
-    <RadzenStack Gap="1rem">
-        <RadzenFormField Text="Nombre">
-            <RadzenTextBox @bind-Value="ContactoModel.NombreContacto" Style="width:100%" />
-        </RadzenFormField>
+	<RadzenStack Gap="1rem">
+		<RadzenFormField Text="Nombre">
+			<RadzenTextBox @bind-Value="ContactoModel.NombreContacto" Style="width:100%" />
+		</RadzenFormField>
 
-        <RadzenFormField Text="Celular">
-            <RadzenTextBox @bind-Value="ContactoModel.CelularContacto" Style="width:100%" />
-        </RadzenFormField>
+		<RadzenFormField Text="Celular">
+			<RadzenTextBox @bind-Value="ContactoModel.CelularContacto" Style="width:100%" />
+		</RadzenFormField>
 
-        <RadzenFormField Text="Identificación">
-            <RadzenTextBox @bind-Value="ContactoModel.Identificacion" Style="width:100%" />
-        </RadzenFormField>
+		<RadzenFormField Text="Identificación">
+			<RadzenTextBox @bind-Value="ContactoModel.Identificacion" Style="width:100%" />
+		</RadzenFormField>
 
-        <RadzenFormField Text="Email">
-            <RadzenTextBox @bind-Value="ContactoModel.CorreoElectronico" Style="width:100%" />
-        </RadzenFormField>
+		<RadzenFormField Text="Email">
+			<RadzenTextBox @bind-Value="ContactoModel.CorreoElectronico" Style="width:100%" />
+		</RadzenFormField>
 
-        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Style="margin-top: 1rem;">
-            <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancelar" Click="@(() => DialogService.Close(false))" />
-            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" Text="Guardar" />
-        </RadzenStack>
-    </RadzenStack>
+		<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Style="margin-top: 1rem;">
+			<RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancelar" Click="@(() => DialogService.Close(false))" />
+			<RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" Text="Guardar" />
+		</RadzenStack>
+	</RadzenStack>
 </RadzenTemplateForm>
 
 @code {
-    [Parameter] public Contacto ContactoModel { get; set; } = new();
+	[Parameter] public Contacto ContactoModel { get; set; } = new();
+	[Parameter] public TipoContactoEnum tipoContactoEnum { get; set; } = new();
 
     private async Task Guardar(Contacto model)
     {
