@@ -3,5 +3,8 @@
     public interface IModificarEstadoMensaje
     {
         Task ActualizarEstadoMensaje(int idConversacion, string waid, string nuevoEstado);
+        Task ActualizarEstadoLecturaMensajeEntrante(int idConversacion);
+
+
     }
 }

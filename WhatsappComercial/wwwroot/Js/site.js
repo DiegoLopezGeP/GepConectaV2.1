@@ -1,23 +1,63 @@
-﻿window.blazorInterop = {
-    scrollToBottom: function (element, smooth) {
+﻿// Instancias globales de audio y estado
+let audioNotificacion = new Audio('/audio/notificacion.mp3');
+let audioDesbloqueado = false;
 
-        if (!element)
-            return;
+// Función interna para desbloquear el audio con la primera interacción del usuario
+function desbloquearAudio() {
+    if (audioDesbloqueado) return;
+
+    audioNotificacion.volume = 0;
+    audioNotificacion.play().then(() => {
+        audioNotificacion.pause();
+        audioNotificacion.currentTime = 0;
+        audioNotificacion.volume = 0.5; // Restablecemos el volumen al 50%
+        audioDesbloqueado = true;
+
+        // Limpiamos los eventos una vez desbloqueado
+        document.removeEventListener('click', desbloquearAudio);
+        document.removeEventListener('keydown', desbloquearAudio);
+        document.removeEventListener('touchstart', desbloquearAudio);
+        console.log("Audio de notificaciones desbloqueado con éxito.");
+    }).catch(() => {
+        console.warn("Esperando interacción del usuario para habilitar audio...");
+    });
+}
+
+// Escuchar el primer clic, toque o tecla del usuario
+document.addEventListener('click', desbloquearAudio);
+document.addEventListener('touchstart', desbloquearAudio);
+document.addEventListener('keydown', desbloquearAudio);
+
+// Objeto Global BlazorInterop con todos sus métodos
+window.blazorInterop = {
+    scrollToBottom: function (element, smooth) {
+        if (!element) return;
 
         requestAnimationFrame(() => {
-
             requestAnimationFrame(() => {
-
                 element.scrollTo({
                     top: element.scrollHeight,
                     behavior: smooth ? 'smooth' : 'auto'
                 });
-
             });
-
         });
     },
-    esDispositivoMovil: function() {
+
+    esDispositivoMovil: function () {
         return window.innerWidth <= 768;
+    },
+
+    reproducirSonidoNotificacion: function () {
+        try {
+            audioNotificacion.currentTime = 0;
+            var playPromise = audioNotificacion.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(function (error) {
+                    console.warn('El audio aún no ha sido interactuado por el usuario o fue bloqueado:', error);
+                });
+            }
+        } catch (e) {
+            console.error('Error al reproducir el sonido:', e);
+        }
     }
-}
+};

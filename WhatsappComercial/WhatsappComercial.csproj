@@ -21,6 +21,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="wwwroot\Images\" />
+    <Folder Include="wwwroot\audio\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GepConecta.WhatsAppCloud\GepConecta.WhatsAppCloud.csproj" />

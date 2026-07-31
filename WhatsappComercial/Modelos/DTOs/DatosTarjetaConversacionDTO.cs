@@ -11,7 +11,7 @@ namespace WhatsappComercial.Modelos.DTOs
         public EstadoConversacionEnum? EstadoConversacion { get; set; }
         public string nombreAsesor { get; set; }
         public string NumeroCelular { get; set; }
-
         public bool esNuevaConversacion { get; set; }
+        public int MensajesSinLeer { get; set; }
     }
 }

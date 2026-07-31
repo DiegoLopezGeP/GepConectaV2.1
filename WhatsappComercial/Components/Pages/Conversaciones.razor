@@ -20,6 +20,7 @@
 @inject IEnviarMensaje enviarMensaje
 @inject ICacheConversaciones cacheConversaciones
 @inject ICacheMensajes cacheMensajes
+@inject IModificarEstadoMensaje modificarEstadoMensaje
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IGestionArchivos gestionArchivos
 @inject INotificarUI NotificadorUI
@@ -237,6 +238,7 @@
 	private async Task AbrirConversacion(DatosTarjetaConversacionDTO conversacion)
 	{
 		conversacionSeleccionada = conversacion;
+		conversacion.MensajesSinLeer = 0;
 
 		if (esMovil)
 		{
@@ -264,8 +266,8 @@
 		_hayMasMensajesAntiguos = mensajesIniciales.Count >= 10;
 		_cargandoMensajesAntiguos = false;
 		_debeIrAlFinal = true;
-
 		StateHasChanged();
+		await modificarEstadoMensaje.ActualizarEstadoLecturaMensajeEntrante(conversacion.IdConversacion);
 	}
 
 	private async Task CargarMensajesAntiguos()
@@ -394,6 +396,13 @@
 	#region Metodos de comunicacion Servicios con UI
 	private async Task ManejarNuevoMensaje(int idConversacion, MensajeDTO nuevoMensaje)
 	{
+		// 🔊 Reproducir el sonido sólo para mensajes entrantes de los clientes
+		if (nuevoMensaje.EsEntrante)
+		{
+			await JS.InvokeVoidAsync("blazorInterop.reproducirSonidoNotificacion");
+		}
+
+		// Caso 1: El usuario tiene abierta esta conversación
 		if (conversacionSeleccionada != null && idConversacion == conversacionSeleccionada.IdConversacion)
 		{
 			await InvokeAsync(() =>
@@ -410,7 +419,16 @@
 		}
 		else
 		{
-			await InvokeAsync(StateHasChanged);
+			// Caso 2: El mensaje es de otra conversación -> Incrementamos el contador
+			await InvokeAsync(() =>
+			{
+				var tarjeta = ListaConversaciones.FirstOrDefault(c => c.IdConversacion == idConversacion);
+				if (tarjeta != null)
+				{
+					tarjeta.MensajesSinLeer++;
+				}
+				StateHasChanged();
+			});
 		}
 	}
 

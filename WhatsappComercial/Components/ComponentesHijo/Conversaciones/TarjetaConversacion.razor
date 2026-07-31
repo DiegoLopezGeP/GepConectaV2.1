@@ -12,6 +12,14 @@
 
 		<div class="ticket-superior">
 
+			<!-- Indicador de mensajes sin leer -->
+			@if (item.MensajesSinLeer > 0)
+			{
+				<RadzenBadge BadgeStyle="BadgeStyle.Danger"
+							 IsPill="true"
+							 Text="@item.MensajesSinLeer.ToString()"
+							 Style="font-weight: bold; font-size: 12px; padding: 4px 8px;" />
+			}
 			@if (item.esNuevaConversacion)
 			{
 				<span class="marca-nueva">
