@@ -6,6 +6,7 @@
 @using WhatsappComercial.Interfaces.Conversaciones
 @using WhatsappComercial.Interfaces.Mensajes
 @using WhatsappComercial.Interfaces.GestionArchivos
+@using WhatsappComercial.Interfaces.Plantillas
 @using WhatsappComercial.Modelos
 @using WhatsappComercial.Modelos.DTOs
 @using Microsoft.AspNetCore.SignalR
@@ -25,6 +26,7 @@
 @inject IGestionArchivos gestionArchivos
 @inject INotificarUI NotificadorUI
 @inject IFinalizarConversacion finalizarConversacion
+@inject IObtenerPlantillas obtenerPlantillas
 @inject NotificationService notificationService
 @inject DialogService dialogService
 
@@ -42,7 +44,7 @@
 		<div class="panel-chat">
 			<RadzenStack Gap="2%">
 				<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-					<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado" OnFinalizarConversacion="ManejarFinalizarConversacion"></TarjetaDatosConversación>
+					<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado" OnFinalizarConversacion="ManejarFinalizarConversacion" Plantillas="@plantillas"></TarjetaDatosConversación>
 
 					@* BOTÓN DE PLANTILLAS VISIBLE SÓLO EN MÓVIL *@
 					@if (esMovil && conversacionSeleccionada?.IdConversacion > 0)
@@ -129,14 +131,10 @@
 	private bool _hayMasMensajesAntiguos = true;
 	private bool _cargandoMensajesAntiguos;
 	private bool _debeIrAlFinal;
+	private List<PlantillaDTO> plantillas = new();
+	private PlantillaDTO? plantillaSeleccionada;
 
-	private SelectorPlantillas.PlantillaDTO? plantillaSeleccionada;
 
-	private List<SelectorPlantillas.PlantillaDTO> plantillas = new()
-	{
-		new SelectorPlantillas.PlantillaDTO { Id = 1, NombrePlantilla = "Bienvenida", CuerpoMensaje = "Hola {{1}}, gracias por contactarnos. ¿En qué podemos ayudarte hoy?" },
-		new SelectorPlantillas.PlantillaDTO { Id = 2, NombrePlantilla = "Seguimiento", CuerpoMensaje = "Hola {{1}}, queremos saber si tu solicitud respecto al ticket #{{2}} fue resuelta." }
-	};
 
 	private async Task AbrirPlantillasModal()
 	{
@@ -154,7 +152,7 @@
 			{
 				{ "Plantillas", plantillas },
 				{ "PlantillaSeleccionada", plantillaSeleccionada },
-				{ "PlantillaSeleccionadaChanged", EventCallback.Factory.Create<SelectorPlantillas.PlantillaDTO?>(this, (p) => {
+				{ "PlantillaSeleccionadaChanged", EventCallback.Factory.Create<PlantillaDTO?>(this, (p) => {
 					plantillaSeleccionada = p;
 					StateHasChanged();
 				})}
@@ -181,6 +179,7 @@
 		userName = HttpContextAccessor.HttpContext?.User?.Identity?.Name?.Split("\\").Last() ?? "Desconocido";
 		infoUsuarioConectado = await informacionUsuario.ObtenerInformacionUsuario(userName);
 		await FiltrarConversacionesPorUsuario();
+		plantillas = await obtenerPlantillas.ObtenerPlantillasActivas();
 
 		NotificadorUI.OnNuevoMensajeEntrante += ManejarNuevoMensaje;
 		NotificadorUI.CambiodeEstadoMensaje += ManejarCambioEstado;
@@ -494,6 +493,11 @@
 				Duration = 4000
 			});
 		}
+	}
+
+	private async Task ObtenerPlantillas()
+	{
+		
 	}
 	#endregion
 

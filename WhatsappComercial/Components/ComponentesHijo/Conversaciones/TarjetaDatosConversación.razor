@@ -196,19 +196,15 @@
 	}
 </style>
 
-@code {
+	@code {
 	[Parameter] public DatosContactoConversacionDTO? datosContactoConversacion { get; set; }
 	[Parameter] public EventCallback OnVolver { get; set; }
 	[Parameter] public EventCallback<int> OnFinalizarConversacion { get; set; }
 	[Parameter] public bool EsMovil { get; set; }
+	[Parameter] public List<PlantillaDTO> Plantillas { get; set; } = new();
 
-	private SelectorPlantillas.PlantillaDTO? plantillaSeleccionada;
-
-	private List<SelectorPlantillas.PlantillaDTO> plantillas = new()
-	{
-		new SelectorPlantillas.PlantillaDTO { Id = 1, NombrePlantilla = "Bienvenida", CuerpoMensaje = "Hola {{1}}, gracias por contactarnos. ¿En qué podemos ayudarte hoy?" },
-		new SelectorPlantillas.PlantillaDTO { Id = 2, NombrePlantilla = "Seguimiento", CuerpoMensaje = "Hola {{1}}, queremos saber si tu solicitud respecto al ticket #{{2}} fue resuelta." }
-	};
+	private PlantillaDTO? plantillaSeleccionada;
+	
 
 	void ShowTooltip(ElementReference elementReference, TooltipOptions options = null)
 		=> tooltipService.Open(elementReference, options?.Text ?? "Pulse para finalizar la conversación!", options);
@@ -263,9 +259,9 @@
 			"Seleccionar Plantilla",
 			new Dictionary<string, object?>
 			{
-				{ "Plantillas", plantillas },
+				{ "Plantillas", Plantillas },
 				{ "PlantillaSeleccionada", plantillaSeleccionada },
-				{ "PlantillaSeleccionadaChanged", EventCallback.Factory.Create<SelectorPlantillas.PlantillaDTO?>(this, (p) => {
+				{ "PlantillaSeleccionadaChanged", EventCallback.Factory.Create<PlantillaDTO?>(this, (p) => {
 					plantillaSeleccionada = p;
 					StateHasChanged();
 				})}

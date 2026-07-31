@@ -6,6 +6,7 @@ using WhatsappComercial.Interfaces.Conversaciones;
 using WhatsappComercial.Interfaces.GestionArchivos;
 using WhatsappComercial.Interfaces.Mensajes;
 using WhatsappComercial.Interfaces.NotificarUI;
+using WhatsappComercial.Interfaces.Plantillas;
 using WhatsappComercial.Interfaces.ProcesarMensajeEntrante;
 using WhatsappComercial.Interfaces.Tickets;
 using WhatsappComercial.Interfaces.Usuarios;
@@ -20,6 +21,7 @@ using WhatsappComercial.Servicios.Conversaciones;
 using WhatsappComercial.Servicios.GestionArchivos;
 using WhatsappComercial.Servicios.Mensajes;
 using WhatsappComercial.Servicios.NotificarUI;
+using WhatsappComercial.Servicios.Plantillas;
 using WhatsappComercial.Servicios.ProcesarMensaje;
 using WhatsappComercial.Servicios.SystemServicio;
 using WhatsappComercial.Servicios.Tickets;
@@ -87,6 +89,8 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<IModificarEstadoMensaje, ModificarEstadoMensaje>();
             //Servicio para Finalizar una conversacion
             services.AddScoped<IFinalizarConversacion, FinalizarConversacion>();
+            //Servicio para Obtener las plantillas activas por grupo de trabajo
+            services.AddScoped<IObtenerPlantillas, ObtenerPlantillas>();
 
             // Servicio systemServicio
             services.AddScoped<SystemService>();
