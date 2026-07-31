@@ -1,5 +1,7 @@
-﻿@using WhatsappComercial.Interfaces.Contactos
+﻿@using WhatsappComercial.Enums
+@using WhatsappComercial.Interfaces.Contactos
 @using WhatsappComercial.Modelos
+@using WhatsappComercial.Modelos.DTOs
 
 @inject IGuardarContacto guardarContacto
 @inject NotificationService notificationService
@@ -11,7 +13,17 @@
                         Submit="OnSubmitContacto"
                         InvalidSubmit="OnInvalidSubmit">
 
+        <RadzenCard Style="width:100%; margin-bottom:10px;">
+            <RadzenRadioButtonList TValue="TipoContactoEnum"
+                                   Data="@tiposContacto"
+                                   TextProperty="Texto"
+                                   ValueProperty="Valor"
+                                   @bind-Value="tipoContactoEnum" />
+        </RadzenCard>
+
         <RadzenStack Gap="1rem">
+
+
 
             <RadzenRow AlignItems="AlignItems.Center">
                 <RadzenColumn Size="12" SizeMD="4">
@@ -41,6 +53,26 @@
                     <RadzenRequiredValidator Component="CelularContacto"
                                              Text="El celular es obligatorio." />
                 </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenLabel Text="Identificación" Component="NombreContacto" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="8">
+                    <RadzenTextBox Name="Identificacion"
+                                   @bind-Value="contacto.Identificacion"
+                                   Style="width:100%;" />
+
+                    <RadzenRequiredValidator Component="Identificacion"
+                                             Text="El celular es obligatorio." />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenLabel Text="Email" Component="NombreContacto" />
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="8">
+                    <RadzenTextBox Name="CorreoElectronico"
+                                   @bind-Value="contacto.CorreoElectronico"
+                                   Style="width:100%;" />
+                </RadzenColumn>
             </RadzenRow>
 
             <RadzenRow>
@@ -63,6 +95,15 @@
 @code {
 
     private Contacto contacto = new();
+    private TipoContactoEnum tipoContactoEnum = TipoContactoEnum.Titular;
+	private List<OpcionTipoContacto> tiposContacto = new()
+	{
+		new OpcionTipoContacto { Texto = "Titular", Valor = TipoContactoEnum.Titular },
+		new OpcionTipoContacto { Texto = "Beneficiario", Valor = TipoContactoEnum.Beneficiario },
+		new OpcionTipoContacto { Texto = "Cobranzas", Valor = TipoContactoEnum.Cobranzas },
+        new OpcionTipoContacto { Texto = "Pagadurias", Valor = TipoContactoEnum.Pagadurias },
+        new OpcionTipoContacto { Texto = "Relacionista", Valor = TipoContactoEnum.Relacionista }
+	};
 
     private async Task OnSubmitContacto()
     {

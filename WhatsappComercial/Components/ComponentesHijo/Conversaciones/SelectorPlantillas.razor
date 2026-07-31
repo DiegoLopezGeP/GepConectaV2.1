@@ -1,0 +1,63 @@
+﻿@using WhatsappComercial.Modelos.DTOs
+
+<RadzenStack Gap="1rem" Style="padding: 5px;">
+    <RadzenLabel Text="Seleccione Una Plantilla" Style="font-weight: bold; font-size: 14px;" />
+
+    <RadzenDropDown TValue="PlantillaDTO"
+                    Data="@Plantillas"
+                    TextProperty="NombrePlantilla"
+                    Placeholder="Seleccione una opción..."
+                    AllowClear="true"
+                    Style="width: 100%; border-radius: 8px;"
+                    Value="@PlantillaSeleccionada"
+                    Change="@OnSeleccionChanged" />
+
+    <RadzenCard Style="height: 280px; overflow-y: auto; border-radius: 12px; background-color: #f9f9f9; padding: 15px;">
+        @if (PlantillaSeleccionada is not null)
+        {
+            <div class="contenido-plantilla">
+                <h5 style="margin-top:0; color: var(--rz-primary);">
+                    @PlantillaSeleccionada.NombrePlantilla
+                </h5>
+                <p style="white-space: pre-line; color: #333;">
+                    @PlantillaSeleccionada.CuerpoMensaje
+                </p>
+            </div>
+        }
+        else
+        {
+            <div style="height: 100%; display: flex; align-items: center; justify-content: center; color: #888;">
+                <RadzenText TextStyle="TextStyle.Body2">
+                    <em>Seleccione una plantilla para ver su contenido aquí.</em>
+                </RadzenText>
+            </div>
+        }
+    </RadzenCard>
+
+    
+    <RadzenStack>
+        <RadzenButton ButtonStyle="ButtonStyle.Primary" Variant="Variant.Text" Shade="Shade.Light" Text="Usar Plantilla"></RadzenButton>
+    </RadzenStack>
+</RadzenStack>
+
+
+
+@code {
+    [Parameter] public List<PlantillaDTO> Plantillas { get; set; } = new();
+    [Parameter] public PlantillaDTO? PlantillaSeleccionada { get; set; }
+    [Parameter] public EventCallback<PlantillaDTO?> PlantillaSeleccionadaChanged { get; set; }
+
+    private async Task OnSeleccionChanged(object value)
+    {
+        PlantillaSeleccionada = value as PlantillaDTO;
+        await PlantillaSeleccionadaChanged.InvokeAsync(PlantillaSeleccionada);
+        StateHasChanged(); // Forzar el refresco interno del componente/modal
+    }
+
+    public class PlantillaDTO
+    {
+        public int Id { get; set; }
+        public string NombrePlantilla { get; set; } = string.Empty;
+        public string CuerpoMensaje { get; set; } = string.Empty;
+    }
+}

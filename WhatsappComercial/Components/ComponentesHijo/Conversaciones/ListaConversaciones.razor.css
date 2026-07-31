@@ -24,6 +24,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     min-height: 0;
+    max-height: calc(85dvh - 180px);
 }
 
 /* --- VISTA MÓVIL (<= 768px) --- */
@@ -36,12 +37,13 @@
         order: 2;
     }
 
-    .contenedor-tarjetas {
-        order: 3;
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
-        min-height: 0;
+    @media (max-width: 768px) {
+        .contenedor-tarjetas {
+            order: 3;
+            flex: 1 1 auto;
+            /* Limita la altura de las tarjetas a la pantalla libre menos la cabecera/búsqueda */
+            max-height: calc(85dvh - 180px);
+        }
     }
 
     .acciones-conversaciones {

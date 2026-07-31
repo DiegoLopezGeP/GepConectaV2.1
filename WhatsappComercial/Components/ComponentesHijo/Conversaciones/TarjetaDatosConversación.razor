@@ -1,225 +1,278 @@
 ﻿@using WhatsappComercial.Modelos.DTOs
 @inject TooltipService tooltipService
 @inject DialogService dialogService
-<RadzenCard Style="padding:20px; border-radius:12px;">
+<RadzenCard Style="padding:20px; border-radius:12px;width: 100%;">
 
-    @if (EsMovil)
-    {
-        <div class="encabezado-movil">
-            <div class="info-conversacion">
+	@if (EsMovil)
+	{
+		<div class="encabezado-movil">
+			<div class="info-conversacion">
 
-                <div class="fila-superior">
+				<div class="fila-superior">
+					<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="width: 100%;">
+						<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+							<div class="btn-atras" @onclick="Volver">
 
-                    <div class="btn-atras" @onclick="Volver">
-                        <RadzenIcon Icon="arrow_back" />
-                    </div>
+								<RadzenIcon Icon="arrow_back" />
 
-                    <span class="ticket">
-                        Ticket: #@datosContactoConversacion.IdTicket
-                    </span>
+							</div>
+							<span class="ticket">
+								Ticket: #@datosContactoConversacion.IdTicket
+							</span>
+						</RadzenStack>
 
-                </div>
+					
 
-                <div class="nombre-movil">
-                    @datosContactoConversacion.NombreCliente
-                </div>
+						<div class="acciones-movil">
+							<RadzenStack Orientation="Orientation.Horizontal">
 
-            </div>
+								<RadzenButton Icon="info"
+											  Variant="Variant.Text"
+											  ButtonStyle="ButtonStyle.Info"
+											  Click="MostrarDetalles"
+											  Size="ButtonSize.Medium"
+											  MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Ver información" }))" />
 
-            <div class="acciones-movil">
+								<RadzenButton Icon="check_circle"
+											  Variant="Variant.Text"
+											  ButtonStyle="ButtonStyle.Danger"
+											  Click="FinalizarConversacion"
+											  MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Finalizar conversación" }))" />
 
-                <RadzenButton Icon="info"
-                              Variant="Variant.Text"
-                              ButtonStyle="ButtonStyle.Info"
-                              Click="MostrarDetalles"
-                              MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Ver información" }))" />
 
-                <RadzenButton Icon="check_circle"
-                              Variant="Variant.Text"
-                              ButtonStyle="ButtonStyle.Danger"
-                              Click="FinalizarConversacion"
-                              MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Finalizar conversación" }))" />
+ 
+								<RadzenButton Icon="description"
+											  ButtonStyle="ButtonStyle.Warning"
+											  Variant="Variant.Text"
+											  MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Mostrar Modal Plantillas" }))"
+											  Click="AbrirPlantillasModal" />
+							</RadzenStack>
 
-            </div>
+						</div>
+					</RadzenStack>
+					
 
-        </div>
-    }
-    else
-    {
-        <div class="encabezado-conversacion">
+				</div>
 
-            <RadzenText Text="Información de la conversación"
-                        TextStyle="TextStyle.H6" />
+				<div class="nombre-movil">
+					@datosContactoConversacion.NombreCliente
+				</div>
 
-            <RadzenButton Icon="check_circle"
-                          Text="Finalizar"
-                          ButtonStyle="ButtonStyle.Danger"
-                          Variant="Variant.Outlined"
-                          Click="FinalizarConversacion"
-                          MouseEnter="@(args => ShowTooltip(args))" />
+			</div>
 
-        </div>
+			
 
-        <RadzenRow Gap="20px">
+		</div>
+	}
+	else
+	{
+		<div class="encabezado-conversacion">
 
-            <RadzenColumn Size="12" SizeMD="4">
+			<RadzenText Text="Información de la conversación"
+						TextStyle="TextStyle.H6" />
 
-                <div class="campo-info">
-                    <label>Usuario</label>
-                    <RadzenText Text="@datosContactoConversacion.NombreCliente" />
-                </div>
+			<RadzenButton Icon="check_circle"
+						  Text="Finalizar"
+						  ButtonStyle="ButtonStyle.Danger"
+						  Variant="Variant.Outlined"
+						  Click="FinalizarConversacion"
+						  MouseEnter="@(args => ShowTooltip(args))" />
 
-                <div class="campo-info">
-                    <label>Celular</label>
-                    <RadzenText Text="@datosContactoConversacion.Celular" />
-                </div>
+		</div>
 
-            </RadzenColumn>
+		<RadzenRow Gap="20px">
 
-            <RadzenColumn Size="12" SizeMD="4">
+			<RadzenColumn Size="12" SizeMD="5">
 
-                <div class="campo-info">
-                    <label>Identificación</label>
-                    <RadzenText Text="@datosContactoConversacion.Identificacion" />
-                </div>
+				<div class="campo-info">
+					<label>Usuario</label>
+					<RadzenText Text="@datosContactoConversacion.NombreCliente" />
+				</div>
 
-                <div class="campo-info">
-                    <label>Estado / Ticket</label>
+				<div class="campo-info">
+					<label>Celular</label>
+					<RadzenText Text="@datosContactoConversacion.Celular" />
+				</div>
 
-                    <div class="estado-ticket">
-                        <span class="estado">@datosContactoConversacion.EstadoConversacion</span>
-                        <span class="ticket">#@datosContactoConversacion.IdTicket</span>
-                    </div>
+			</RadzenColumn>
 
-                </div>
+			<RadzenColumn Size="12" SizeMD="4">
 
-            </RadzenColumn>
+				<div class="campo-info">
+					<label>Identificación</label>
+					<RadzenText Text="@datosContactoConversacion.Identificacion" />
+				</div>
 
-            <RadzenColumn Size="12" SizeMD="4">
+				<div class="campo-info">
+					<label>Estado / Ticket</label>
 
-                <div class="campo-info">
-                    <label>Fecha inicio</label>
-                    <RadzenText Text="@datosContactoConversacion.FechaInicioConversacion?.ToString("dd/MM/yyyy HH:mm")" />
-                </div>
+					<div class="estado-ticket">
+						<span class="estado">@datosContactoConversacion.EstadoConversacion</span>
+						<span class="ticket">#@datosContactoConversacion.IdTicket</span>
+					</div>
 
-                <div class="campo-info">
-                    <label>Fecha finalización</label>
-                    <RadzenText Text="@(datosContactoConversacion.FechaFinConversacion?.ToString("dd/MM/yyyy HH:mm") ?? "En curso")" />
-                </div>
+				</div>
 
-            </RadzenColumn>
+			</RadzenColumn>
 
-        </RadzenRow>
-    }
+			<RadzenColumn Size="12" SizeMD="3">
+
+				<div class="campo-info">
+					<label>Fecha inicio</label>
+					<RadzenText Text="@datosContactoConversacion.FechaInicioConversacion?.ToString("dd/MM/yyyy HH:mm")" />
+				</div>
+
+				<div class="campo-info">
+					<label>Fecha finalización</label>
+					<RadzenText Text="@(datosContactoConversacion.FechaFinConversacion?.ToString("dd/MM/yyyy HH:mm") ?? "En curso")" />
+				</div>
+
+			</RadzenColumn>
+
+		</RadzenRow>
+	}
 
 </RadzenCard>
 
 <style>
-    .encabezado-conversacion {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-    }
+	.encabezado-conversacion {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 10px;
+	}
 
-    .campo-info {
-        margin-bottom: 15px;
-    }
+	.campo-info {
+		margin-bottom: 15px;
+	}
 
-        .campo-info label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #6c757d;
-            margin-bottom: 4px;
-        }
+		.campo-info label {
+			display: block;
+			font-size: 13px;
+			font-weight: 600;
+			color: #6c757d;
+			margin-bottom: 4px;
+		}
 
-    .estado-ticket {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 2px;
-    }
+	.estado-ticket {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-top: 2px;
+	}
 
-    .estado {
-        color: #198754;
-        font-weight: 600;
-    }
+	.estado {
+		color: #198754;
+		font-weight: 600;
+	}
 
-    .ticket {
-        background: #0d6efd;
-        color: white;
-        padding: 2px 8px;
-        border-radius: 10px;
-        font-size: 12px;
-        font-weight: 600;
-    }
+	.ticket {
+		background: #0d6efd;
+		color: white;
+		padding: 2px 8px;
+		border-radius: 10px;
+		font-size: 12px;
+		width: 60%;
+		font-weight: 600;
+		height: 25px;
+		vertical-align: middle;
+	}
 
-    .encabezado-movil {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+	.encabezado-movil {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
 
-    .nombre-movil {
-        font-size: 16px;
-        font-weight: 600;
-        max-width: 180px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: wrap;
-    }
+	.nombre-movil {
+		font-size: 16px;
+		font-weight: 600;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: wrap;
+	}
 
-    .acciones-movil {
-        display: flex;
-        gap: 5px;
-    }
+	.acciones-movil {
+		display: flex;
+		gap: 5px;
+	}
 
-    .info-conversacion {
-        flex: 1;
-        min-width: 0;
-    }
+	.info-conversacion {
+		flex: 1;
+		min-width: 0;
+	}
 
-    .fila-superior {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 6px;
-    }
+	.fila-superior {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 6px;
+	}
 </style>
 @code
 {
 
-    [Parameter] public DatosContactoConversacionDTO datosContactoConversacion { get; set; }
+	[Parameter] public DatosContactoConversacionDTO datosContactoConversacion { get; set; }
 
-    [Parameter] public EventCallback OnVolver { get; set; }
+	[Parameter] public EventCallback OnVolver { get; set; }
 
-    [Parameter] public bool EsMovil { get; set; }
+	[Parameter] public bool EsMovil { get; set; }
 
-    void ShowTooltip(ElementReference elementReference, TooltipOptions options = null) => tooltipService.Open(elementReference, "Pulse para finalizar la conversación!", options);
+	void ShowTooltip(ElementReference elementReference, TooltipOptions options = null) => tooltipService.Open(elementReference, "Pulse para finalizar la conversación!", options);
 
-    private async Task FinalizarConversacion()
-    {
-        // Mostrar confirmación y finalizar la conversación
-    }
-    private async Task MostrarDetalles()
-    {
-        await dialogService.OpenAsync<DetallesConversacionMovil>(
-            "Información de la conversación",
-            new Dictionary<string, object?>
-            {
-                 { nameof(DetallesConversacionMovil.datosContactoConversacion), datosContactoConversacion }
-            },
-            new DialogOptions
-            {
-                Width = "90%",
-                Style = "transform: translateY(35%);",
-                CloseDialogOnOverlayClick = true,
-                ShowClose = true
-            });
-    }
-    private async Task Volver()
-    {
-        await OnVolver.InvokeAsync();
-    }
+	private SelectorPlantillas.PlantillaDTO? plantillaSeleccionada;
+
+	private List<SelectorPlantillas.PlantillaDTO> plantillas = new()
+	{
+		new SelectorPlantillas.PlantillaDTO { Id = 1, NombrePlantilla = "Bienvenida", CuerpoMensaje = "Hola {{1}}, gracias por contactarnos. ¿En qué podemos ayudarte hoy?" },
+		new SelectorPlantillas.PlantillaDTO { Id = 2, NombrePlantilla = "Seguimiento", CuerpoMensaje = "Hola {{1}}, queremos saber si tu solicitud respecto al ticket #{{2}} fue resuelta." }
+	};
+
+	private async Task FinalizarConversacion()
+	{
+		// Mostrar confirmación y finalizar la conversación
+	}
+	private async Task MostrarDetalles()
+	{
+		await dialogService.OpenAsync<DetallesConversacionMovil>(
+			"Información de la conversación",
+			new Dictionary<string, object?>
+			{
+				 { nameof(DetallesConversacionMovil.datosContactoConversacion), datosContactoConversacion }
+			},
+			new DialogOptions
+			{
+				Width = "90%",
+				Style = "transform: translateY(35%);",
+				CloseDialogOnOverlayClick = true,
+				ShowClose = true
+			});
+	}
+	private async Task AbrirPlantillasModal()
+	{
+		var opciones = new DialogOptions
+		{
+			Width = "90%",
+			CloseDialogOnOverlayClick = true,
+			ShowClose = true,
+			Style = "margin-top: 10%; border-radius: 12px;"
+		};
+
+		await dialogService.OpenAsync<SelectorPlantillas>(
+			"Seleccionar Plantilla",
+			new Dictionary<string, object?>
+			{
+				{ "Plantillas", plantillas },
+				{ "PlantillaSeleccionada", plantillaSeleccionada },
+				{ "PlantillaSeleccionadaChanged", EventCallback.Factory.Create<SelectorPlantillas.PlantillaDTO?>(this, (p) => {
+					plantillaSeleccionada = p;
+					StateHasChanged();
+				})}
+			},
+			opciones);
+	}
+	private async Task Volver()
+	{
+		await OnVolver.InvokeAsync();
+	}
 }

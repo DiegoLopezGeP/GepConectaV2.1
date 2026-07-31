@@ -11,7 +11,8 @@
 }
 
 .panel-lista,
-.panel-chat {
+.panel-chat 
+.panel-plantillas{
     min-width: 0;
     overflow: hidden;
     padding:10px;
@@ -19,7 +20,7 @@
 
 @media (min-width: 769px) {
     .contenedor-conversaciones {
-        grid-template-columns: 30% 70%;
+        grid-template-columns: 30% 50% 20%;
     }
 
     .panel-lista,

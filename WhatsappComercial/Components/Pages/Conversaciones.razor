@@ -23,6 +23,7 @@
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IGestionArchivos gestionArchivos
 @inject INotificarUI NotificadorUI
+@inject DialogService dialogService
 
 @implements IDisposable
 
@@ -33,24 +34,50 @@
 	<div class="panel-lista">
 		<ListaConversaciones NombreUsuarioDA="@userName" InformacionUsuarioAutenticado="@infoUsuarioConectado" ListaDatosTarjeta="@ListaConversaciones" esMovil="@esMovil" OnAbrirConversacion="AbrirConversacion"></ListaConversaciones>
 	</div>
+	@if (conversacionSeleccionada?.IdConversacion > 0)
+	{
+		<div class="panel-chat">
+			<RadzenStack Gap="2%">
+				<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+					<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado"></TarjetaDatosConversación>
 
-	<div class="panel-chat">
-		<RadzenStack Gap="2%">
-			<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado" ></TarjetaDatosConversación>
-			<VisorMensajes IdConversacion="@(conversacionSeleccionada?.IdConversacion ?? 0)"
-						   Mensajes="@mensajesIniciales"
-						   CargandoMensajesAntiguos="@_cargandoMensajesAntiguos"
-						   DebeIrAlFinal="@_debeIrAlFinal"
-						   OnLlegoAlTope="CargarMensajesAntiguos">
-			</VisorMensajes>
-			<CuadroDeTexto EsMovil="@esMovil"
-						   OnEnviarTexto="ManejarEnvioTexto"
-						   OnEnviarArchivo="ManejarEnvioArchivo" 
-						   IdTicket="@conversacionSeleccionada.IdTicket"
-						   TelefonoDestino="@contactoConversacionSeleccionado.Celular"/>
-		</RadzenStack>        
-	</div>
+					@* BOTÓN DE PLANTILLAS VISIBLE SÓLO EN MÓVIL *@
+					@if (esMovil && conversacionSeleccionada?.IdConversacion > 0)
+					{
+						<RadzenButton Icon="description"
+									  Text="Plantillas"
+									  ButtonStyle="ButtonStyle.Info"
+									  Variant="Variant.Flat"
+									  Size="ButtonSize.Small"
+									  Style="margin-right: 10px; border-radius: 8px;"
+									  Click="AbrirPlantillasModal" />
+					}
+				</RadzenStack>
 
+				<VisorMensajes IdConversacion="@(conversacionSeleccionada?.IdConversacion ?? 0)"
+							   Mensajes="@mensajesIniciales"
+							   CargandoMensajesAntiguos="@_cargandoMensajesAntiguos"
+							   DebeIrAlFinal="@_debeIrAlFinal"
+							   OnLlegoAlTope="CargarMensajesAntiguos">
+				</VisorMensajes>
+				<CuadroDeTexto EsMovil="@esMovil"
+							   OnEnviarTexto="ManejarEnvioTexto"
+							   OnEnviarArchivo="ManejarEnvioArchivo"
+							   IdTicket="@conversacionSeleccionada.IdTicket"
+							   TelefonoDestino="@contactoConversacionSeleccionado.Celular" />
+			</RadzenStack>
+		</div>
+
+		@* PANEL DE PLANTILLAS EN ESCRITORIO CON COMPONENTE HIJO *@
+		@if (!esMovil)
+		{
+			<div class="panel-plantillas" style="padding: 10px;">
+				<SelectorPlantillas Plantillas="@plantillas"
+									@bind-PlantillaSeleccionada="plantillaSeleccionada" />
+			</div>
+		}
+	}
+	
 </div>
 
 <style>
@@ -100,6 +127,38 @@
 	private bool _cargandoMensajesAntiguos;
 	private bool _debeIrAlFinal;
 
+	private SelectorPlantillas.PlantillaDTO? plantillaSeleccionada;
+
+	private List<SelectorPlantillas.PlantillaDTO> plantillas = new()
+	{
+		new SelectorPlantillas.PlantillaDTO { Id = 1, NombrePlantilla = "Bienvenida", CuerpoMensaje = "Hola {{1}}, gracias por contactarnos. ¿En qué podemos ayudarte hoy?" },
+		new SelectorPlantillas.PlantillaDTO { Id = 2, NombrePlantilla = "Seguimiento", CuerpoMensaje = "Hola {{1}}, queremos saber si tu solicitud respecto al ticket #{{2}} fue resuelta." }
+	};
+
+	private async Task AbrirPlantillasModal()
+	{
+		var opciones = new DialogOptions
+		{
+			Width = "90%",
+			CloseDialogOnOverlayClick = true,
+			ShowClose = true,
+			Style = "margin-top: 10%; border-radius: 12px;"
+		};
+
+		await dialogService.OpenAsync<SelectorPlantillas>(
+			"Seleccionar Plantilla",
+			new Dictionary<string, object?>
+			{
+				{ "Plantillas", plantillas },
+				{ "PlantillaSeleccionada", plantillaSeleccionada },
+				{ "PlantillaSeleccionadaChanged", EventCallback.Factory.Create<SelectorPlantillas.PlantillaDTO?>(this, (p) => {
+					plantillaSeleccionada = p;
+					StateHasChanged();
+				})}
+			},
+			opciones);
+	}
+
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		if (firstRender)
@@ -110,26 +169,22 @@
 			RegistrarEventosSignalR();
 			await conexionHubGepConecta.StartAsync();
 
-			StateHasChanged(); // aquí sí tiene sentido, porque esMovil cambió tras el primer render
+			StateHasChanged();
 		}
 	}
+
 	protected override async Task OnInitializedAsync()
 	{
-		//esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
 		userName = HttpContextAccessor.HttpContext?.User?.Identity?.Name?.Split("\\").Last() ?? "Desconocido";
 		infoUsuarioConectado = await informacionUsuario.ObtenerInformacionUsuario(userName);
 		await FiltrarConversacionesPorUsuario();
-		// Se suscribe al evento cuando la pantalla se abre
+
 		NotificadorUI.OnNuevoMensajeEntrante += ManejarNuevoMensaje;
 		NotificadorUI.CambiodeEstadoMensaje += ManejarCambioEstado;
-
-
 	}
-
 
 	public void Dispose()
 	{
-		// MUY IMPORTANTE: Desuscribirse para evitar fugas de memoria (Memory Leaks)
 		NotificadorUI.OnNuevoMensajeEntrante -= ManejarNuevoMensaje;
 		NotificadorUI.CambiodeEstadoMensaje -= ManejarCambioEstado;
 	}
@@ -159,10 +214,9 @@
 		{
 			await InvokeAsync(() =>
 			{
-				// Evita duplicados si por alguna razón llega dos veces
 				if (!ListaConversaciones.Any(c => c.IdConversacion == dto.IdConversacion))
 				{
-					ListaConversaciones.Insert(0, dto); // al inicio, como conversación más reciente
+					ListaConversaciones.Insert(0, dto);
 				}
 
 				StateHasChanged();
@@ -191,31 +245,24 @@
 
 		contactoConversacionSeleccionado = await obtenerConversaciones.ObtenerDatosContactoConversacionSeleccionada(conversacion.IdTicket);
 
-		// 1. Intentar obtener desde la memoria RAM
 		var mensajesCache = cacheMensajes.ObtenerDeCache(conversacion.IdConversacion);
 
 		if (mensajesCache != null && mensajesCache.Any())
 		{
-			// Carga ultrarrápida desde RAM
 			mensajesIniciales = mensajesCache;
 		}
 		else
 		{
-			// Si no está en caché, consulta BD y llena el caché inicial
 			mensajesIniciales = await obtenerMensajes.MensajesConversacion(conversacionSeleccionada.IdConversacion, 10, "NULL");
 			cacheMensajes.GuardarEnCache(conversacion.IdConversacion, mensajesIniciales);
 		}
 
-		// 2. Reseteamos los punteros de paginación histórica
 		_cursorMensajeMasAntiguo = mensajesIniciales.Any()
 			? mensajesIniciales.Min(m => m.IdMensaje)
 			: null;
 
-		// Si viene de caché, puede tener 10 o más mensajes; si viene de BD y trajo menos de 10, no hay más antiguos
 		_hayMasMensajesAntiguos = mensajesIniciales.Count >= 10;
 		_cargandoMensajesAntiguos = false;
-
-		// 3. Forzamos ir al fondo al abrir el chat
 		_debeIrAlFinal = true;
 
 		StateHasChanged();
@@ -229,15 +276,13 @@
 		var idConversacionActual = conversacionSeleccionada.IdConversacion;
 
 		_cargandoMensajesAntiguos = true;
-		_debeIrAlFinal = false; // Desactivar ir al fondo al cargar históricos
+		_debeIrAlFinal = false;
 		StateHasChanged();
 
 		try
 		{
-			// La paginación histórica SIEMPRE va a la BD para garantizar integridad
 			var mensajesAntiguos = await obtenerMensajes.MensajesConversacion(idConversacionActual, 10, _cursorMensajeMasAntiguo.ToString());
 
-			// Si el usuario cambió de chat mientras esperábamos la BD, descartamos el resultado
 			if (conversacionSeleccionada is null || conversacionSeleccionada.IdConversacion != idConversacionActual)
 				return;
 
@@ -247,13 +292,9 @@
 				return;
 			}
 
-			// 1. Insertamos al inicio de la lista visual de Blazor
 			mensajesIniciales.InsertRange(0, mensajesAntiguos);
-
-			// 2. IMPORTANTE: Sincronizamos los mensajes antiguos con el servicio de caché
 			cacheMensajes.AgregarMensajesAntiguos(idConversacionActual, mensajesAntiguos);
 
-			// 3. Actualizamos el cursor al mensaje ID más bajo que acabamos de recibir
 			_cursorMensajeMasAntiguo = mensajesAntiguos.Min(m => m.IdMensaje);
 			_hayMasMensajesAntiguos = mensajesAntiguos.Count == 10;
 		}
@@ -264,7 +305,6 @@
 		}
 	}
 
-	// MÉTODO 1: Exclusivo para mensajes de Texto Plano
 	private async Task ManejarEnvioTexto((string texto, string waid) infoMensajeSaliente)
 	{
 		if (conversacionSeleccionada is null || conversacionSeleccionada.IdConversacion == 0)
@@ -281,7 +321,6 @@
 			EsEntrante = false
 		};
 
-		// Actualización optimista de UI y Caché
 		mensajesIniciales.Add(nuevoMensaje);
 		mensajesIniciales.OrderBy(x => x.Fecha);
 		_debeIrAlFinal = true;
@@ -305,14 +344,12 @@
 		}
 	}
 
-	// MÉTODO 2: Exclusivo para mensajes con Archivos Adjuntos
 	private async Task ManejarEnvioArchivo((int idTicket, CuadroDeTexto.DatosAdjuntoOutDTO datos, EnviarRespuestaWhatsApp? respuestaHttp) parametrosEnvioArchivo)
 	{
 		if (conversacionSeleccionada is null || conversacionSeleccionada.IdConversacion == 0)
 			return;
 
 		var idConversacionActual = conversacionSeleccionada.IdConversacion;
-		// 2. Guardar archivo en servidor y calcular SHA256 en un solo flujo
 		var (rutaRelativa, sha256Calculado) = await gestionArchivos.GuardarArchivoYCalcularSha256Async(idConversacionActual, parametrosEnvioArchivo.datos.Archivo.ContentType, parametrosEnvioArchivo.datos.Archivo, 15 * 1024 * 1024);
 
 		var nuevoMensaje = new MensajeDTO
@@ -327,29 +364,23 @@
 			TamanoArchivo = parametrosEnvioArchivo.datos.Archivo.Size,
 			HashSha256 = sha256Calculado,
 			EstadoLectura = "sent"
-			
 		};
 
-		// Actualización optimista de UI y Caché
 		mensajesIniciales.Add(nuevoMensaje);
 		_debeIrAlFinal = true;
 		StateHasChanged();
 
 		cacheMensajes.AgregarMensaje(idConversacionActual, nuevoMensaje);
 
-
-
-
 		try
 		{
-
 			var idGenerado = await enviarMensaje.EnviarMensajeArchivoAsync(
 				idConversacionActual,
 				parametrosEnvioArchivo.idTicket,
 				userName,
 				contactoConversacionSeleccionado?.Celular,
 				nuevoMensaje,
-				parametrosEnvioArchivo.datos.Archivo, parametrosEnvioArchivo.respuestaHttp // Pasamos el IBrowserFile al servicio especializado en archivos
+				parametrosEnvioArchivo.datos.Archivo, parametrosEnvioArchivo.respuestaHttp
 			);
 
 			nuevoMensaje.IdMensaje = idGenerado;
@@ -363,48 +394,35 @@
 	#region Metodos de comunicacion Servicios con UI
 	private async Task ManejarNuevoMensaje(int idConversacion, MensajeDTO nuevoMensaje)
 	{
-		// Solo actualizamos la UI si el mensaje pertenece a la conversación activa en pantalla
 		if (conversacionSeleccionada != null && idConversacion == conversacionSeleccionada.IdConversacion)
 		{
 			await InvokeAsync(() =>
-
 			{
-				// 1. Agregar el nuevo mensaje
 				mensajesIniciales.Add(nuevoMensaje);
-
-				// 2. ORDENAR LA LISTA LOCAL:
-				// Dependiendo de cómo muestres el chat en pantalla:
-				// - Si el mensaje MÁS RECIENTE va ABAJO (Chat estilo WhatsApp clásico):
 				mensajesIniciales = mensajesIniciales
 					.OrderBy(m => m.Fecha)
 					.ThenBy(m => m.IdMensaje)
 					.ToList();
 
-				// - NOTA: Si tu chat renderiza el más reciente arriba, usa OrderByDescending
-
-				// 3. Notificar scroll y re-renderizar
 				_debeIrAlFinal = true;
 				StateHasChanged();
 			});
 		}
 		else
 		{
-			// OPCIONAL: Si el mensaje es de OTRA conversación, podrías refrescar la lista de tarjetas
-			// para que se actualice el contador o el último mensaje recibido en el panel izquierdo.
 			await InvokeAsync(StateHasChanged);
 		}
 	}
 
 	private async Task ManejarCambioEstado(int idConversacion, string idMensaje, string nuevoEstado)
 	{
-		// Verificar si la notificación corresponde al chat que el usuario tiene abierto
 		if (conversacionSeleccionada?.IdConversacion == idConversacion)
 		{
 			var mensaje = mensajesIniciales.FirstOrDefault(m => m.Waid == idMensaje);
 			if (mensaje != null)
 			{
-				mensaje.EstadoLectura = nuevoEstado; // Actualizamos el estado
-				await InvokeAsync(StateHasChanged); // Forzamos el renderizado seguro de Blazor
+				mensaje.EstadoLectura = nuevoEstado;
+				await InvokeAsync(StateHasChanged);
 			}
 		}
 	}
