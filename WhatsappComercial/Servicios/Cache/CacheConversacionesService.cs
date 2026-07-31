@@ -53,9 +53,17 @@ namespace WhatsappComercial.Servicios.Cache
             return conversacion;
         }
 
-        public Task FinalizarAsync(int conversacionId)
+        public async Task FinalizarAsync(int conversacionId)
         {
-            throw new NotImplementedException();
+            // 1 Remover del caché activo en memoria (ConcurrentDictionary / Dictionary)
+            // Asumiendo que tu diccionario en el servicio se llama _conversacionesActivas:
+            bool removido = _conversaciones.TryRemove(conversacionId, out var conversacionRemovida);
+
+            // 2. Notificar a todos los componentes Blazor suscritos que el chat finalizó
+            if (ConversacionFinalizada != null)
+            {
+                await ConversacionFinalizada.Invoke(conversacionId);
+            }
         }
 
         public IEnumerable<DatosTarjetaConversacionDTO> ObtenerActivasPorArea(int areaId)

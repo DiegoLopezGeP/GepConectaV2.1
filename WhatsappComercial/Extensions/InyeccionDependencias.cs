@@ -85,6 +85,9 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<IValidarExistenciaConversacion, ValidarExistenciaConversacionService>();
             // Servicio para Modificar el estado de un mensaje en la base de datos
             services.AddScoped<IModificarEstadoMensaje, ModificarEstadoMensaje>();
+            //Servicio para Finalizar una conversacion
+            services.AddScoped<IFinalizarConversacion, FinalizarConversacion>();
+
             // Servicio systemServicio
             services.AddScoped<SystemService>();
 

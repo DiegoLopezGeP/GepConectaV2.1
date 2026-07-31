@@ -4,6 +4,7 @@ namespace WhatsappComercial.Modelos.DTOs
 {
     public class DatosContactoConversacionDTO
     {
+        public int IdConversacion { get; set; }
         public int IdTicket { get; set; }
         public string? NombreCliente  { get; set; }
         public string? Celular { get; set; }

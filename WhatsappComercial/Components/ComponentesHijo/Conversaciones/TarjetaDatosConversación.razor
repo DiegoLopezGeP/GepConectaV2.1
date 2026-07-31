@@ -1,7 +1,9 @@
 ﻿@using WhatsappComercial.Modelos.DTOs
+@using WhatsappComercial.Components.ComponentesHijo.Conversaciones
 @inject TooltipService tooltipService
 @inject DialogService dialogService
-<RadzenCard Style="padding:20px; border-radius:12px;width: 100%;">
+
+<RadzenCard Style="padding:20px; border-radius:12px; width: 100%;">
 
 	@if (EsMovil)
 	{
@@ -12,16 +14,12 @@
 					<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="width: 100%;">
 						<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
 							<div class="btn-atras" @onclick="Volver">
-
 								<RadzenIcon Icon="arrow_back" />
-
 							</div>
 							<span class="ticket">
-								Ticket: #@datosContactoConversacion.IdTicket
+								Ticket: #@(datosContactoConversacion?.IdTicket.ToString() ?? "N/A")
 							</span>
 						</RadzenStack>
-
-					
 
 						<div class="acciones-movil">
 							<RadzenStack Orientation="Orientation.Horizontal">
@@ -39,99 +37,77 @@
 											  Click="FinalizarConversacion"
 											  MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Finalizar conversación" }))" />
 
-
- 
 								<RadzenButton Icon="description"
 											  ButtonStyle="ButtonStyle.Warning"
 											  Variant="Variant.Text"
 											  MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Mostrar Modal Plantillas" }))"
 											  Click="AbrirPlantillasModal" />
 							</RadzenStack>
-
 						</div>
 					</RadzenStack>
-					
-
 				</div>
 
 				<div class="nombre-movil">
-					@datosContactoConversacion.NombreCliente
+					@(datosContactoConversacion?.NombreCliente ?? "Sin Nombre")
 				</div>
 
 			</div>
-
-			
-
 		</div>
 	}
 	else
 	{
 		<div class="encabezado-conversacion">
-
-			<RadzenText Text="Información de la conversación"
-						TextStyle="TextStyle.H6" />
+			<RadzenText Text="Información de la conversación" TextStyle="TextStyle.H6" />
 
 			<RadzenButton Icon="check_circle"
 						  Text="Finalizar"
 						  ButtonStyle="ButtonStyle.Danger"
 						  Variant="Variant.Outlined"
 						  Click="FinalizarConversacion"
-						  MouseEnter="@(args => ShowTooltip(args))" />
-
+						  MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Pulse para finalizar la conversación" }))" />
 		</div>
 
 		<RadzenRow Gap="20px">
-
 			<RadzenColumn Size="12" SizeMD="5">
-
 				<div class="campo-info">
 					<label>Usuario</label>
-					<RadzenText Text="@datosContactoConversacion.NombreCliente" />
+					<RadzenText Text="@(datosContactoConversacion?.NombreCliente ?? "N/A")" />
 				</div>
 
 				<div class="campo-info">
 					<label>Celular</label>
-					<RadzenText Text="@datosContactoConversacion.Celular" />
+					<RadzenText Text="@(datosContactoConversacion?.Celular ?? "N/A")" />
 				</div>
-
 			</RadzenColumn>
 
 			<RadzenColumn Size="12" SizeMD="4">
-
 				<div class="campo-info">
 					<label>Identificación</label>
-					<RadzenText Text="@datosContactoConversacion.Identificacion" />
+					<RadzenText Text="@(datosContactoConversacion?.Identificacion ?? "N/A")" />
 				</div>
 
 				<div class="campo-info">
 					<label>Estado / Ticket</label>
-
 					<div class="estado-ticket">
-						<span class="estado">@datosContactoConversacion.EstadoConversacion</span>
-						<span class="ticket">#@datosContactoConversacion.IdTicket</span>
+						<span class="estado">@((datosContactoConversacion?.EstadoConversacion))</span>
+						<span class="ticket">#@(datosContactoConversacion?.IdTicket.ToString() ?? "N/A")</span>
 					</div>
-
 				</div>
-
 			</RadzenColumn>
 
 			<RadzenColumn Size="12" SizeMD="3">
-
 				<div class="campo-info">
 					<label>Fecha inicio</label>
-					<RadzenText Text="@datosContactoConversacion.FechaInicioConversacion?.ToString("dd/MM/yyyy HH:mm")" />
+					<RadzenText Text="@(datosContactoConversacion?.FechaInicioConversacion?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")" />
 				</div>
 
 				<div class="campo-info">
 					<label>Fecha finalización</label>
-					<RadzenText Text="@(datosContactoConversacion.FechaFinConversacion?.ToString("dd/MM/yyyy HH:mm") ?? "En curso")" />
+					<RadzenText Text="@(datosContactoConversacion?.FechaFinConversacion?.ToString("dd/MM/yyyy HH:mm") ?? "En curso")" />
 				</div>
-
 			</RadzenColumn>
-
 		</RadzenRow>
 	}
-
 </RadzenCard>
 
 <style>
@@ -172,10 +148,11 @@
 		padding: 2px 8px;
 		border-radius: 10px;
 		font-size: 12px;
-		width: 60%;
 		font-weight: 600;
 		height: 25px;
-		vertical-align: middle;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.encabezado-movil {
@@ -189,7 +166,7 @@
 		font-weight: 600;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		white-space: wrap;
+		white-space: nowrap;
 	}
 
 	.acciones-movil {
@@ -208,17 +185,22 @@
 		gap: 8px;
 		margin-bottom: 6px;
 	}
+
+	.btn-atras {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		padding: 4px;
+		border-radius: 50%;
+	}
 </style>
-@code
-{
 
-	[Parameter] public DatosContactoConversacionDTO datosContactoConversacion { get; set; }
-
+@code {
+	[Parameter] public DatosContactoConversacionDTO? datosContactoConversacion { get; set; }
 	[Parameter] public EventCallback OnVolver { get; set; }
-
+	[Parameter] public EventCallback<int> OnFinalizarConversacion { get; set; }
 	[Parameter] public bool EsMovil { get; set; }
-
-	void ShowTooltip(ElementReference elementReference, TooltipOptions options = null) => tooltipService.Open(elementReference, "Pulse para finalizar la conversación!", options);
 
 	private SelectorPlantillas.PlantillaDTO? plantillaSeleccionada;
 
@@ -228,17 +210,35 @@
 		new SelectorPlantillas.PlantillaDTO { Id = 2, NombrePlantilla = "Seguimiento", CuerpoMensaje = "Hola {{1}}, queremos saber si tu solicitud respecto al ticket #{{2}} fue resuelta." }
 	};
 
+	void ShowTooltip(ElementReference elementReference, TooltipOptions options = null)
+		=> tooltipService.Open(elementReference, options?.Text ?? "Pulse para finalizar la conversación!", options);
+
 	private async Task FinalizarConversacion()
 	{
-		// Mostrar confirmación y finalizar la conversación
+		if (datosContactoConversacion is null) return;
+
+		bool? confirmacion = await dialogService.Confirm(
+			"¿Estás seguro de que deseas finalizar esta conversación?",
+			"Finalizar Conversación",
+			new ConfirmOptions()
+			{
+				OkButtonText = "Sí, Finalizar",
+				CancelButtonText = "Cancelar"
+			});
+
+		if (confirmacion == true)
+		{
+			await OnFinalizarConversacion.InvokeAsync(datosContactoConversacion.IdConversacion);
+		}
 	}
+
 	private async Task MostrarDetalles()
 	{
 		await dialogService.OpenAsync<DetallesConversacionMovil>(
 			"Información de la conversación",
 			new Dictionary<string, object?>
 			{
-				 { nameof(DetallesConversacionMovil.datosContactoConversacion), datosContactoConversacion }
+				{ nameof(DetallesConversacionMovil.datosContactoConversacion), datosContactoConversacion }
 			},
 			new DialogOptions
 			{
@@ -248,6 +248,7 @@
 				ShowClose = true
 			});
 	}
+
 	private async Task AbrirPlantillasModal()
 	{
 		var opciones = new DialogOptions
@@ -271,6 +272,7 @@
 			},
 			opciones);
 	}
+
 	private async Task Volver()
 	{
 		await OnVolver.InvokeAsync();

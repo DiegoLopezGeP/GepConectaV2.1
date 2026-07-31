@@ -59,6 +59,7 @@ namespace WhatsappComercial.Servicios.Conversaciones
 
             return new DatosContactoConversacionDTO
             {
+                IdConversacion = Convert.ToInt32(row["IdConversacion"]),
                 NombreCliente = row["NombreCliente"]?.ToString(),
                 IdTicket = Convert.ToInt32(row["IdTicket"]),
                 FechaInicioConversacion = row["FechaInicio"] == DBNull.Value ? null : Convert.ToDateTime(row["FechaInicio"]),

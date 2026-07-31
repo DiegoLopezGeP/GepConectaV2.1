@@ -24,6 +24,8 @@
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IGestionArchivos gestionArchivos
 @inject INotificarUI NotificadorUI
+@inject IFinalizarConversacion finalizarConversacion
+@inject NotificationService notificationService
 @inject DialogService dialogService
 
 @implements IDisposable
@@ -40,7 +42,7 @@
 		<div class="panel-chat">
 			<RadzenStack Gap="2%">
 				<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-					<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado"></TarjetaDatosConversación>
+					<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado" OnFinalizarConversacion="ManejarFinalizarConversacion"></TarjetaDatosConversación>
 
 					@* BOTÓN DE PLANTILLAS VISIBLE SÓLO EN MÓVIL *@
 					@if (esMovil && conversacionSeleccionada?.IdConversacion > 0)
@@ -442,6 +444,55 @@
 				mensaje.EstadoLectura = nuevoEstado;
 				await InvokeAsync(StateHasChanged);
 			}
+		}
+	}
+	private async Task ManejarFinalizarConversacion(int idConversacion)
+	{
+		try
+		{
+			// 1. Cambia el estado en BD y remueve del caché en una sola operación atómica
+			await cacheConversaciones.FinalizarAsync(idConversacion);
+
+			// 2. Remover de la lista en la interfaz de usuario (UI)
+			var conversacionARemover = ListaConversaciones.FirstOrDefault(c => c.IdConversacion == idConversacion);
+			if (conversacionARemover != null)
+			{
+				ListaConversaciones.Remove(conversacionARemover);
+			}
+
+			// 3. Limpiar los datos de la conversación seleccionada en el panel derecho
+			conversacionSeleccionada = new();
+			contactoConversacionSeleccionado = new();
+			mensajesIniciales.Clear();
+
+			// 4. Si es dispositivo móvil, regresar a la vista de lista de chats
+			if (esMovil)
+			{
+				vistaActual = VistaConversaciones.Lista;
+			}
+
+			// 5. Notificar confirmación visual al usuario
+			notificationService.Notify(new NotificationMessage
+			{
+				Severity = NotificationSeverity.Success,
+				Summary = "Éxito",
+				Detail = "La conversación ha sido finalizada correctamente.",
+				Duration = 3000
+			});
+			await finalizarConversacion.FinalizarConversacionManual(idConversacion, EstadoConversacionEnum.Finalizado);
+			StateHasChanged();
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Error al finalizar la conversación: {ex.Message}");
+
+			notificationService.Notify(new NotificationMessage
+			{
+				Severity = NotificationSeverity.Error,
+				Summary = "Error",
+				Detail = "No se pudo finalizar la conversación.",
+				Duration = 4000
+			});
 		}
 	}
 	#endregion
