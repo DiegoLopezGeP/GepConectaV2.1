@@ -48,10 +48,10 @@
 		<div class="panel-chat">
 			<RadzenStack Gap="2%">
 				<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-					<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado" OnFinalizarConversacion="ManejarFinalizarConversacion" Plantillas="@plantillas"></TarjetaDatosConversación>
+					<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado" plantillaSeleccionada="@plantillaSeleccionada" OnFinalizarConversacion="ManejarFinalizarConversacion" Plantillas="@plantillas" OnUsarPlantilla="UsarPlantillaSeleccionada"></TarjetaDatosConversación>
 
 					@* BOTÓN DE PLANTILLAS VISIBLE SÓLO EN MÓVIL *@
-					@if (esMovil && conversacionSeleccionada?.IdConversacion > 0)
+@* 					@if (esMovil && conversacionSeleccionada?.IdConversacion > 0)
 					{
 						<RadzenButton Icon="description"
 									  Text="Plantillas"
@@ -60,7 +60,7 @@
 									  Size="ButtonSize.Small"
 									  Style="margin-right: 10px; border-radius: 8px;"
 									  Click="AbrirPlantillasModal" />
-					}
+					} *@
 				</RadzenStack>
 
 				<VisorMensajes IdConversacion="@(conversacionSeleccionada?.IdConversacion ?? 0)"
@@ -159,7 +159,7 @@
 					plantillaSeleccionada = p;
 					StateHasChanged();
 				})},
-				{ "OnUsarPlantilla", EventCallback.Factory.Create<PlantillaMetaResponseDTO>(this, async (detalleMeta) => {
+				{ "OnUsarPlantilla", EventCallback.Factory.Create<(PlantillaMetaResponseDTO, PlantillaDTO)>(this, async (detalleMeta) => {
 					dialogService.Close();
 					await UsarPlantillaSeleccionada(detalleMeta);
 				})}
@@ -503,8 +503,10 @@
 		}
 	}
 
-	private async Task UsarPlantillaSeleccionada(PlantillaMetaResponseDTO detalleMeta)
+	private async Task UsarPlantillaSeleccionada((PlantillaMetaResponseDTO, PlantillaDTO?) parametros)
 	{
+		var (detalleMeta, plantillaSeleccionada) = parametros;
+
 		if (conversacionSeleccionada is null || conversacionSeleccionada.IdConversacion == 0 || plantillaSeleccionada is null)
 		{
 			notificationService.Notify(NotificationSeverity.Warning, "Atención", "Seleccione una conversación y una plantilla válidas.");

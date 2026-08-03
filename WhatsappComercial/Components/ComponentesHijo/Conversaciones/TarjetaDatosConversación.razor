@@ -1,5 +1,6 @@
-﻿@using WhatsappComercial.Modelos.DTOs
+﻿@using GepConecta.WhatsAppCloud.Models.Responses
 @using WhatsappComercial.Components.ComponentesHijo.Conversaciones
+@using WhatsappComercial.Modelos.DTOs
 @inject TooltipService tooltipService
 @inject DialogService dialogService
 
@@ -196,15 +197,17 @@
 	}
 </style>
 
-	@code {
+@code {
 	[Parameter] public DatosContactoConversacionDTO? datosContactoConversacion { get; set; }
 	[Parameter] public EventCallback OnVolver { get; set; }
 	[Parameter] public EventCallback<int> OnFinalizarConversacion { get; set; }
 	[Parameter] public bool EsMovil { get; set; }
 	[Parameter] public List<PlantillaDTO> Plantillas { get; set; } = new();
+	[Parameter] public PlantillaDTO? plantillaSeleccionada { get; set; }
+	// EventCallback necesario para enviar la plantilla seleccionada al componente padre (Conversaciones)
+	[Parameter] public EventCallback<(PlantillaMetaResponseDTO, PlantillaDTO)> OnUsarPlantilla { get; set; }
 
-	private PlantillaDTO? plantillaSeleccionada;
-	
+
 
 	void ShowTooltip(ElementReference elementReference, TooltipOptions options = null)
 		=> tooltipService.Open(elementReference, options?.Text ?? "Pulse para finalizar la conversación!", options);
@@ -259,12 +262,19 @@
 			"Seleccionar Plantilla",
 			new Dictionary<string, object?>
 			{
-				{ "Plantillas", Plantillas },
-				{ "PlantillaSeleccionada", plantillaSeleccionada },
-				{ "PlantillaSeleccionadaChanged", EventCallback.Factory.Create<PlantillaDTO?>(this, (p) => {
-					plantillaSeleccionada = p;
-					StateHasChanged();
-				})}
+			{ "Plantillas", Plantillas },
+			{ "PlantillaSeleccionada", plantillaSeleccionada },
+			{ "PlantillaSeleccionadaChanged", EventCallback.Factory.Create<PlantillaDTO?>(this, (p) => {
+				plantillaSeleccionada = p;
+				StateHasChanged();
+			})},
+			{ "OnUsarPlantilla", EventCallback.Factory.Create<(PlantillaMetaResponseDTO, PlantillaDTO)>(this, async (detalleMeta) => {
+				// 1. Primero se notifica al componente padre
+				await OnUsarPlantilla.InvokeAsync(detalleMeta);
+
+// 2. Al final se cierra el modal para evitar renderizar sobre un objeto descartado
+				dialogService.Close();
+			})}
 			},
 			opciones);
 	}

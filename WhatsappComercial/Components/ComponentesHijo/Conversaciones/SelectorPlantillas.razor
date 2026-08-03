@@ -19,7 +19,7 @@
         @if (CargandoContenido)
         {
             <div style="min-height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #666;">
-                <RadzenProgressBarProgress Value="100" Mode="ProgressBarMode.Indeterminate" Style="width: 80%;" />
+                <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" Style="width: 80%;" />
                 <RadzenText TextStyle="TextStyle.Caption">Consultando plantilla en Meta...</RadzenText>
             </div>
         }
@@ -105,7 +105,7 @@
     [Parameter] public EventCallback<PlantillaDTO?> PlantillaSeleccionadaChanged { get; set; }
 
     // EventCallback compatible con el manejador de Conversaciones.razor
-    [Parameter] public EventCallback<PlantillaMetaResponseDTO> OnUsarPlantilla { get; set; }
+    [Parameter] public EventCallback<(PlantillaMetaResponseDTO, PlantillaDTO)> OnUsarPlantilla { get; set; }
 
     private PlantillaMetaResponseDTO? DetallePlantillaMeta { get; set; }
     private bool CargandoContenido { get; set; } = false;
@@ -187,7 +187,7 @@
                 PlantillaSeleccionada.CuerpoMensaje = BodyTextoFormateado;
             }
 
-            await OnUsarPlantilla.InvokeAsync(DetallePlantillaMeta ?? new PlantillaMetaResponseDTO());
+            await OnUsarPlantilla.InvokeAsync((DetallePlantillaMeta ?? new PlantillaMetaResponseDTO(), PlantillaSeleccionada));
         }
     }
 }
