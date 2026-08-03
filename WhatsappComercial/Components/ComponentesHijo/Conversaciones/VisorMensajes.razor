@@ -2,7 +2,7 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 
-<RadzenCard class="contenedor-chat">
+<RadzenCard class="contenedor-chat chat-bg-doodle">
 
 	<div class="lista-mensajes" @ref="_elementoLista">
 
@@ -74,6 +74,15 @@
 		padding: 15px;
 		border-radius: 12px;
 		overflow: hidden;
+	}
+
+	.chat-bg-doodle {
+		background-color: #f0f2f5; /* Fondo gris/azul clásico de chat */
+		/* Reemplaza la URL por un SVG de doodles transparente */
+		background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86d3830a-7392-11e7-876f-6be9f2449541.png');
+		background-repeat: repeat;
+		background-size: 400px;
+		opacity: 0.95; /* Controla la intensidad */
 	}
 
 	.lista-mensajes {
