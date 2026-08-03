@@ -1,4 +1,7 @@
-﻿@using WhatsappComercial.Modelos.DTOs
+﻿@using GepConecta.WhatsAppCloud.Models.Responses
+@using GepConecta.WhatsAppCloud.Services
+@using WhatsappComercial.Modelos.DTOs
+@inject IWhatsAppCloudClient WhatsAppClient
 
 <RadzenStack Gap="1rem" Style="padding: 5px;">
     <RadzenLabel Text="Seleccione Una Plantilla" Style="font-weight: bold; font-size: 14px;" />
@@ -12,21 +15,72 @@
                     Value="@PlantillaSeleccionada"
                     Change="@OnSeleccionChanged" />
 
-    <RadzenCard Style="height: 280px; overflow-y: auto; border-radius: 12px; background-color: #f9f9f9; padding: 15px;">
-        @if (PlantillaSeleccionada is not null)
+    <RadzenCard Style="max-height: 625px; min-height: 120px; height: auto; overflow-y: auto; border-radius: 12px; background-color: #f9f9f9; padding: 15px; position: relative;">
+        @if (CargandoContenido)
+        {
+            <div style="min-height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #666;">
+                <RadzenProgressBarProgress Value="100" Mode="ProgressBarMode.Indeterminate" Style="width: 80%;" />
+                <RadzenText TextStyle="TextStyle.Caption">Consultando plantilla en Meta...</RadzenText>
+            </div>
+        }
+        else if (PlantillaSeleccionada is not null)
         {
             <div class="contenido-plantilla">
                 <h5 style="margin-top:0; color: var(--rz-primary);">
                     @PlantillaSeleccionada.NombrePlantilla
                 </h5>
-                <p style="white-space: pre-line; color: #333;">
-                    @PlantillaSeleccionada.CuerpoMensaje
-                </p>
+
+                @if (DetallePlantillaMeta is not null)
+                {
+                    @* 1. Renderizado del Header (Encabezado) *@
+                    @if (HeaderComponente is not null && !string.IsNullOrEmpty(HeaderComponente.Texto))
+                    {
+                        <strong style="display: block; margin-bottom: 8px; color: #222;">
+                            @HeaderComponente.Texto
+                        </strong>
+                    }
+
+                    @* 2. Renderizado del Body (Cuerpo del mensaje) *@
+                    <p style="white-space: pre-line; color: #333; margin-bottom: 12px; font-size: 14px; line-height: 1.4;">
+                        @BodyTextoFormateado
+                    </p>
+
+                    @* 3. Renderizado del Footer (Pie de página) *@
+                    @if (FooterComponente is not null && !string.IsNullOrEmpty(FooterComponente.Texto))
+                    {
+                        <small style="display: block; color: #777; margin-top: 8px; font-size: 12px;">
+                            @FooterComponente.Texto
+                        </small>
+                    }
+
+                    @* 4. Renderizado de Botones *@
+                    @if (BotonesComponente?.Botones is not null && BotonesComponente.Botones.Any())
+                    {
+                        <hr style="border: 0; border-top: 1px solid #e0e0e0; margin: 12px 0 8px 0;" />
+                        <RadzenStack Gap="0.5rem">
+                            @foreach (var boton in BotonesComponente.Botones)
+                            {
+                                <RadzenButton Variant="Variant.Outlined" 
+                                              ButtonStyle="ButtonStyle.Secondary" 
+                                              Size="ButtonSize.Small" 
+                                              Text="@boton.Texto" 
+                                              Style="width: 100%; text-transform: none; border-color: #ccc; color: #007bff; background: #fff;" 
+                                              Disabled="true" />
+                            }
+                        </RadzenStack>
+                    }
+                }
+                else
+                {
+                    <p style="white-space: pre-line; color: #333;">
+                        @PlantillaSeleccionada.CuerpoMensaje
+                    </p>
+                }
             </div>
         }
         else
         {
-            <div style="height: 100%; display: flex; align-items: center; justify-content: center; color: #888;">
+            <div style="min-height: 90px; display: flex; align-items: center; justify-content: center; color: #888;">
                 <RadzenText TextStyle="TextStyle.Body2">
                     <em>Seleccione una plantilla para ver su contenido aquí.</em>
                 </RadzenText>
@@ -34,25 +88,106 @@
         }
     </RadzenCard>
 
-    
-    <RadzenStack>
-        <RadzenButton ButtonStyle="ButtonStyle.Primary" Variant="Variant.Text" Shade="Shade.Light" Text="Usar Plantilla"></RadzenButton>
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+        <RadzenButton ButtonStyle="ButtonStyle.Primary" 
+                      Variant="Variant.Text" 
+                      Shade="Shade.Light" 
+                      Text="Enviar Plantilla"
+                      Icon="send"
+                      Disabled="@(PlantillaSeleccionada is null || CargandoContenido)"
+                      Click="@OnUsarPlantillaClick" />
     </RadzenStack>
 </RadzenStack>
-
-
 
 @code {
     [Parameter] public List<PlantillaDTO> Plantillas { get; set; } = new();
     [Parameter] public PlantillaDTO? PlantillaSeleccionada { get; set; }
     [Parameter] public EventCallback<PlantillaDTO?> PlantillaSeleccionadaChanged { get; set; }
 
+    // EventCallback compatible con el manejador de Conversaciones.razor
+    [Parameter] public EventCallback<PlantillaMetaResponseDTO> OnUsarPlantilla { get; set; }
+
+    private PlantillaMetaResponseDTO? DetallePlantillaMeta { get; set; }
+    private bool CargandoContenido { get; set; } = false;
+
+    private ComponentePlantillaDTO? HeaderComponente => 
+        DetallePlantillaMeta?.Componentes?.FirstOrDefault(c => c.Tipo.Equals("HEADER", StringComparison.OrdinalIgnoreCase));
+
+    private ComponentePlantillaDTO? BodyComponente => 
+        DetallePlantillaMeta?.Componentes?.FirstOrDefault(c => c.Tipo.Equals("BODY", StringComparison.OrdinalIgnoreCase));
+
+    private ComponentePlantillaDTO? FooterComponente => 
+        DetallePlantillaMeta?.Componentes?.FirstOrDefault(c => c.Tipo.Equals("FOOTER", StringComparison.OrdinalIgnoreCase));
+
+    private ComponentePlantillaDTO? BotonesComponente => 
+        DetallePlantillaMeta?.Componentes?.FirstOrDefault(c => c.Tipo.Equals("BUTTONS", StringComparison.OrdinalIgnoreCase));
+
+    private string BodyTextoFormateado
+    {
+        get
+        {
+            if (BodyComponente is null || string.IsNullOrEmpty(BodyComponente.Texto))
+                return PlantillaSeleccionada?.CuerpoMensaje ?? string.Empty;
+
+            string texto = BodyComponente.Texto;
+
+            var ejemplos = BodyComponente.Ejemplo?.TextoCuerpoVariables?.FirstOrDefault();
+            if (ejemplos != null && ejemplos.Any())
+            {
+                for (int i = 0; i < ejemplos.Count; i++)
+                {
+                    texto = texto.Replace($"{{{i + 1}}}", $"[{ejemplos[i]}]");
+                }
+            }
+
+            return texto;
+        }
+    }
+
     private async Task OnSeleccionChanged(object value)
     {
         PlantillaSeleccionada = value as PlantillaDTO;
+        DetallePlantillaMeta = null;
+
+        if (PlantillaSeleccionada is not null && !string.IsNullOrWhiteSpace(PlantillaSeleccionada.Id))
+        {
+            CargandoContenido = true;
+            StateHasChanged();
+
+            try
+            {
+                DetallePlantillaMeta = await WhatsAppClient.ObtenerContenidoPlantillaAsync(PlantillaSeleccionada.Id);
+
+                if (!string.IsNullOrEmpty(BodyTextoFormateado))
+                {
+                    PlantillaSeleccionada.CuerpoMensaje = BodyTextoFormateado;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR AL OBTENER PLANTILLA]: {ex.Message}");
+            }
+            finally
+            {
+                CargandoContenido = false;
+            }
+        }
+
         await PlantillaSeleccionadaChanged.InvokeAsync(PlantillaSeleccionada);
-        StateHasChanged(); // Forzar el refresco interno del componente/modal
+        StateHasChanged();
     }
 
+    private async Task OnUsarPlantillaClick()
+    {
+        if (PlantillaSeleccionada is not null)
+        {
+            // Nos aseguramos de que el DTO local lleve el cuerpo procesado
+            if (!string.IsNullOrEmpty(BodyTextoFormateado))
+            {
+                PlantillaSeleccionada.CuerpoMensaje = BodyTextoFormateado;
+            }
 
+            await OnUsarPlantilla.InvokeAsync(DetallePlantillaMeta ?? new PlantillaMetaResponseDTO());
+        }
+    }
 }

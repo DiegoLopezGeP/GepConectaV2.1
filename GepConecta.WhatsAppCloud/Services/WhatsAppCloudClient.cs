@@ -365,6 +365,86 @@ namespace GepConecta.WhatsAppCloud.Services
             }
         }
 
+        public async Task<PlantillaMetaResponseDTO?> ObtenerContenidoPlantillaAsync(string IdPlantillaMeta)
+        {
+            if (string.IsNullOrWhiteSpace(IdPlantillaMeta))
+                return null;
+
+            try
+            {
+                string idEscaped = Uri.EscapeDataString(IdPlantillaMeta.Trim());
+                string requestUrl = $"https://graph.facebook.com/v25.0/{idEscaped}";
+
+                using var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
+
+                var response = await _client.SendAsync(request);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[META ERROR CONSULTA PLANTILLA {response.StatusCode}]: {errorContent}");
+                    return null;
+                }
+
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+
+                // Deserializamos DIRECTAMENTE la plantilla (ya no usamos Wrapper)
+                var plantillaDetalle = JsonConvert.DeserializeObject<PlantillaMetaResponseDTO>(jsonResponse);
+                return plantillaDetalle;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EXCEPCIÓN PLANTILLA META]: Error al consultar la plantilla '{IdPlantillaMeta}': {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<EnviarMensajeResponseDTO?> EnviarPlantillaAsync(EnviarMensajePlantillaRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Para) || string.IsNullOrWhiteSpace(request.Plantilla.Nombre))
+                return null;
+
+            try
+            {
+                // Se usa la URL con PHONE_NUMBER_ID
+                string requestUrl = $"https://graph.facebook.com/v25.0/{_phoneNumberId}/messages";
+
+                string jsonPayload = JsonConvert.SerializeObject(request, new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore
+                });
+
+                using var httpRequest = new HttpRequestMessage(HttpMethod.Post, requestUrl);
+                httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
+                httpRequest.Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                var response = await _client.SendAsync(httpRequest);
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+
+                var respuestaMeta = JsonConvert.DeserializeObject<EnviarMensajeResponseDTO>(jsonResponse);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"[META ERROR ENVÍO PLANTILLA {response.StatusCode}]: {jsonResponse}");
+                }
+
+                return respuestaMeta;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EXCEPCIÓN AL ENVIAR PLANTILLA META]: {ex.Message}");
+                return null;
+            }
+        }
+
+        // Clase envoltorio necesaria porque Meta retorna un arreglo "data" al consultar message_templates
+        internal class MetaTemplatesResponseWrapper
+        {
+            [JsonProperty("data")]
+            public List<PlantillaMetaResponseDTO>? Data { get; set; }
+        }
+
 
 
         #endregion

@@ -4,6 +4,6 @@ namespace WhatsappComercial.Interfaces.Plantillas
 {
     public interface IObtenerPlantillas
     {
-        Task<List<PlantillaDTO>> ObtenerPlantillasActivas();
+        Task<List<PlantillaDTO>> ObtenerPlantillasActivas(string[] idGrupoTrabajo);
     }
 }

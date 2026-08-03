@@ -12,7 +12,7 @@ namespace WhatsappComercial.Servicios.Plantillas
 		{
 			_servicioAccesoDatos = servicioAccesoDatos;
 		}
-        public async Task<List<PlantillaDTO>> ObtenerPlantillasActivas()
+        public async Task<List<PlantillaDTO>> ObtenerPlantillasActivas(string[] idGrupoTrabajo)
         {
             try
             {
@@ -20,7 +20,7 @@ namespace WhatsappComercial.Servicios.Plantillas
                 List<PlantillaDTO> plantillas = new List<PlantillaDTO>();
 
                 // 2. Obtener los datos (se usa await si tu método TraerTablaNombre admite llamadas asíncronas)
-                DataTable dtPlantillas = _servicioAccesoDatos.TraerTablaNombre("AccionNodo");
+                DataTable dtPlantillas = await _servicioAccesoDatos.TraerTablaConArregloAsincrono(61, idGrupoTrabajo);
 
                 // 3. Recorrer las filas de la tabla
                 if (dtPlantillas != null && dtPlantillas.Rows.Count > 0)
@@ -30,9 +30,8 @@ namespace WhatsappComercial.Servicios.Plantillas
                         // Crear un nuevo objeto por cada fila
                         var plantilla = new PlantillaDTO()
                         {
-                            Id = Convert.ToInt32(row["Id"]),
-                            NombrePlantilla = row["nombrePlantilla"]?.ToString() ?? string.Empty,
-                            CuerpoMensaje = string.Empty
+                            Id = row["IdPlantillaMeta"].ToString() ?? string.Empty,
+                            NombrePlantilla = row["nombrePlantilla"]?.ToString()?.Replace("_", " ") ?? string.Empty,
                         };
 
                         // Agregar a la lista

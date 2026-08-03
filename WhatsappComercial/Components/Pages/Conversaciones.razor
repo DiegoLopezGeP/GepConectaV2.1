@@ -12,8 +12,12 @@
 @using Microsoft.AspNetCore.SignalR
 @using Microsoft.AspNetCore.SignalR.Client
 @using WhatsappComercial.Interfaces.NotificarUI
+@using GepConecta.WhatsAppCloud.Models.Requests
 @using GepConecta.WhatsAppCloud.Models.Responses
+@using GepConecta.WhatsAppCloud.Services
+
 @inject NavigationManager Navigation
+@inject IWhatsAppCloudClient whatsAppCloudClient
 
 @inject IUsuarios informacionUsuario
 @inject IObtenerConversaciones obtenerConversaciones
@@ -78,11 +82,12 @@
 		{
 			<div class="panel-plantillas" style="padding: 10px;">
 				<SelectorPlantillas Plantillas="@plantillas"
-									@bind-PlantillaSeleccionada="plantillaSeleccionada" />
+									@bind-PlantillaSeleccionada="plantillaSeleccionada"
+									OnUsarPlantilla="UsarPlantillaSeleccionada" />
 			</div>
 		}
 	}
-	
+
 </div>
 
 <style>
@@ -134,8 +139,6 @@
 	private List<PlantillaDTO> plantillas = new();
 	private PlantillaDTO? plantillaSeleccionada;
 
-
-
 	private async Task AbrirPlantillasModal()
 	{
 		var opciones = new DialogOptions
@@ -155,6 +158,10 @@
 				{ "PlantillaSeleccionadaChanged", EventCallback.Factory.Create<PlantillaDTO?>(this, (p) => {
 					plantillaSeleccionada = p;
 					StateHasChanged();
+				})},
+				{ "OnUsarPlantilla", EventCallback.Factory.Create<PlantillaMetaResponseDTO>(this, async (detalleMeta) => {
+					dialogService.Close();
+					await UsarPlantillaSeleccionada(detalleMeta);
 				})}
 			},
 			opciones);
@@ -179,7 +186,7 @@
 		userName = HttpContextAccessor.HttpContext?.User?.Identity?.Name?.Split("\\").Last() ?? "Desconocido";
 		infoUsuarioConectado = await informacionUsuario.ObtenerInformacionUsuario(userName);
 		await FiltrarConversacionesPorUsuario();
-		plantillas = await obtenerPlantillas.ObtenerPlantillasActivas();
+		plantillas = await obtenerPlantillas.ObtenerPlantillasActivas(new string[] { infoUsuarioConectado.IdGrupoTrabajo.ToString() });
 
 		NotificadorUI.OnNuevoMensajeEntrante += ManejarNuevoMensaje;
 		NotificadorUI.CambiodeEstadoMensaje += ManejarCambioEstado;
@@ -445,6 +452,7 @@
 			}
 		}
 	}
+
 	private async Task ManejarFinalizarConversacion(int idConversacion)
 	{
 		try
@@ -495,9 +503,136 @@
 		}
 	}
 
-	private async Task ObtenerPlantillas()
+	private async Task UsarPlantillaSeleccionada(PlantillaMetaResponseDTO detalleMeta)
 	{
-		
+		if (conversacionSeleccionada is null || conversacionSeleccionada.IdConversacion == 0 || plantillaSeleccionada is null)
+		{
+			notificationService.Notify(NotificationSeverity.Warning, "Atención", "Seleccione una conversación y una plantilla válidas.");
+			return;
+		}
+
+		var idConversacionActual = conversacionSeleccionada.IdConversacion;
+		string telefonoDestino = contactoConversacionSeleccionado?.Celular ?? string.Empty;
+
+		if (string.IsNullOrWhiteSpace(telefonoDestino))
+		{
+			notificationService.Notify(NotificationSeverity.Error, "Error", "El contacto no tiene un número de celular configurado.");
+			return;
+		}
+
+		// 1. Construir el payload de envío para la API Graph de Meta
+		var requestPayload = new EnviarMensajePlantillaRequest
+		{
+			Para = telefonoDestino,
+			Plantilla = new PlantillaEnvioDTO
+			{
+				Nombre = detalleMeta.Nombre,
+				Lenguaje = new LenguajePlantillaDTO
+				{
+					Codigo = !string.IsNullOrEmpty(detalleMeta?.Idioma) ? detalleMeta.Idioma : "es_CO"
+				},
+				Componentes = ConstruirComponentesEnvioPlantilla(detalleMeta)
+			}
+		};
+
+		// 2. Enviar el mensaje a Meta mediante WhatsAppCloudClient
+		var respuestaMeta = await whatsAppCloudClient.EnviarPlantillaAsync(requestPayload);
+
+		if (respuestaMeta is not null && respuestaMeta.Mensajes?.Any() == true)
+		{
+			string waidGenerado = respuestaMeta.Mensajes.First().Id;
+
+			// 3. Crear el DTO de mensaje local
+			var nuevoMensaje = new MensajeDTO
+			{
+				IdMensaje = 0,
+				Texto = plantillaSeleccionada.CuerpoMensaje, // Contenido de la plantilla procesado
+				Waid = waidGenerado,
+				Fecha = DateTime.Now,
+				EsEntrante = false,
+				EstadoLectura = "sent"
+			};
+
+			// 4. Agregar al UI (VisorMensajes)
+			mensajesIniciales.Add(nuevoMensaje);
+			_debeIrAlFinal = true;
+			StateHasChanged();
+
+			// 5. Agregar a la memoria Caché
+			cacheMensajes.AgregarMensaje(idConversacionActual, nuevoMensaje);
+
+			// 6. Persistencia en Base de Datos
+			try
+			{
+				var idGeneradoBD = await enviarMensaje.EnviarMensajeTextoAsync(
+					idConversacionActual,
+					userName,
+					telefonoDestino,
+					nuevoMensaje
+				);
+
+				nuevoMensaje.IdMensaje = idGeneradoBD;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Error al guardar en BD el mensaje de la plantilla: {ex.Message}");
+			}
+
+			notificationService.Notify(NotificationSeverity.Success, "Éxito", "Plantilla enviada correctamente.");
+		}
+		else
+		{
+			string msjError = respuestaMeta?.Error?.Mensaje ?? "No se pudo realizar el envío de la plantilla a través de WhatsApp.";
+			notificationService.Notify(NotificationSeverity.Error, "Error Meta", msjError);
+		}
+	}
+
+	private List<ComponenteEnvioDTO> ConstruirComponentesEnvioPlantilla(PlantillaMetaResponseDTO? detalleMeta)
+	{
+		var listaComponentes = new List<ComponenteEnvioDTO>();
+
+		if (detalleMeta?.Componentes is null)
+			return listaComponentes;
+
+		foreach (var comp in detalleMeta.Componentes)
+		{
+			if (comp.Tipo.Equals("BODY", StringComparison.OrdinalIgnoreCase))
+			{
+				var variablesBody = comp.Ejemplo?.TextoCuerpoVariables?.FirstOrDefault();
+				if (variablesBody != null && variablesBody.Any())
+				{
+					listaComponentes.Add(new ComponenteEnvioDTO
+					{
+						Tipo = "body",
+						Parametros = variablesBody.Select(v => new ParametroEnvioDTO
+						{
+							Tipo = "text",
+							Texto = v
+						}).ToList()
+					});
+				}
+			}
+			else if (comp.Tipo.Equals("HEADER", StringComparison.OrdinalIgnoreCase))
+			{
+				if (comp.Format?.Equals("IMAGE", StringComparison.OrdinalIgnoreCase) == true && comp.Ejemplo?.HeadersArchivos?.Any() == true)
+				{
+					listaComponentes.Add(new ComponenteEnvioDTO
+					{
+						Tipo = "header",
+						Parametros = new List<ParametroEnvioDTO>
+						{
+							new ParametroEnvioDTO
+							{
+								Tipo = "image",
+								Imagen = new RecursoMultimediaDTO { Link = comp.Ejemplo.HeadersArchivos.First() }
+							}
+						}
+					});
+				}
+			}
+		}
+
+		return listaComponentes;
 	}
 	#endregion
 

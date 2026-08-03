@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using GepConecta.WhatsAppCloud.Models.Requests;
 using GepConecta.WhatsAppCloud.Models.Responses;
 
 namespace GepConecta.WhatsAppCloud.Services
@@ -21,5 +22,10 @@ namespace GepConecta.WhatsAppCloud.Services
         Task<EnviarRespuestaWhatsApp?> SendMediaMessageAsync(string to, string mediaType, string mediaIdOrUrl, string? caption = null, string? fileName = null, bool isUrl = false);
 
         Task<byte[]> DescargarMediaAsync(string mediaId);
+        //Plantullas
+        Task<PlantillaMetaResponseDTO?> ObtenerContenidoPlantillaAsync(string nombrePlantilla);
+        // Método para enviar el payload armado directamente
+        Task<EnviarMensajeResponseDTO?> EnviarPlantillaAsync(EnviarMensajePlantillaRequest request);
+
     }
 }
