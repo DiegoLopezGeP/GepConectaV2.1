@@ -19,76 +19,104 @@
 @inject DialogService dialogService
 @inject IHubContext<GepConectaHub> _hubGepConecta
 
+<div class="rz-p-2 rz-p-md-4">
+	<!-- Encabezado del Modal con Botón de Cierre -->
+	<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" class="rz-mb-3 rz-pb-2 rz-border-bottom">
+		<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+			<RadzenIcon Icon="contacts" IconStyle="IconStyle.Primary" Style="font-size: 1.75rem;" />
+			<RadzenText TextStyle="TextStyle.H6" class="rz-m-0 rz-font-weight-bold">
+				Búsqueda y Gestión de Contactos
+			</RadzenText>
+		</RadzenStack>
 
-<RadzenCard Style="width:100%; margin-bottom:10px;">
-	<RadzenRadioButtonList TValue="TipoContactoEnum"
-						   Data="@tiposContacto"
-						   TextProperty="Texto"
-						   ValueProperty="Valor"
-						   @bind-Value="tipoContactoEnum" />
-</RadzenCard>
-
-
-<RadzenStack Gap="1rem" Style="width:100%;">
-
-	<RadzenTextBox @bind-Value="textoBusqueda"
-				   Placeholder="Buscar por número de identificación o celular"
-				   Style="width:100%;"
-				   @onkeyup="OnKeyUp" />
-
-	<RadzenDataGrid TItem="Contacto"
-					Data="@contactosFiltrados"
-					AllowSorting="true"
-					AllowPaging="true"
-					PageSize="5"
-					AllowColumnResize="true"
-					AllowAlternatingRows="false"
-					SelectionMode="DataGridSelectionMode.Single"
-					RowSelect="OnRowSelect"
-					ShowPagingSummary="true"
-					PagerHorizontalAlign="HorizontalAlign.Left">
-
-		<Columns>
-
-			<RadzenDataGridColumn TItem="Contacto"
-								  Property="@nameof(Contacto.NombreContacto)"
-								  Title="Nombre" />
-			<RadzenDataGridColumn TItem="Contacto"
-								  Property="@nameof(Contacto.CelularContacto)"
-								  Title="Celular" />
-			<RadzenDataGridColumn TItem="Contacto"
-								  Property="@nameof(Contacto.Identificacion)"
-								  Title="Identificacion" />
-			<RadzenDataGridColumn TItem="Contacto"
-								  Property="@nameof(Contacto.CorreoElectronico)"
-								  Title="Email" />
-
-
-		</Columns>
-
-	</RadzenDataGrid>
-
-	<RadzenStack Orientation="Orientation.Horizontal"
-				 JustifyContent="JustifyContent.End">
-
-		<RadzenButton Text="Editar"
-					  Icon="edit"
-					  Disabled="@(contactoSeleccionado is null)"
-					  ButtonStyle="ButtonStyle.Warning"
-					  Variant="Variant.Text"
-					  Shade="Shade.Light" 
-					  Click="EditarContacto" />
-
-		<RadzenButton Text="Crear Conversacion"
-					  Icon="check"
-					  ButtonStyle="ButtonStyle.Success" Variant="Variant.Text"
-					  Shade="Shade.Light"
-					  Disabled="@(contactoSeleccionado is null)"
-					  Click="CrearNuevaConversacion" />
-
+		<!-- Botón para cerrar el DialogService -->
+		<RadzenButton Icon="close"
+					  ButtonStyle="ButtonStyle.Base"
+					  Variant="Variant.Flat"
+					  Size="ButtonSize.Small"
+					  Click="@(() => dialogService.Close(null))"
+					  aria-label="Cerrar" />
 	</RadzenStack>
 
-</RadzenStack>
+	<RadzenStack Gap="1.25rem">
+		<!-- Selector de Tipo de Contacto (Estilo Segmentado) -->
+		<RadzenCard class="rz-background-color-base-100 rz-p-2" Variant="Variant.Flat">
+			<RadzenSelectBar TValue="TipoContactoEnum"
+							 Data="@tiposContacto"
+							 TextProperty="Texto"
+							 ValueProperty="Valor"
+							 @bind-Value="tipoContactoEnum"
+							 Change="@(() => BuscarContacto())"
+							 Style="width: 100%; flex-wrap: wrap;" />
+		</RadzenCard>
+
+		<!-- Input de Búsqueda -->
+		<RadzenFormField Text="Criterio de búsqueda" Variant="Variant.Outlined" AllowFloatingLabel="false" Style="width:100%;">
+			<ChildContent>
+				<RadzenTextBox @bind-Value="textoBusqueda"
+							   Placeholder="Ingrese número de identificación o celular..."
+							   @onkeyup="OnKeyUp" />
+			</ChildContent>
+			<End>
+				<RadzenButton Icon="search" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Flat" Click="BuscarContacto" />
+			</End>
+		</RadzenFormField>
+
+		<!-- DataGrid de Resultados -->
+		<RadzenDataGrid TItem="Contacto"
+						Data="@contactosFiltrados"
+						AllowSorting="true"
+						AllowPaging="true"
+						PageSize="5"
+						AllowColumnResize="true"
+						AllowAlternatingRows="false"
+						SelectionMode="DataGridSelectionMode.Single"
+						RowSelect="OnRowSelect"
+						ShowPagingSummary="true"
+						PagerHorizontalAlign="HorizontalAlign.Left"
+						Density="Density.Compact"
+						class="rz-border-radius-2 rz-shadow-1">
+			<Columns>
+				<RadzenDataGridColumn TItem="Contacto"
+									  Property="@nameof(Contacto.NombreContacto)"
+									  Title="Nombre" />
+				<RadzenDataGridColumn TItem="Contacto"
+									  Property="@nameof(Contacto.CelularContacto)"
+									  Title="Celular"
+									  Width="140px" />
+				<RadzenDataGridColumn TItem="Contacto"
+									  Property="@nameof(Contacto.Identificacion)"
+									  Title="Identificación"
+									  Width="140px" />
+				<RadzenDataGridColumn TItem="Contacto"
+									  Property="@nameof(Contacto.CorreoElectronico)"
+									  Title="Email" />
+			</Columns>
+		</RadzenDataGrid>
+
+		<!-- Acciones Inferiores -->
+		<RadzenStack Orientation="Orientation.Horizontal"
+					 JustifyContent="JustifyContent.End"
+					 Gap="0.75rem"
+					 class="rz-pt-2 rz-border-top">
+
+			<RadzenButton Text="Editar"
+						  Icon="edit"
+						  Disabled="@(contactoSeleccionado is null)"
+						  ButtonStyle="ButtonStyle.Warning"
+						  Variant="Variant.Flat"
+						  Click="EditarContacto" />
+
+			<RadzenButton Text="Crear Conversación"
+						  Icon="chat"
+						  ButtonStyle="ButtonStyle.Success"
+						  Variant="Variant.Filled"
+						  Disabled="@(contactoSeleccionado is null)"
+						  Click="CrearNuevaConversacion" />
+
+		</RadzenStack>
+	</RadzenStack>
+</div>
 
 @code
 {
@@ -116,7 +144,7 @@
 		new()
 		{
 			Valor = TipoContactoEnum.Pagadurias,
-			Texto = "Pagadurias"
+			Texto = "Pagadurías"
 		},
 		new()
 		{
@@ -125,12 +153,8 @@
 		}
 	};
 
-
-
 	private Contacto? contactoSeleccionado;
-
 	private List<Contacto> contactos = new();
-
 	private List<Contacto> contactosFiltrados = new();
 
 	protected override void OnInitialized()
@@ -147,7 +171,6 @@
 	{
 		try
 		{
-			// 1. Validaciones básicas
 			if (contactoSeleccionado is null)
 			{
 				notificacion.Notify(
@@ -168,8 +191,6 @@
 				return;
 			}
 
-			// 2. Verificación de existencia en Caché por número de teléfono
-			// (Ajusta 'ObtenerPorTelefonoAsync' o 'ExistePorTelefonoAsync' según la firma exacta de tu ICacheConversaciones)
 			var conversacionExistente = await cacheConversaciones.ObtenerConversacionPorNumeroTelefono(contactoSeleccionado.CelularContacto);
 
 			if (conversacionExistente is not null)
@@ -197,7 +218,6 @@
 				return;
 			}
 
-			// 3. Crear ticket
 			Ticket nuevoTicket = new()
 			{
 				IdGrupoUser = InformacionUsuarioAutenticado.IdGrupoUser
@@ -212,7 +232,6 @@
 
 			var fechaActual = DateTime.Now;
 
-			// 4. Crear conversación
 			Conversacion nuevaConversacion = new()
 			{
 				FechaFinConversacion = null,
@@ -237,7 +256,6 @@
 				throw new Exception("No fue posible consultar o crear la conversación.");
 			}
 
-			// 5. Asignar ticket
 			bool asignado = await asignarTicket.AsignarTicketNuevaConversacion(idTicket, idConversacion);
 
 			if (!asignado)
@@ -250,7 +268,6 @@
 				"Correcto",
 				"La conversación fue creada correctamente.");
 
-			// 6. Actualización en Caché y SignalR
 			DatosTarjetaConversacionDTO nuevaConversacionCache = await utilidades.ConstruirObjetoTarjetaConversacionAsync(
 				idConversacion,
 				idTicket,
@@ -329,8 +346,6 @@
 			return;
 		}
 
-
-
 		var filtro = textoBusqueda.Trim();
 
 		switch (tipoContactoEnum)
@@ -365,7 +380,6 @@
 	{
 		if (contactoSeleccionado is null) return;
 
-		// 1. Determinar el tipo de componente según el enum
 		Type tipoDialogo = tipoContactoEnum switch
 		{
 			TipoContactoEnum.Titular => typeof(EditarContactoDialog),
@@ -376,14 +390,12 @@
 			_ => throw new ArgumentOutOfRangeException()
 		};
 
-		// 2. Definir parámetros a enviar al diálogo modal
 		var parametros = new Dictionary<string, object>
-	{
-		{ "ContactoModel", contactoSeleccionado },
-		{ "TipoContacto", tipoContactoEnum },
-	};
+		{
+			{ "ContactoModel", contactoSeleccionado },
+			{ "TipoContacto", tipoContactoEnum },
+		};
 
-		// 3. Abrir el modal usando DialogService
 		var resultado = await dialogService.OpenAsync(
 			$"Editar {tipoContactoEnum}",
 			tipoDialogo,
@@ -391,7 +403,6 @@
 			new DialogOptions() { Width = "600px", Resizable = true, Draggable = true }
 		);
 
-		// 4. Si el diálogo retorna true (indica actualización exitosa), refrescamos la lista
 		if (resultado is bool seActualizo && seActualizo)
 		{
 			notificacion.Notify(
@@ -399,7 +410,7 @@
 				"Éxito",
 				"Contacto actualizado correctamente.");
 
-			await BuscarContacto(); // Recarga la lista para ver los datos frescos
+			await BuscarContacto();
 		}
 	}
 }

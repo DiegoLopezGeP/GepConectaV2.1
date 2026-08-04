@@ -69,6 +69,15 @@
 	</div>
 </div>
 
+<style>
+	.rz-dialog-content {
+		padding: 0 !important
+	}
+	.rz-dialog-titlebar{
+		padding: 0 !important
+	}
+</style>
+
 @code {
 	[Parameter] public EventCallback<DatosTarjetaConversacionDTO> OnAbrirConversacion { get; set; }
 	[Parameter] public List<DatosTarjetaConversacionDTO> ListaDatosTarjeta { get; set; } = new();
@@ -118,7 +127,9 @@
 			CloseDialogOnOverlayClick = false,
 			TitleContent = null,
 			ShowClose = true,
-			Style = esMovil ? "margin-top:30%;" : null
+			Style = esMovil ? "margin-top:30%;" : null,
+			ShowTitle = false
+
 		};
 
 		var result = await dialogService.OpenAsync<ConsultaContacto>(
@@ -138,16 +149,17 @@
 			Width = esMovil ? "95%" : "40%",
 			CloseDialogOnOverlayClick = false,
 			TitleContent = null,
-			ShowClose = true
+			ShowClose = false,
+
 		};
 
 		if (esMovil)
 		{
-			opciones.Style = "margin-top:30%;";
+			opciones.Style = "margin-top:5%";
 		}
 
 		var result = await dialogService.OpenAsync<RegistroContacto>(
-			"Registro de Contacto",
+			"",
 			null,
 			opciones);
 	}

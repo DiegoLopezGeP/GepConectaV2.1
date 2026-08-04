@@ -2,14 +2,14 @@
 {
     public class ContactoTitularFormDTO : ContactoBaseFormDTO
     {
-        [FormCampo(Label = "Nombre Completo", Requerido = true, Orden = 1)]
+        [FormCampo(Label = "Número de Identificación", Requerido = true, Orden = 1)]
+        public string NumIdentificacionCliente { get; set; } = string.Empty;
+
+        [FormCampo(Label = "Nombre Completo", Requerido = true, Orden = 2)]
         public string NombreCompletoCliente { get; set; } = string.Empty;
 
-        [FormCampo(Label = "Número de Celular", Requerido = true, Orden = 2)]
+        [FormCampo(Label = "Número de Celular", Requerido = true, Orden = 3)]
         public string NumCelularCliente { get; set; } = string.Empty;
-
-        [FormCampo(Label = "Número de Identificación", Requerido = true, Orden = 3)]
-        public string NumIdentificacionCliente { get; set; } = string.Empty;
 
         [FormCampo(Label = "Profesión", Requerido = false, Orden = 4)]
         public string? Profesion { get; set; }
@@ -18,7 +18,7 @@
         public string CorreoElectronico { get; set; } = string.Empty;
 
         // Campo especial (Pendiente de validación externa, no requerido por ahora)
-        [FormCampo(Label = "Id Afiliaciones", Requerido = false, Orden = 6, Ocultar =true)]
+        [FormCampo(Label = "Id Afiliaciones", Requerido = false, Orden = 6, Ocultar = true)]
         public int? IdClienteAfiliaciones { get; set; }
     }
 }
