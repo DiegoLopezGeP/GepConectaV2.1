@@ -91,6 +91,8 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<IFinalizarConversacion, FinalizarConversacion>();
             //Servicio para Obtener las plantillas activas por grupo de trabajo
             services.AddScoped<IObtenerPlantillas, ObtenerPlantillas>();
+            //Servicio para crear helpers que puedan usarse en contactos
+            services.AddScoped<IHelperContacto, HelperContacto>();
 
             // Servicio systemServicio
             services.AddScoped<SystemService>();
