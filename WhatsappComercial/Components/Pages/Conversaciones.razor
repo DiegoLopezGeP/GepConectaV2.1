@@ -41,7 +41,7 @@
 <div class="contenedor-conversaciones @ClaseVista">
 
 	<div class="panel-lista">
-		<ListaConversaciones NombreUsuarioDA="@userName" InformacionUsuarioAutenticado="@infoUsuarioConectado" ListaDatosTarjeta="@ListaConversaciones" esMovil="@esMovil" OnAbrirConversacion="AbrirConversacion"></ListaConversaciones>
+		<ListaConversaciones NombreUsuarioDA="@userName" InformacionUsuarioAutenticado="@infoUsuarioConectado" ListaDatosTarjeta="@ListaConversaciones" esMovil="@esMovil" OnAbrirConversacion="AbrirConversacion" IdConversacionActiva="@(conversacionSeleccionada?.IdConversacion ?? 0)"></ListaConversaciones>
 	</div>
 	@if (conversacionSeleccionada?.IdConversacion > 0)
 	{
@@ -49,18 +49,7 @@
 			<RadzenStack Gap="2%">
 				<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
 					<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado" plantillaSeleccionada="@plantillaSeleccionada" OnFinalizarConversacion="ManejarFinalizarConversacion" Plantillas="@plantillas" OnUsarPlantilla="UsarPlantillaSeleccionada"></TarjetaDatosConversación>
-
-					@* BOTÓN DE PLANTILLAS VISIBLE SÓLO EN MÓVIL *@
-@* 					@if (esMovil && conversacionSeleccionada?.IdConversacion > 0)
-					{
-						<RadzenButton Icon="description"
-									  Text="Plantillas"
-									  ButtonStyle="ButtonStyle.Info"
-									  Variant="Variant.Flat"
-									  Size="ButtonSize.Small"
-									  Style="margin-right: 10px; border-radius: 8px;"
-									  Click="AbrirPlantillasModal" />
-					} *@
+W
 				</RadzenStack>
 
 				<VisorMensajes IdConversacion="@(conversacionSeleccionada?.IdConversacion ?? 0)"

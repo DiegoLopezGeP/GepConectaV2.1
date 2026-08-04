@@ -27,16 +27,32 @@
 		</RadzenStack>
 	</div>
 
-	<!-- Filtro de categorías (Chips) -->
+	<!-- Filtro de categorías (Chips con Badge dinámico) -->
 	<div class="filtro-categorias">
 		<RadzenStack Gap="0.5rem" Style="padding: 5px 0 10px 0;">
 			<RadzenChipList @bind-Value="@selectedCategory"
 							TValue="string"
 							Data="@categories"
-							TextProperty="Name"
 							ValueProperty="Name"
+							TextProperty="Name"
 							ChipStyle="BadgeStyle.Base"
-							Change="OnFiltroBotonConversaciones" />
+							Change="OnFiltroBotonConversaciones">
+				<Template Context="item">
+					@{
+						var categoria = item.Value as string;
+					}
+					<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="6px">
+						<span>@categoria</span>
+						@if (categoria == "No Leídos" && TotalConversacionesNoLeidas > 0)
+						{
+							<RadzenBadge BadgeStyle="BadgeStyle.Danger"
+										 IsPill="true"
+										 Text="@TotalConversacionesNoLeidas.ToString()"
+										 Style="font-size: 11px; padding: 2px 6px;" />
+						}
+					</RadzenStack>
+				</Template>
+			</RadzenChipList>
 		</RadzenStack>
 	</div>
 
@@ -51,20 +67,20 @@
 	<div class="contenedor-tarjetas">
 		<TarjetaConversacion datosTarjetaConversacion="@ListaDatosTarjetaFiltrada" OnSeleccionar="AbrirConversacion" />
 	</div>
-
 </div>
 
-
-
 @code {
-	[Parameter]	public EventCallback<DatosTarjetaConversacionDTO> OnAbrirConversacion { get; set; }
+	[Parameter] public EventCallback<DatosTarjetaConversacionDTO> OnAbrirConversacion { get; set; }
 	[Parameter] public List<DatosTarjetaConversacionDTO> ListaDatosTarjeta { get; set; } = new();
 	[Parameter] public string? NombreUsuarioDA { get; set; }
 	[Parameter] public GrupoUser InformacionUsuarioAutenticado { get; set; } = new();
-	private List<DatosTarjetaConversacionDTO> ListaDatosTarjetaFiltrada = new();
-	private string textoBusqueda = string.Empty;
 	[Parameter] public bool esMovil { get; set; }
 
+	// NUEVO PARÁMETRO: Recibe el ID de la conversación que está abierta actualmente
+	[Parameter] public int IdConversacionActiva { get; set; }
+
+	private List<DatosTarjetaConversacionDTO> ListaDatosTarjetaFiltrada = new();
+	private string textoBusqueda = string.Empty;
 
 	string selectedCategory = "Activas";
 
@@ -75,6 +91,9 @@
 	};
 
 	public record NamedItem(string Name);
+
+	// El contador muestra solo las verdaderamente no leídas
+	private int TotalConversacionesNoLeidas => ListaDatosTarjeta.Count(c => c.MensajesSinLeer > 0);
 
 	private string TextoBusqueda
 	{
@@ -88,15 +107,11 @@
 
 	protected override async Task OnParametersSetAsync()
 	{
-		ListaDatosTarjetaFiltrada = ListaDatosTarjeta.ToList();
 		FiltrarConversaciones();
-
 	}
 
 	private async Task AbrirBusquedaCliente()
 	{
-		// esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
-
 		var opciones = new DialogOptions
 		{
 			Width = esMovil ? "95%" : "40%",
@@ -114,17 +129,10 @@
 				{ "InformacionUsuarioAutenticado", InformacionUsuarioAutenticado }
 			},
 			opciones);
-
-		// Si el diálogo retorna un resultado puedes procesarlo aquí.
-		// if (result != null)
-		// {
-		//     ...
-		// }
 	}
 
 	private async Task AbrirRegistroContacto()
 	{
-		// esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
 		var opciones = new DialogOptions
 		{
 			Width = esMovil ? "95%" : "40%",
@@ -137,42 +145,45 @@
 		{
 			opciones.Style = "margin-top:30%;";
 		}
+
 		var result = await dialogService.OpenAsync<RegistroContacto>(
 			"Registro de Contacto",
 			null,
 			opciones);
 	}
+
 	private void FiltrarConversaciones()
 	{
-		if (string.IsNullOrWhiteSpace(textoBusqueda))
+		IEnumerable<DatosTarjetaConversacionDTO> resultado = ListaDatosTarjeta;
+
+		// Si estamos en "No Leídos", incluimos las no leídas O la conversación actualmente seleccionada
+		if (selectedCategory == "No Leídos")
 		{
-			ListaDatosTarjetaFiltrada = ListaDatosTarjeta.ToList();
-			return;
+			resultado = resultado.Where(c => c.MensajesSinLeer > 0 || c.IdConversacion == IdConversacionActiva);
 		}
 
-		string filtro = textoBusqueda.Trim();
+		if (!string.IsNullOrWhiteSpace(textoBusqueda))
+		{
+			string filtro = textoBusqueda.Trim();
 
-		ListaDatosTarjetaFiltrada = ListaDatosTarjeta
-			.Where(c =>
+			resultado = resultado.Where(c =>
 				(!string.IsNullOrWhiteSpace(c.NombreCliente) &&
 					c.NombreCliente.Contains(filtro, StringComparison.OrdinalIgnoreCase))
 				||
-				// (!string.IsNullOrWhiteSpace(c.NumeroTelefono) &&
-				//  c.NumeroTelefono.Contains(filtro, StringComparison.OrdinalIgnoreCase))
-				// ||
-				c.IdTicket.ToString().Contains(filtro))
-			.ToList();
+				c.IdTicket.ToString().Contains(filtro, StringComparison.OrdinalIgnoreCase));
+		}
+
+		ListaDatosTarjetaFiltrada = resultado.ToList();
 	}
 
 	private async Task OnFiltroBotonConversaciones()
 	{
-		Console.WriteLine(selectedCategory);
+		FiltrarConversaciones();
+		await InvokeAsync(StateHasChanged);
 	}
+
 	private async Task AbrirConversacion(DatosTarjetaConversacionDTO conversacion)
 	{
-
-
-
 		await OnAbrirConversacion.InvokeAsync(conversacion);
 	}
 }
