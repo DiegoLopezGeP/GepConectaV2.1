@@ -9,6 +9,7 @@
 @using WhatsappComercial.Interfaces.Utilidades
 @using WhatsappComercial.Modelos
 @using WhatsappComercial.Modelos.DTOs
+
 @inject IBusquedaContactos busquedaContactos
 @inject ICrearTicket crearTicket
 @inject ICrearConversacion crearConversacion
@@ -122,36 +123,10 @@
 {
 	[Parameter] public string? NombreUsuarioDA { get; set; }
 	[Parameter] public GrupoUser InformacionUsuarioAutenticado { get; set; } = new();
+
 	private string? textoBusqueda;
 	private TipoContactoEnum tipoContactoEnum = TipoContactoEnum.Titular;
-	private List<OpcionTipoContacto> tiposContacto = new()
-	{
-		new()
-		{
-			Valor = TipoContactoEnum.Titular,
-			Texto = "Titular"
-		},
-		new()
-		{
-			Valor = TipoContactoEnum.Beneficiario,
-			Texto = "Beneficiario"
-		},
-		new()
-		{
-			Valor = TipoContactoEnum.Relacionista,
-			Texto = "Relacionista"
-		},
-		new()
-		{
-			Valor = TipoContactoEnum.Pagadurias,
-			Texto = "Pagadurías"
-		},
-		new()
-		{
-			Valor = TipoContactoEnum.Cobranzas,
-			Texto = "Cobranzas"
-		}
-	};
+	private List<OpcionTipoContacto> tiposContacto = new();
 
 	private Contacto? contactoSeleccionado;
 	private List<Contacto> contactos = new();
@@ -159,7 +134,42 @@
 
 	protected override void OnInitialized()
 	{
+		ConfigurarTiposContacto();
+	}
 
+	protected override void OnParametersSet()
+	{
+		ConfigurarTiposContacto();
+	}
+
+	private void ConfigurarTiposContacto()
+	{
+		// Compara con IdGrupoUser o Id según la propiedad de tu modelo GrupoUser
+		int? idGrupo = InformacionUsuarioAutenticado?.IdGrupoTrabajo;
+
+		if (idGrupo == 12)
+		{
+			tiposContacto = new List<OpcionTipoContacto>
+			{
+				new() { Valor = TipoContactoEnum.Relacionista, Texto = "Relacionista" }
+			};
+
+			if (tipoContactoEnum != TipoContactoEnum.Relacionista)
+			{
+				tipoContactoEnum = TipoContactoEnum.Relacionista;
+			}
+		}
+		else
+		{
+			tiposContacto = new List<OpcionTipoContacto>
+			{
+				new() { Valor = TipoContactoEnum.Titular, Texto = "Titular" },
+				new() { Valor = TipoContactoEnum.Beneficiario, Texto = "Beneficiario" },
+				new() { Valor = TipoContactoEnum.Relacionista, Texto = "Relacionista" },
+				new() { Valor = TipoContactoEnum.Pagadurias, Texto = "Pagadurías" },
+				new() { Valor = TipoContactoEnum.Cobranzas, Texto = "Cobranzas" }
+			};
+		}
 	}
 
 	private void OnRowSelect(Contacto contacto)
@@ -208,7 +218,11 @@
 				throw new InvalidOperationException("No fue posible obtener la información del usuario autenticado.");
 			}
 
-			if (InformacionUsuarioAutenticado.IdGrupoUser <= 0)
+			int idGrupo = InformacionUsuarioAutenticado.IdGrupoUser > 0
+				? InformacionUsuarioAutenticado.IdGrupoUser
+				: InformacionUsuarioAutenticado.IdGrupoTrabajo;
+
+			if (idGrupo <= 0)
 			{
 				notificacion.Notify(
 					NotificationSeverity.Warning,
@@ -220,7 +234,7 @@
 
 			Ticket nuevoTicket = new()
 			{
-				IdGrupoUser = InformacionUsuarioAutenticado.IdGrupoUser
+				IdGrupoUser = idGrupo
 			};
 
 			int idTicket = await crearTicket.CrearTicketAsync(nuevoTicket);

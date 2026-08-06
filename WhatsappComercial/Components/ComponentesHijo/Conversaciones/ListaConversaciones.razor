@@ -127,7 +127,7 @@
 			CloseDialogOnOverlayClick = false,
 			TitleContent = null,
 			ShowClose = true,
-			Style = esMovil ? "margin-top:30%;" : null,
+			Style = esMovil ? "margin-top:50%;" : null,
 			ShowTitle = false
 
 		};
@@ -150,7 +150,6 @@
 			CloseDialogOnOverlayClick = false,
 			TitleContent = null,
 			ShowClose = false,
-
 		};
 
 		if (esMovil)
@@ -160,7 +159,10 @@
 
 		var result = await dialogService.OpenAsync<RegistroContacto>(
 			"",
-			null,
+			new Dictionary<string, object>
+			{
+			{ nameof(RegistroContacto.grupoUser), InformacionUsuarioAutenticado }
+			},
 			opciones);
 	}
 

@@ -146,6 +146,8 @@
 </RadzenCard>
 
 @code {
+    [Parameter] public GrupoUser? grupoUser { get; set; }
+
     private TipoContactoEnum tipoContactoEnum = TipoContactoEnum.Titular;
     private List<CampoEsquemaDTO> camposEsquema = new();
     private Dictionary<string, object?> modeloDinamico = new();
@@ -155,18 +157,45 @@
     private object? beneficiarioSeleccionadoId;
     private int? idClienteTitularLocal;
 
-    private List<OpcionTipoContacto> tiposContacto = new()
-    {
-        new OpcionTipoContacto { Texto = "Titular", Valor = TipoContactoEnum.Titular },
-        new OpcionTipoContacto { Texto = "Beneficiario", Valor = TipoContactoEnum.Beneficiario },
-        new OpcionTipoContacto { Texto = "Cobranzas", Valor = TipoContactoEnum.Cobranzas },
-        new OpcionTipoContacto { Texto = "Pagadurías", Valor = TipoContactoEnum.Pagadurias },
-        new OpcionTipoContacto { Texto = "Relacionista", Valor = TipoContactoEnum.Relacionista }
-    };
+    private List<OpcionTipoContacto> tiposContacto = new();
 
     protected override void OnInitialized()
     {
+        ConfigurarTiposContacto();
         CargarEsquema(tipoContactoEnum);
+    }
+
+    protected override void OnParametersSet()
+    {
+        ConfigurarTiposContacto();
+    }
+
+    private void ConfigurarTiposContacto()
+    {
+        if (grupoUser != null && grupoUser.IdGrupoTrabajo == 12)
+        {
+            tiposContacto = new List<OpcionTipoContacto>
+            {
+                new OpcionTipoContacto { Texto = "Relacionista", Valor = TipoContactoEnum.Relacionista }
+            };
+
+            if (tipoContactoEnum != TipoContactoEnum.Relacionista)
+            {
+                tipoContactoEnum = TipoContactoEnum.Relacionista;
+                CargarEsquema(tipoContactoEnum);
+            }
+        }
+        else
+        {
+            tiposContacto = new List<OpcionTipoContacto>
+            {
+                new OpcionTipoContacto { Texto = "Titular", Valor = TipoContactoEnum.Titular },
+                new OpcionTipoContacto { Texto = "Beneficiario", Valor = TipoContactoEnum.Beneficiario },
+                new OpcionTipoContacto { Texto = "Cobranzas", Valor = TipoContactoEnum.Cobranzas },
+                new OpcionTipoContacto { Texto = "Pagadurías", Valor = TipoContactoEnum.Pagadurias },
+                new OpcionTipoContacto { Texto = "Relacionista", Valor = TipoContactoEnum.Relacionista }
+            };
+        }
     }
 
     private void OnTipoContactoChanged(TipoContactoEnum nuevoTipo)
@@ -212,7 +241,6 @@
     {
         beneficiarioSeleccionadoId = idContacto;
 
-        // Ejecuta el mapeo en el servicio
         formularioService.MapearBeneficiarioSeleccionado(
             idContacto,
             beneficiariosEncontrados,
@@ -221,7 +249,6 @@
 
         notificationService.Notify(NotificationSeverity.Info, "Beneficiario Cargado", "Se autocompletaron los datos.");
 
-        // Forzar renderizado para refrescar el campo "Id Cliente" en la pantalla
         StateHasChanged();
     }
 
