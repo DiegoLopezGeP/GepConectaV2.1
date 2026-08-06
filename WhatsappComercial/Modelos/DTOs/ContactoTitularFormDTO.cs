@@ -2,7 +2,7 @@
 {
     public class ContactoTitularFormDTO : ContactoBaseFormDTO
     {
-        [FormCampo(Label = "Número de Identificación", Requerido = true, Orden = 1)]
+        [FormCampo(Label = "Número de Identificación", Requerido = true, Orden = 1, ValidarExistenciaOnBlur = true)]
         public string NumIdentificacionCliente { get; set; } = string.Empty;
 
         [FormCampo(Label = "Nombre Completo", Requerido = true, Orden = 2)]

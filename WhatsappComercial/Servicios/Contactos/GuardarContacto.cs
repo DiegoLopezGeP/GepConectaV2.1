@@ -2,6 +2,7 @@
 using WhatsappComercial.Enums;
 using WhatsappComercial.Interfaces.Contactos;
 using WhatsappComercial.Modelos;
+using WhatsappComercial.Modelos.DTOs;
 using WhatsappComercial.Servicios.AccesoADatos;
 
 namespace WhatsappComercial.Servicios.Contactos
@@ -32,7 +33,10 @@ namespace WhatsappComercial.Servicios.Contactos
 
             // 2. Construir la consulta INSERT dinámica
             // Ejemplo: INSERT INTO ContactoTitular (NombreContacto, Celular) VALUES (@NombreContacto, @Celular)
-            _servicioAccesoDatos.GrabarRegistro(datos, nombreTabla);
+
+            var objetoCreado = ConstruirObjeto(tipoContacto, datos.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+
+            _servicioAccesoDatos.GrabarRegistro(objetoCreado, nombreTabla);
         }
 
         public async Task<DataTable> ObtenerEsquemaTablaAsync(TipoContactoEnum tipoContacto)
@@ -42,6 +46,69 @@ namespace WhatsappComercial.Servicios.Contactos
             DataTable dtEsquemaTabla = _servicioAccesoDatos.TraerTablaNombre(nombreTabla);
 
             return dtEsquemaTabla;
+        }
+
+        public object ConstruirObjeto(TipoContactoEnum tipoContacto, Dictionary<string, object?> datos)
+        {
+            try
+            {
+                return tipoContacto switch
+                {
+                    TipoContactoEnum.Titular => MapearDiccionarioAObjeto<Clientes>(datos),
+                    TipoContactoEnum.Beneficiario => MapearDiccionarioAObjeto<Beneficiario>(datos),
+                    TipoContactoEnum.Relacionista => MapearDiccionarioAObjeto<Contacto>(datos),
+                    TipoContactoEnum.Pagadurias => MapearDiccionarioAObjeto<Pagaduria>(datos),
+                    TipoContactoEnum.Cobranzas => MapearDiccionarioAObjeto<BaseCobranzas>(datos),
+                    _ => throw new ArgumentOutOfRangeException(nameof(tipoContacto), $"Tipo de contacto no soportado: {tipoContacto}")
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al construir objeto para {tipoContacto}: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Método auxiliar que asigna los valores del diccionario a las propiedades coincidentes del objeto.
+        /// </summary>
+        private TObjeto MapearDiccionarioAObjeto<TObjeto>(Dictionary<string, object?> datos) where TObjeto : class, new()
+        {
+            var instancia = new TObjeto();
+            var propiedades = typeof(TObjeto).GetProperties();
+
+            foreach (var prop in propiedades)
+            {
+                // Busca la clave en el diccionario ignorando mayúsculas/minúsculas
+                var kvp = datos.FirstOrDefault(d => d.Key.Equals(prop.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (kvp.Key != null && kvp.Value != null && prop.CanWrite)
+                {
+                    try
+                    {
+                        var tipoPropiedad = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+
+                        // Manejo especial si la propiedad es un Enum
+                        object valorConvertido;
+                        if (tipoPropiedad.IsEnum)
+                        {
+                            valorConvertido = Enum.Parse(tipoPropiedad, kvp.Value.ToString()!);
+                        }
+                        else
+                        {
+                            valorConvertido = Convert.ChangeType(kvp.Value, tipoPropiedad);
+                        }
+
+                        prop.SetValue(instancia, valorConvertido);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error al mapear la propiedad '{prop.Name}': {ex.Message}");
+                    }
+                }
+            }
+
+            return instancia;
         }
 
     }

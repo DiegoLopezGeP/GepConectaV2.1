@@ -93,6 +93,12 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<IObtenerPlantillas, ObtenerPlantillas>();
             //Servicio para crear helpers que puedan usarse en contactos
             services.AddScoped<IHelperContacto, HelperContacto>();
+            //Servicio para consultar contactos en la base de datos de afiliaciones
+            services.AddScoped<IBusquedaContactoAfiliaciones, BusquedaContactoAfiliaciones>();
+
+
+            //Servicio para representar el formulario de registro de contacto
+            services.AddScoped<IFormularioContactoService, FormularioContactoService>();
 
             // Servicio systemServicio
             services.AddScoped<SystemService>();

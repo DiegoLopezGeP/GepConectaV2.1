@@ -10,6 +10,7 @@
         public string? FormatoFechaQextractor { get; set; }
 
         public string? Aplicacion { get; set; }
+        public string? AplicacionCRM { get; set; }
 
         public string? HubNotificaciones { get; set; }
 

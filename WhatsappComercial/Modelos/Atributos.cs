@@ -9,11 +9,27 @@
         public int Orden { get; set; } = 99;
         public bool Ocultar { get; set; } = false;
 
-        public FormCampoAttribute(string label = "", bool requerido = false, int orden = 99, string mensajeRequerido = "")
+        /// <summary>
+        /// Indica si al perder el foco (Tab / OnBlur) en este campo se debe disparar la consulta
+        /// para verificar si el cliente/contacto ya existe en la base de datos.
+        /// </summary>
+        public bool ValidarExistenciaOnBlur { get; set; } = false;
+
+        // Constructor por defecto
+        public FormCampoAttribute() { }
+
+        // Constructor parametrizado actualizado
+        public FormCampoAttribute(
+            string label = "",
+            bool requerido = false,
+            int orden = 99,
+            string mensajeRequerido = "",
+            bool validarExistenciaOnBlur = false)
         {
             Label = label;
             Requerido = requerido;
             Orden = orden;
+            ValidarExistenciaOnBlur = validarExistenciaOnBlur;
             MensajeRequerido = string.IsNullOrWhiteSpace(mensajeRequerido)
                 ? $"El campo {label} es obligatorio."
                 : mensajeRequerido;

@@ -15,10 +15,16 @@
 
         public Type TipoDato { get; set; } = typeof(string);
         public bool EsObligatorio { get; set; }
+
         public string MensajeError { get; set; } = string.Empty;
         public int Orden { get; set; } = 99;
         public int? LongitudMaxima { get; set; }
         public bool EsClavePrimaria { get; set; }
         public bool EsAutoincremental { get; set; }
+
+        /// <summary>
+        /// Indica si al perder el foco (Tab/OnBlur) se debe validar si el registro existe en la BD.
+        /// </summary>
+        public bool ValidarExistenciaOnBlur { get; set; }
     }
 }

@@ -1,34 +1,30 @@
-﻿@using System.Reflection
-@using WhatsappComercial.Enums
+﻿@using WhatsappComercial.Enums
 @using WhatsappComercial.Interfaces.Contactos
 @using WhatsappComercial.Modelos
 @using WhatsappComercial.Modelos.DTOs
 
-
 @inject IGuardarContacto guardarContacto
+@inject IFormularioContactoService formularioService
 @inject NotificationService notificationService
 @inject DialogService dialogService
 
 <RadzenCard class="rz-shadow-3 rz-border-radius-2 rz-p-4 rz-mx-auto" Style="max-width: 900px;">
-    <!-- Encabezado del Formulario -->
+    <!-- Encabezado -->
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem" class="rz-mb-4">
         <RadzenIcon Icon="person_add" IconStyle="IconStyle.Primary" Style="font-size: 2rem;" />
         <div>
             <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H2" class="rz-m-0 rz-font-weight-bold">
                 Registro de Contacto
             </RadzenText>
-
             <RadzenText TextStyle="TextStyle.Caption" class="rz-text-secondary-color rz-m-0">
                 Seleccione el tipo de perfil e ingrese los datos requeridos.
             </RadzenText>
         </div>
     </RadzenStack>
 
-    <!-- Seleccionador de Tipo de Contacto (Estilo Segmentado) -->
+    <!-- Selector de Tipo -->
     <RadzenCard class="rz-background-color-base-100 rz-p-3 rz-mb-4" Variant="Variant.Flat">
-        <RadzenText TextStyle="TextStyle.Overline" class="rz-display-block rz-mb-2">
-            Tipo de Contacto
-        </RadzenText>
+        <RadzenText TextStyle="TextStyle.Overline" class="rz-display-block rz-mb-2">Tipo de Contacto</RadzenText>
         <RadzenSelectBar TValue="TipoContactoEnum"
                          Data="@tiposContacto"
                          TextProperty="Texto"
@@ -45,26 +41,42 @@
                             Submit="OnSubmitContacto"
                             InvalidSubmit="OnInvalidSubmit">
 
-            <!-- Grid a 2 columnas para pantallas medianas/grandes -->
             <RadzenRow RowGap="1.25rem" ColumnGap="1rem">
+                <!-- Dropdown Beneficiarios -->
+                @if (tipoContactoEnum == TipoContactoEnum.Beneficiario && beneficiariosEncontrados.Any())
+                {
+                    <RadzenColumn Size="12">
+                        <RadzenFormField Text="Seleccione el Beneficiario de Afiliaciones *" Style="width: 100%;" Variant="Variant.Outlined">
+                            <ChildContent>
+                                <RadzenDropDown TValue="object"
+                                                Data="@beneficiariosEncontrados"
+                                                TextProperty="NombreContacto"
+                                                ValueProperty="IdContacto"
+                                                Value="@beneficiarioSeleccionadoId"
+                                                ValueChanged="@OnBeneficiarioSeleccionado"
+                                                Placeholder="-- Seleccione un beneficiario para autocompletar --" />
+                            </ChildContent>
+                        </RadzenFormField>
+                    </RadzenColumn>
+                }
+
+                <!-- Campos Dinámicos -->
                 @foreach (var campo in camposEsquema)
                 {
                     <RadzenColumn Size="12" SizeMD="@ObtenerAnchoColumna(campo)">
-                        <!-- Agregamos el asterisco directamente en la etiqueta del RadzenFormField -->
                         <RadzenFormField Text="@(campo.EsObligatorio ? $"{campo.Etiqueta} *" : campo.Etiqueta)"
                                          Style="width: 100%;"
                                          AllowFloatingLabel="false"
                                          Variant="Variant.Outlined">
                             <ChildContent>
-                                @* --- CONTROLES DINÁMICOS POR TIPO DE DATO --- *@
-
                                 @if (campo.TipoDato.IsEnum)
                                 {
                                     <RadzenDropDown TValue="object"
                                                     Name="@campo.NombreCampo"
                                                     Data="@Enum.GetValues(campo.TipoDato)"
                                                     Value="@GetValor(campo.NombreCampo)"
-                                                    ValueChanged="@(val => SetValor(campo.NombreCampo, val))" />
+                                                    ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
+                                                    @onkeydown="@(async (KeyboardEventArgs e) => await ManejarKeyDownCampoAsync(e, campo))" />
                                 }
                                 else if (campo.TipoDato == typeof(bool))
                                 {
@@ -72,7 +84,8 @@
                                         <RadzenCheckBox Name="@campo.NombreCampo"
                                                         TValue="bool"
                                                         Value="@GetValorBool(campo.NombreCampo)"
-                                                        ValueChanged="@(val => SetValor(campo.NombreCampo, val))" />
+                                                        ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
+                                                        @onkeydown="@(async (KeyboardEventArgs e) => await ManejarKeyDownCampoAsync(e, campo))" />
                                         <RadzenLabel Text=" Confirmar / Activar" class="rz-ml-2" />
                                     </div>
                                 }
@@ -82,7 +95,8 @@
                                                       DateFormat="dd/MM/yyyy"
                                                       TValue="DateTime?"
                                                       Value="@GetValorDateTime(campo.NombreCampo)"
-                                                      ValueChanged="@(val => SetValor(campo.NombreCampo, val))" />
+                                                      ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
+                                                      @onkeydown="@(async (KeyboardEventArgs e) => await ManejarKeyDownCampoAsync(e, campo))" />
                                 }
                                 else if (campo.TipoDato == typeof(int) || campo.TipoDato == typeof(int?) ||
                                          campo.TipoDato == typeof(decimal) || campo.TipoDato == typeof(decimal?))
@@ -90,13 +104,15 @@
                                     <RadzenNumeric Name="@campo.NombreCampo"
                                                    TValue="decimal?"
                                                    Value="@GetValorDecimal(campo.NombreCampo)"
-                                                   ValueChanged="@(val => SetValor(campo.NombreCampo, val))" />
+                                                   ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
+                                                   @onkeydown="@(async (KeyboardEventArgs e) => await ManejarKeyDownCampoAsync(e, campo))" />
                                 }
                                 else
                                 {
                                     <RadzenTextBox Name="@campo.NombreCampo"
                                                    Value="@GetValorString(campo.NombreCampo)"
-                                                   ValueChanged="@(val => SetValor(campo.NombreCampo, val))" />
+                                                   ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
+                                                   @onkeydown="@(async (KeyboardEventArgs e) => await ManejarKeyDownCampoAsync(e, campo))" />
                                 }
                             </ChildContent>
 
@@ -114,19 +130,10 @@
                 }
             </RadzenRow>
 
-            <!-- Acciones / Botones -->
+            <!-- Acciones -->
             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" class="rz-mt-4 rz-pt-3 rz-border-top">
-                <RadzenButton Text="Cancelar"
-                              ButtonStyle="ButtonStyle.Light"
-                              Variant="Variant.Flat"
-                              Click="@(() => dialogService.Close(false))" />
-
-                <RadzenButton Text="Guardar Contacto"
-                              Icon="save"
-                              ButtonType="ButtonType.Submit"
-                              ButtonStyle="ButtonStyle.Primary"
-                              IsBusy="@isSaving"
-                              BusyText="Guardando..." />
+                <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Click="@(() => dialogService.Close(false))" />
+                <RadzenButton Text="Guardar Contacto" Icon="save" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" IsBusy="@isSaving" BusyText="Guardando..." />
             </RadzenStack>
         </RadzenTemplateForm>
     }
@@ -144,6 +151,10 @@
     private Dictionary<string, object?> modeloDinamico = new();
     private bool isSaving = false;
 
+    private List<Contacto> beneficiariosEncontrados = new();
+    private object? beneficiarioSeleccionadoId;
+    private int? idClienteTitularLocal;
+
     private List<OpcionTipoContacto> tiposContacto = new()
     {
         new OpcionTipoContacto { Texto = "Titular", Valor = TipoContactoEnum.Titular },
@@ -155,118 +166,63 @@
 
     protected override void OnInitialized()
     {
-        CargarEsquemaDesdeModelo(tipoContactoEnum);
+        CargarEsquema(tipoContactoEnum);
     }
 
     private void OnTipoContactoChanged(TipoContactoEnum nuevoTipo)
     {
         tipoContactoEnum = nuevoTipo;
-        CargarEsquemaDesdeModelo(nuevoTipo);
+        beneficiariosEncontrados.Clear();
+        beneficiarioSeleccionadoId = null;
+        CargarEsquema(nuevoTipo);
     }
 
-    private void CargarEsquemaDesdeModelo(TipoContactoEnum tipo)
+    private void CargarEsquema(TipoContactoEnum tipo)
     {
-        modeloDinamico.Clear();
-        camposEsquema.Clear();
+        var res = formularioService.GenerarEsquema(tipo);
+        camposEsquema = res.Campos;
+        modeloDinamico = res.ModeloInicial;
+    }
 
-        Type tipoModelo = tipo switch
+    private async Task ManejarKeyDownCampoAsync(KeyboardEventArgs e, CampoEsquemaDTO campo)
+    {
+        if (e.Key == "Enter" || e.Key == "Tab")
         {
-            TipoContactoEnum.Titular => typeof(ContactoTitularFormDTO),
-            TipoContactoEnum.Beneficiario => typeof(ContactoBeneficiarioFormDTO),
-            TipoContactoEnum.Cobranzas => typeof(ContactoCobranzasFormDTO),
-            TipoContactoEnum.Pagadurias => typeof(ContactoPagaduriasFormDTO),
-            TipoContactoEnum.Relacionista => typeof(ContactoRelacionstaFormDTO),
-            _ => typeof(ContactoBaseFormDTO)
-        };
+            if (!campo.ValidarExistenciaOnBlur) return;
 
-        var propiedades = tipoModelo.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            var res = await formularioService.ProcesarValidacionBlurAsync(tipoContactoEnum, campo, modeloDinamico);
 
-        foreach (var prop in propiedades)
-        {
-            if (prop.Name.StartsWith("Id", StringComparison.OrdinalIgnoreCase) &&
-                !prop.Name.Contains("Afiliaciones") &&
-                !prop.Name.Equals("IdCliente") &&
-                !prop.Name.Equals("IdParentesco"))
+            if (!string.IsNullOrEmpty(res.Mensaje))
             {
-                continue;
+                var severity = res.EsAdvertencia ? NotificationSeverity.Warning : NotificationSeverity.Success;
+                notificationService.Notify(severity, res.Titulo, res.Mensaje, 5000);
             }
 
-            var attr = prop.GetCustomAttribute<FormCampoAttribute>();
-
-            if (attr != null && attr.Ocultar)
-                continue;
-
-            var campo = new CampoEsquemaDTO
+            if (res.BeneficiariosEncontrados != null)
             {
-                NombreCampo = prop.Name,
-                Etiqueta = attr?.Label ?? prop.Name,
-                TipoDato = prop.PropertyType,
-                EsObligatorio = attr?.Requerido ?? false,
-                MensajeError = attr?.MensajeRequerido ?? $"El campo {attr?.Label ?? prop.Name} es obligatorio.",
-                Orden = attr?.Orden ?? 99
-            };
-
-            camposEsquema.Add(campo);
-
-            if (prop.PropertyType.IsEnum)
-            {
-                var enumValores = Enum.GetValues(prop.PropertyType);
-                modeloDinamico[prop.Name] = enumValores.GetValue(0);
+                beneficiariosEncontrados = res.BeneficiariosEncontrados;
+                idClienteTitularLocal = res.IdClienteTitularLocal;
             }
-            else
-            {
-                modeloDinamico[prop.Name] = null;
-            }
+
+            StateHasChanged();
         }
+    }
 
-        camposEsquema = camposEsquema.OrderBy(c => c.Orden).ToList();
+    private void OnBeneficiarioSeleccionado(object idContacto)
+    {
+        beneficiarioSeleccionadoId = idContacto;
+
+        // Ejecuta el mapeo en el servicio
+        formularioService.MapearBeneficiarioSeleccionado(
+            idContacto,
+            beneficiariosEncontrados,
+            idClienteTitularLocal,
+            modeloDinamico);
+
+        notificationService.Notify(NotificationSeverity.Info, "Beneficiario Cargado", "Se autocompletaron los datos.");
+
+        // Forzar renderizado para refrescar el campo "Id Cliente" en la pantalla
         StateHasChanged();
-    }
-
-    // Define si un campo toma ancho completo (12 col) o mitad de pantalla (6 col)
-    private int ObtenerAnchoColumna(CampoEsquemaDTO campo)
-    {
-        // Campos que suelen requerir más espacio ocupan toda la fila
-        if (campo.TipoDato == typeof(bool) ||
-            campo.NombreCampo.Contains("Observacion", StringComparison.OrdinalIgnoreCase) ||
-            campo.NombreCampo.Contains("Direccion", StringComparison.OrdinalIgnoreCase))
-        {
-            return 12;
-        }
-
-        return 6; // Por defecto 2 columnas en desktop
-    }
-
-    // --- HELPERS DICCIONARIO ---
-    private void SetValor(string nombreCampo, object? valor) => modeloDinamico[nombreCampo] = valor;
-
-    private object? GetValor(string nombreCampo) =>
-        modeloDinamico.TryGetValue(nombreCampo, out var val) ? val : null;
-
-    private string GetValorString(string nombreCampo) =>
-        modeloDinamico.TryGetValue(nombreCampo, out var val) ? val?.ToString() ?? string.Empty : string.Empty;
-
-    private decimal? GetValorDecimal(string nombreCampo) =>
-        modeloDinamico.TryGetValue(nombreCampo, out var val) && val != null ? Convert.ToDecimal(val) : null;
-
-    private DateTime? GetValorDateTime(string nombreCampo) =>
-        modeloDinamico.TryGetValue(nombreCampo, out var val) && val is DateTime dt ? dt : null;
-
-    private bool GetValorBool(string nombreCampo) =>
-        modeloDinamico.TryGetValue(nombreCampo, out var val) && val is bool b && b;
-
-    private bool ValidarCampoObligatorio(string nombreCampo)
-    {
-        if (!modeloDinamico.TryGetValue(nombreCampo, out var val) || val == null)
-            return false;
-
-        if (val is string str)
-            return !string.IsNullOrWhiteSpace(str);
-
-        if (val is Enum enumVal)
-            return Convert.ToInt32(enumVal) != 0;
-
-        return true;
     }
 
     private async Task OnSubmitContacto()
@@ -275,20 +231,12 @@
         {
             isSaving = true;
             await guardarContacto.GuardarContactoDinamicoAsync(tipoContactoEnum, modeloDinamico);
-
-            notificationService.Notify(
-                NotificationSeverity.Success,
-                "Éxito",
-                "El contacto fue registrado correctamente.");
-
+            notificationService.Notify(NotificationSeverity.Success, "Éxito", "El contacto fue registrado correctamente.");
             dialogService.Close(true);
         }
         catch (Exception ex)
         {
-            notificationService.Notify(
-                NotificationSeverity.Error,
-                "Error",
-                ex.Message);
+            notificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
         }
         finally
         {
@@ -298,9 +246,24 @@
 
     private void OnInvalidSubmit(FormInvalidSubmitEventArgs args)
     {
-        notificationService.Notify(
-            NotificationSeverity.Warning,
-            "Formulario Incompleto",
-            "Por favor complete todos los campos obligatorios.");
+        notificationService.Notify(NotificationSeverity.Warning, "Formulario Incompleto", "Por favor complete todos los campos obligatorios.");
+    }
+
+    private int ObtenerAnchoColumna(CampoEsquemaDTO campo) =>
+        (campo.TipoDato == typeof(bool) || campo.NombreCampo.Contains("Observacion", StringComparison.OrdinalIgnoreCase) || campo.NombreCampo.Contains("Direccion", StringComparison.OrdinalIgnoreCase)) ? 12 : 6;
+
+    private void SetValor(string key, object? val) => modeloDinamico[key] = val;
+    private object? GetValor(string key) => modeloDinamico.TryGetValue(key, out var val) ? val : null;
+    private string GetValorString(string key) => modeloDinamico.TryGetValue(key, out var val) ? val?.ToString() ?? "" : "";
+    private decimal? GetValorDecimal(string key) => modeloDinamico.TryGetValue(key, out var val) && val != null ? Convert.ToDecimal(val) : null;
+    private DateTime? GetValorDateTime(string key) => modeloDinamico.TryGetValue(key, out var val) && val is DateTime dt ? dt : null;
+    private bool GetValorBool(string key) => modeloDinamico.TryGetValue(key, out var val) && val is bool b && b;
+
+    private bool ValidarCampoObligatorio(string key)
+    {
+        if (!modeloDinamico.TryGetValue(key, out var val) || val == null) return false;
+        if (val is string str) return !string.IsNullOrWhiteSpace(str);
+        if (val is Enum enumVal) return Convert.ToInt32(enumVal) != 0;
+        return true;
     }
 }

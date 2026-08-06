@@ -14,6 +14,7 @@ namespace WhatsappComercial.Servicios.AccesoADatos
         readonly AccesoDatosSoapClient ServicioDatos = new(AccesoDatosSoapClient.EndpointConfiguration.AccesoDatosSoap);
         private readonly Microsoft.Extensions.Options.IOptions<ConfiguracionApp> configuracionAplicacion;
         public int Aplicacion;
+        public int AplicacionCRM;
         #endregion
 
         #region Constructor
@@ -23,6 +24,7 @@ namespace WhatsappComercial.Servicios.AccesoADatos
             if (!string.IsNullOrEmpty(configuracionAplicacion.Value.Aplicacion))
             {
                 Aplicacion = int.Parse(configuracionAplicacion.Value.Aplicacion);
+                AplicacionCRM = int.Parse(configuracionAplicacion.Value.AplicacionCRM);
             }
         }
         #endregion
@@ -99,6 +101,14 @@ namespace WhatsappComercial.Servicios.AccesoADatos
 
         #endregion
 
+        #region Consultas Afiliaciones
+        public DataTable TraerTablaParametrosAfiliaciones(string tabla, string campos, string condicion)
+        {
+            DataTable dtConsulta = ServicioDatos.TraerTablaParametros(tabla, campos, condicion, AplicacionCRM);
+            return dtConsulta;
+        }
+        #endregion
+
         #region Inserciones
         public void InsertarTabla(DataTable tablaGrabar)
         {
@@ -156,7 +166,7 @@ namespace WhatsappComercial.Servicios.AccesoADatos
             {
                 DataTable tablaEsquema = ServicioDatos.TraerEsquemaTabla(nombreTabla, Aplicacion);
                 DataRow fila = tablaEsquema.NewRow();
-                PropertyInfo[] propiedades = typeof(T).GetProperties();
+                PropertyInfo[] propiedades = objeto.GetType().GetProperties();
 
                 foreach (PropertyInfo propiedad in propiedades)
                 {
