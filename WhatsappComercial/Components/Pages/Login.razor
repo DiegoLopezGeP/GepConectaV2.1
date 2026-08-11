@@ -1,0 +1,192 @@
+﻿@page "/login"
+@using Microsoft.AspNetCore.Authorization
+@using Radzen
+@using Radzen.Blazor
+@attribute [AllowAnonymous]
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Iniciar Sesión - WhatsApp Comercial</PageTitle>
+
+<div class="login-wrapper">
+    <RadzenCard class="login-card rz-variant-flat rz-border-radius-3 rz-shadow-6">
+
+        <!-- Header del Formulario -->
+        <div class="login-header">
+            <div class="logo-container">
+                <RadzenImage Path="favicon.png" AlternateText="Logo" Style="width: 54px; height: 54px;" />
+            </div>
+            <RadzenText TextStyle="TextStyle.H5" class="rz-font-weight-bold rz-mb-1" Style="color: var(--rz-primary-darker);">
+                WhatsApp Comercial
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" class="rz-color-muted">
+                Ingresa tus credenciales corporativas
+            </RadzenText>
+        </div>
+
+        <!-- Alerta de Error -->
+        @if (!string.IsNullOrEmpty(mensajeError))
+        {
+            <RadzenAlert AlertStyle="AlertStyle.Danger"
+                         Variant="Variant.Flat"
+                         Shade="Shade.Lighter"
+                         AllowClose="false"
+                         Icon="error"
+                         class="rz-mb-4">
+                @mensajeError
+            </RadzenAlert>
+        }
+
+        <!-- Formulario Radzen -->
+        <RadzenTemplateForm Data="@loginModel" Submit="@((LoginModel args) => ProcesarLogin())">
+
+            <!-- Campo Usuario -->
+            <div class="rz-mb-4">
+                <RadzenFormField Text="Usuario de Red" Variant="Variant.Outlined" Style="width: 100%;">
+                    <Start>
+                        <RadzenIcon Icon="person" />
+                    </Start>
+                    <ChildContent>
+                        <RadzenTextBox Name="Username"
+                                       @bind-Value="loginModel.Username"
+                                       Placeholder="Ej. jperez"
+                                       AutoComplete="false"
+                                       Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
+                <RadzenRequiredValidator Component="Username" Text="El usuario es obligatorio" Popup="false" />
+            </div>
+
+            <!-- Campo Contraseña con Toggle de Visibilidad -->
+            <div class="rz-mb-4">
+                <RadzenFormField Text="Contraseña" Variant="Variant.Outlined" Style="width: 100%;">
+                    <Start>
+                        <RadzenIcon Icon="lock" />
+                    </Start>
+                    <ChildContent>
+                        @if (mostrarPassword)
+                        {
+                            <RadzenTextBox Name="Password"
+                                           @bind-Value="loginModel.Password"
+                                           Placeholder="••••••••"
+                                           Style="width: 100%;" />
+                        }
+                        else
+                        {
+                            <RadzenPassword Name="Password"
+                                            @bind-Value="loginModel.Password"
+                                            Placeholder="••••••••"
+                                            Style="width: 100%;" />
+                        }
+                    </ChildContent>
+                    <End>
+                        <RadzenButton Icon="@(mostrarPassword ? "visibility_off" : "visibility")"
+                                      ButtonStyle="ButtonStyle.Base"
+                                      Variant="Variant.Text"
+                                      Click="@ToggleMostrarPassword"
+                                      Type="Button"
+                                      Size="ButtonSize.Small"
+                                      Style="padding: 0; min-width: 32px;" />
+                    </End>
+                </RadzenFormField>
+                <RadzenRequiredValidator Component="Password" Text="La contraseña es obligatoria" Popup="false" />
+            </div>
+
+            <!-- Botón Submit -->
+            <RadzenButton ButtonType="ButtonType.Submit"
+                          Text="@(cargando ? "Validando..." : "Iniciar Sesión")"
+                          Icon="@(cargando ? "" : "login")"
+                          IsBusy="@cargando"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Size="ButtonSize.Large"
+                          Style="width: 100%; font-weight: 600;"
+                          class="rz-border-radius-2" />
+
+        </RadzenTemplateForm>
+    </RadzenCard>
+</div>
+
+<style>
+    .login-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 85vh;
+        background-color: var(--rz-body-background-color, #f4f6f9);
+        padding: 1.5rem;
+    }
+
+    .login-card {
+        width: 100%;
+        max-width: 420px;
+        padding: 2rem !important;
+        background-color: #ffffff;
+        border: 1px solid var(--rz-border-color, #e0e0e0);
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .logo-container {
+        display: inline-flex;
+        padding: 12px;
+        border-radius: 50%;
+        background: #f0f4f8;
+        margin-bottom: 1rem;
+    }
+
+    /* Ajuste fino para la posición de iconos finales en RadzenFormField */
+    .rz-form-field-end {
+        display: flex;
+        align-items: center;
+        padding-right: 8px;
+    }
+</style>
+
+@code {
+    private LoginModel loginModel = new();
+    private string mensajeError = string.Empty;
+    private bool cargando = false;
+    private bool mostrarPassword = false;
+
+    private void ToggleMostrarPassword()
+    {
+        mostrarPassword = !mostrarPassword;
+    }
+
+    private async Task ProcesarLogin()
+    {
+        cargando = true;
+        mensajeError = string.Empty;
+
+        try
+        {
+            bool exito = await JS.InvokeAsync<bool>("submitLogin", loginModel.Username, loginModel.Password);
+
+            if (exito)
+            {
+                Navigation.NavigateTo("/WhatsappCorporativo/Conversaciones", forceLoad: true);
+            }
+            else
+            {
+                mensajeError = "Usuario o contraseña incorrectos.";
+            }
+        }
+        catch (Exception)
+        {
+            mensajeError = "Error al intentar conectar con el servidor.";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    public class LoginModel
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

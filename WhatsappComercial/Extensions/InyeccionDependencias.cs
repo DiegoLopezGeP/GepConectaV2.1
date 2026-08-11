@@ -4,6 +4,7 @@ using WhatsappComercial.Interfaces.Cache;
 using WhatsappComercial.Interfaces.Contactos;
 using WhatsappComercial.Interfaces.Conversaciones;
 using WhatsappComercial.Interfaces.GestionArchivos;
+using WhatsappComercial.Interfaces.LDAPAuth;
 using WhatsappComercial.Interfaces.Mensajes;
 using WhatsappComercial.Interfaces.NotificarUI;
 using WhatsappComercial.Interfaces.Plantillas;
@@ -19,6 +20,7 @@ using WhatsappComercial.Servicios.ConfiguracionEstatica;
 using WhatsappComercial.Servicios.Contactos;
 using WhatsappComercial.Servicios.Conversaciones;
 using WhatsappComercial.Servicios.GestionArchivos;
+using WhatsappComercial.Servicios.LDAPAuth;
 using WhatsappComercial.Servicios.Mensajes;
 using WhatsappComercial.Servicios.NotificarUI;
 using WhatsappComercial.Servicios.Plantillas;
@@ -95,6 +97,8 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<IHelperContacto, HelperContacto>();
             //Servicio para consultar contactos en la base de datos de afiliaciones
             services.AddScoped<IBusquedaContactoAfiliaciones, BusquedaContactoAfiliaciones>();
+            //Servicio para Validar las credenciales contra el directorio activo LDAP
+            services.AddScoped<ILdapAuthService, LdapAuthService>();
 
 
             //Servicio para representar el formulario de registro de contacto

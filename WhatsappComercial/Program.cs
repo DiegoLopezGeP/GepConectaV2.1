@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using GepConecta.WhatsAppCloud.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.HttpOverrides; // <-- Agregar esta directiva
 using Microsoft.Extensions.FileProviders;
@@ -17,12 +18,25 @@ namespace WhatsappComercial
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
-            .AddNegotiate();
+            // 1. Agregar el servicio de Controladores
+            builder.Services.AddControllers();
 
-            builder.Services.AddAuthorization(options =>
+            builder.Services.AddAuthentication(options =>
             {
-                options.FallbackPolicy = options.DefaultPolicy;
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            })
+            .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+            {
+                options.Cookie.Name = "WhatsappComercialSession";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = SameSiteMode.Lax; // Permite guardar la cookie en redirecciones locales
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.LoginPath = "/login";
+                options.AccessDeniedPath = "/login";
+                options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                options.SlidingExpiration = true;
             });
 
             // Add services to the container.
@@ -119,7 +133,7 @@ namespace WhatsappComercial
             app.UseAntiforgery();
 
             app.MapStaticAssets();
-
+            app.MapControllers();
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
 
