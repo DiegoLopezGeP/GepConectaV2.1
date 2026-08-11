@@ -18,7 +18,7 @@
 
 @inject NavigationManager Navigation
 @inject IWhatsAppCloudClient whatsAppCloudClient
-
+@inject IConfiguration configuration
 @inject IUsuarios informacionUsuario
 @inject IObtenerConversaciones obtenerConversaciones
 @inject IObtenerMensajesConversacion obtenerMensajes
@@ -31,6 +31,7 @@
 @inject INotificarUI NotificadorUI
 @inject IFinalizarConversacion finalizarConversacion
 @inject IObtenerPlantillas obtenerPlantillas
+@inject ILogger<Conversaciones> Logger
 @inject NotificationService notificationService
 @inject DialogService dialogService
 
@@ -126,7 +127,6 @@
 	private bool _debeIrAlFinal;
 	private List<PlantillaDTO> plantillas = new();
 	private PlantillaDTO? plantillaSeleccionada;
-
 	private async Task AbrirPlantillasModal()
 	{
 		var opciones = new DialogOptions
@@ -161,7 +161,9 @@
 		{
 			esMovil = await JS.InvokeAsync<bool>("blazorInterop.esDispositivoMovil");
 
-			conexionHubGepConecta = CrearConexionHub($"/GepConectaHub?usuario={userName}");
+			conexionHubGepConecta = CrearConexionHub($"GepConectaHub?usuario={userName}");
+
+
 			RegistrarEventosSignalR();
 			await conexionHubGepConecta.StartAsync();
 
@@ -171,13 +173,46 @@
 
 	protected override async Task OnInitializedAsync()
 	{
-		userName = HttpContextAccessor.HttpContext?.User?.Identity?.Name?.Split("\\").Last() ?? "Desconocido";
-		infoUsuarioConectado = await informacionUsuario.ObtenerInformacionUsuario(userName);
-		await FiltrarConversacionesPorUsuario();
-		plantillas = await obtenerPlantillas.ObtenerPlantillasActivas(new string[] { infoUsuarioConectado.IdGrupoTrabajo.ToString() });
+		try
+		{
+			// 1. Obtener el usuario con fallback seguro
+			userName = HttpContextAccessor.HttpContext?.User?.Identity?.Name?.Split("\\").Last() ?? "Desconocido";
 
-		NotificadorUI.OnNuevoMensajeEntrante += ManejarNuevoMensaje;
-		NotificadorUI.CambiodeEstadoMensaje += ManejarCambioEstado;
+			// 2. Obtener la información del usuario
+			infoUsuarioConectado = await informacionUsuario.ObtenerInformacionUsuario(userName);
+
+			if (infoUsuarioConectado == null)
+			{
+				throw new Exception($"No se encontró información registrada para el usuario '{userName}'.");
+			}
+
+			// 3. Filtrar conversaciones y cargar plantillas
+			await FiltrarConversacionesPorUsuario();
+
+			var idGrupo = infoUsuarioConectado.IdGrupoTrabajo > 0
+				? infoUsuarioConectado.IdGrupoTrabajo.ToString()
+				: infoUsuarioConectado.IdGrupoUser.ToString();
+
+			plantillas = await obtenerPlantillas.ObtenerPlantillasActivas(new string[] { idGrupo });
+
+			// 4. Suscribir eventos
+			NotificadorUI.OnNuevoMensajeEntrante += ManejarNuevoMensaje;
+			NotificadorUI.CambiodeEstadoMensaje += ManejarCambioEstado;
+		}
+		catch (Exception ex)
+		{
+			Logger.LogError(ex, $"[ERROR CRÍTICO EN CONVERSACIONES] {ex.Message} \n {ex.StackTrace}");
+
+			Console.WriteLine($"[ERROR CRÍTICO EN CONVERSACIONES]: {ex.Message} \n {ex.StackTrace}");
+
+			notificationService.Notify(new NotificationMessage
+			{
+				Severity = NotificationSeverity.Error,
+				Summary = "Error al iniciar Conversaciones",
+				Detail = ex.Message,
+				Duration = 10000
+			});
+		}
 	}
 
 	public void Dispose()
@@ -188,8 +223,12 @@
 
 	private HubConnection CrearConexionHub(string endpoint)
 	{
+		// En vez de: Navigation.ToAbsoluteUri(endpoint)
+		// que sale por internet vía HAProxy y rompe NTLM,
+		// conectamos directo al mismo proceso vía localhost.
+		var urlInterna = configuration["AppSettings:UrlInternaHub"] + endpoint;
 		return new HubConnectionBuilder()
-			.WithUrl(Navigation.ToAbsoluteUri(endpoint), options =>
+			.WithUrl(urlInterna, options =>
 			{
 				options.UseDefaultCredentials = true;
 			})

@@ -1,5 +1,135 @@
 ﻿@page "/not-found"
 @layout MainLayout
+@inject NavigationManager Navigation
+@inject ILogger<NotFound> Logger
 
-<h3>Not Found</h3>
-<p>Sorry, the content you are looking for does not exist.</p>
+<div class="not-found-container">
+    <RadzenCard class="not-found-card rz-shadow-6 rz-border-radius-3 rz-p-4 rz-p-md-5">
+        <div class="icon-wrapper rz-mb-3">
+            <RadzenIcon Icon="warning" class="not-found-icon" />
+        </div>
+
+        <RadzenText TextStyle="TextStyle.H4" class="rz-font-weight-bold rz-mb-1 text-center text-danger">
+            Error de Inicialización / Recurso no encontrado
+        </RadzenText>
+
+        <RadzenText TextStyle="TextStyle.Body1" class="rz-text-secondary-color text-center rz-mb-4">
+            Ocurrió un problema al cargar el componente solicitado o la ruta no existe.
+        </RadzenText>
+
+        <!-- Diagnóstico general -->
+        <RadzenCard Variant="Variant.Flat" class="rz-background-color-base-200 rz-p-3 rz-mb-3 rz-border-radius-2">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-mb-1">
+                <RadzenIcon Icon="bug_report" IconStyle="IconStyle.Danger" Style="font-size: 1.25rem;" />
+                <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-m-0 rz-font-weight-bold">
+                    Detalles del Error
+                </RadzenText>
+            </RadzenStack>
+
+            <RadzenText TextStyle="TextStyle.Body2" class="rz-m-0">
+                @razonDetallada
+            </RadzenText>
+        </RadzenCard>
+
+        <!-- Sección tipo Consola / Log de Excepción -->
+        @if (ExcepcionCapturada != null)
+        {
+            <RadzenCard Variant="Variant.Flat" class="rz-background-color-danger-lighter rz-p-3 rz-mb-4 text-start">
+                <RadzenText TextStyle="TextStyle.Caption" class="rz-font-weight-bold rz-text-danger-dark rz-mb-1">
+                    EXCEPCIÓN DETECTADA:
+                </RadzenText>
+                <div class="log-console">
+                    <pre class="m-0"><strong>Mensaje:</strong> @ExcepcionCapturada.Message</pre>
+                    <hr class="rz-my-2" />
+                    <details>
+                        <summary class="cursor-pointer text-muted">Ver StackTrace completo</summary>
+                        <pre class="stack-trace rz-mt-2">@ExcepcionCapturada.StackTrace</pre>
+                    </details>
+                </div>
+            </RadzenCard>
+        }
+
+        <!-- Acciones -->
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Gap="1rem" class="rz-pt-2">
+            <RadzenButton Text="Reintentar / Recargar"
+                          Icon="refresh"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Variant="Variant.Filled"
+                          Click="@Recargar" />
+        </RadzenStack>
+    </RadzenCard>
+</div>
+
+<style>
+    .not-found-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 75vh;
+        padding: 1.5rem;
+    }
+
+    .not-found-card {
+        max-width: 700px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .icon-wrapper {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background-color: var(--rz-danger-lighter, #fee2e2);
+        margin: 0 auto;
+    }
+
+    .not-found-icon {
+        font-size: 2.5rem;
+        color: var(--rz-danger, #ef4444);
+    }
+
+    .log-console {
+        background-color: #1e1e1e;
+        color: #d4d4d4;
+        padding: 12px;
+        border-radius: 6px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.8rem;
+        max-height: 250px;
+        overflow-y: auto;
+    }
+
+    .stack-trace {
+        font-size: 0.725rem;
+        color: #f87171;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+</style>
+
+@code {
+    [Parameter] public Exception? ExcepcionCapturada { get; set; }
+
+    private string razonDetallada = "Se ha intentado acceder a una ruta inexistente o el recurso solicitado no está disponible.";
+
+    protected override void OnInitialized()
+    {
+        if (ExcepcionCapturada != null)
+        {
+            Logger.LogError(ExcepcionCapturada, "Error no controlado capturado en NotFound.razor");
+            razonDetallada = $"Error de ejecución ({ExcepcionCapturada.GetType().Name}): {ExcepcionCapturada.Message}";
+        }
+    }
+
+    private void Recargar()
+    {
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+}

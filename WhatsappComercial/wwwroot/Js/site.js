@@ -1,5 +1,5 @@
 ﻿// Instancias globales de audio y estado
-let audioNotificacion = new Audio('/audio/notificacion.mp3');
+let audioNotificacion = new Audio('audio/notificacion.mp3');
 let audioDesbloqueado = false;
 
 // Función interna para desbloquear el audio con la primera interacción del usuario
