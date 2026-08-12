@@ -62,7 +62,8 @@ namespace WhatsappComercial.Servicios.Mensajes
                 MimeTypeMensaje = mimeType,                 // "image/png", "application/pdf", etc.
                 Sha256Mensaje = mensaje.HashSha256,        // Cadena Hash hexadecimal
                 Leido = false,
-                EstadoEnvio = "send"
+                EstadoEnvio = "send",
+                Caption = mensaje.Caption
             };
 
             // 5. Guardar en Base de Datos

@@ -17,6 +17,7 @@
 @using GepConecta.WhatsAppCloud.Models.Requests
 @using GepConecta.WhatsAppCloud.Models.Responses
 @using GepConecta.WhatsAppCloud.Services
+@using GepConecta.WhatsAppCloud.Models.Enums
 
 @inject NavigationManager Navigation
 @inject IWhatsAppCloudClient whatsAppCloudClient
@@ -33,6 +34,7 @@
 @inject INotificarUI NotificadorUI
 @inject IFinalizarConversacion finalizarConversacion
 @inject IObtenerPlantillas obtenerPlantillas
+@inject IWhatsAppCloudClient WhatsAppClient
 @inject ILogger<Conversaciones> Logger
 @inject NotificationService notificationService
 @inject DialogService dialogService
@@ -359,83 +361,158 @@
 
 		var idConversacionActual = conversacionSeleccionada.IdConversacion;
 
+		// 1. RENDER OPTIMISTA INSTANTÁNEO (Se muestra en pantalla de inmediato)
 		var nuevoMensaje = new MensajeDTO
 		{
 			IdMensaje = 0,
 			Texto = infoMensajeSaliente.texto,
-			Waid = infoMensajeSaliente.waid,
+			Waid = null, // Aún no lo tenemos
 			Fecha = DateTime.Now,
-			EsEntrante = false
+			EsEntrante = false,
+			EstadoLectura = "pending" // Puedes usar un estado "pendiente" temporal
 		};
 
 		mensajesIniciales.Add(nuevoMensaje);
-		mensajesIniciales.OrderBy(x => x.Fecha);
 		_debeIrAlFinal = true;
-		StateHasChanged();
+		StateHasChanged(); // La UI se actualiza inmediatamente para el usuario
 
 		cacheMensajes.AgregarMensaje(idConversacionActual, nuevoMensaje);
 
-		try
+		// 2. EJECUCIÓN EN SEGUNDO PLANO (Meta + Base de Datos)
+		_ = Task.Run(async () =>
 		{
-			var idGenerado = await enviarMensaje.EnviarMensajeTextoAsync(idConversacionActual,
-				userName,
-				contactoConversacionSeleccionado?.Celular,
-				nuevoMensaje
-			);
+			try
+			{
+				// Envío a WhatsApp Cloud API
+				string? waidReal = null;
+				if (!string.IsNullOrWhiteSpace(contactoConversacionSeleccionado?.Celular))
+				{
+					var respuestaWA = await WhatsAppClient.SendTextMessageAsync(
+						contactoConversacionSeleccionado.Celular,
+						TipoMensajeWhatsAppEnum.text.ToString(),
+						infoMensajeSaliente.texto
+					);
+					waidReal = respuestaWA?.Messages?.FirstOrDefault()?.Id;
+				}
 
-			nuevoMensaje.IdMensaje = idGenerado;
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine($"Error guardando mensaje de texto: {ex.Message}");
-		}
+				nuevoMensaje.Waid = waidReal;
+
+				// Guardado en BD
+				var idGenerado = await enviarMensaje.EnviarMensajeTextoAsync(
+					idConversacionActual,
+					userName,
+					contactoConversacionSeleccionado?.Celular,
+					nuevoMensaje
+				);
+
+				// Actualización final del mensaje
+				nuevoMensaje.IdMensaje = idGenerado;
+				nuevoMensaje.EstadoLectura = "sent";
+				await InvokeAsync(StateHasChanged);
+			}
+			catch (Exception ex)
+			{
+				nuevoMensaje.EstadoLectura = "failed"; // Opcional: marcar como fallido si hubo error
+				await InvokeAsync(StateHasChanged);
+				Console.WriteLine($"Error enviando o guardando mensaje de texto: {ex.Message}");
+			}
+		});
 	}
 
-	private async Task ManejarEnvioArchivo((int idTicket, CuadroDeTexto.DatosAdjuntoOutDTO datos, EnviarRespuestaWhatsApp? respuestaHttp) parametrosEnvioArchivo)
+	private async Task ManejarEnvioArchivo((int idTicket, CuadroDeTexto.DatosAdjuntoOutDTO datos, byte[] bytes) parametrosEnvio)
 	{
 		if (conversacionSeleccionada is null || conversacionSeleccionada.IdConversacion == 0)
 			return;
 
 		var idConversacionActual = conversacionSeleccionada.IdConversacion;
-		var (rutaRelativa, sha256Calculado) = await gestionArchivos.GuardarArchivoYCalcularSha256Async(idConversacionActual, parametrosEnvioArchivo.datos.Archivo.ContentType, parametrosEnvioArchivo.datos.Archivo, 15 * 1024 * 1024);
+
+		// 1. RENDER OPTIMISTA INSTANTÁNEO
+		// Guardamos el archivo localmente rápido para obtener la ruta
+		var (rutaRelativa, sha256Calculado) = await gestionArchivos.GuardarArchivoYCalcularSha256Async(
+			idConversacionActual,
+			parametrosEnvio.datos.Archivo.ContentType,
+			parametrosEnvio.datos.Archivo,
+			15 * 1024 * 1024
+		);
 
 		var nuevoMensaje = new MensajeDTO
 		{
 			IdMensaje = 0,
-			Waid = parametrosEnvioArchivo.respuestaHttp?.Messages?.FirstOrDefault()?.Id,
+			Waid = null,
 			Texto = rutaRelativa,
 			Fecha = DateTime.Now,
 			EsEntrante = false,
-			NombreArchivo = parametrosEnvioArchivo.datos.Archivo.Name,
-			TipoArchivo = parametrosEnvioArchivo.datos.Archivo.ContentType,
-			TamanoArchivo = parametrosEnvioArchivo.datos.Archivo.Size,
+			NombreArchivo = parametrosEnvio.datos.Archivo.Name,
+			TipoArchivo = parametrosEnvio.datos.Archivo.ContentType,
+			TamanoArchivo = parametrosEnvio.datos.Archivo.Size,
 			HashSha256 = sha256Calculado,
-			EstadoLectura = "sent"
+			EstadoLectura = "sent",
+			Caption = parametrosEnvio.datos.Comentario
 		};
 
 		mensajesIniciales.Add(nuevoMensaje);
 		_debeIrAlFinal = true;
-		StateHasChanged();
+		StateHasChanged(); // El usuario ya ve su archivo en pantalla sin esperar a Meta
 
 		cacheMensajes.AgregarMensaje(idConversacionActual, nuevoMensaje);
 
-		try
+		// 2. SUBIDA A META Y GUARDADO EN SEGUNDO PLANO
+		_ = Task.Run(async () =>
 		{
-			var idGenerado = await enviarMensaje.EnviarMensajeArchivoAsync(
-				idConversacionActual,
-				parametrosEnvioArchivo.idTicket,
-				userName,
-				contactoConversacionSeleccionado?.Celular,
-				nuevoMensaje,
-				parametrosEnvioArchivo.datos.Archivo, parametrosEnvioArchivo.respuestaHttp
-			);
+			try
+			{
+				EnviarRespuestaWhatsApp? respuestaHttpWhatsApp = null;
 
-			nuevoMensaje.IdMensaje = idGenerado;
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine($"Error guardando mensaje de archivo: {ex.Message}");
-		}
+				if (!string.IsNullOrWhiteSpace(contactoConversacionSeleccionado?.Celular))
+				{
+					var uploadResult = await WhatsAppClient.UploadMediaAsync(
+						fileBytes: parametrosEnvio.bytes,
+						fileName: parametrosEnvio.datos.Archivo.Name,
+						contentType: parametrosEnvio.datos.Archivo.ContentType
+					);
+
+					if (uploadResult != null && !string.IsNullOrEmpty(uploadResult.Id))
+					{
+						string contentType = parametrosEnvio.datos.Archivo.ContentType.ToLower();
+						string mediaId = uploadResult.Id;
+						string celular = contactoConversacionSeleccionado.Celular;
+						string caption = parametrosEnvio.datos.Comentario;
+
+						if (contentType.StartsWith("audio/"))
+							respuestaHttpWhatsApp = await WhatsAppClient.SendAudioAsync(celular, mediaId, isUrl: false);
+						else if (contentType.StartsWith("image/"))
+							respuestaHttpWhatsApp = await WhatsAppClient.SendImageAsync(celular, mediaId, caption: caption, isUrl: false);
+						else if (contentType.StartsWith("video/"))
+							respuestaHttpWhatsApp = await WhatsAppClient.SendVideoAsync(celular, mediaId, caption: caption, isUrl: false);
+						else
+							respuestaHttpWhatsApp = await WhatsAppClient.SendDocumentAsync(celular, mediaId, parametrosEnvio.datos.Archivo.Name, caption, isUrl: false);
+					}
+				}
+
+				nuevoMensaje.Waid = respuestaHttpWhatsApp?.Messages?.FirstOrDefault()?.Id;
+
+				// Guardado en BD
+				var idGenerado = await enviarMensaje.EnviarMensajeArchivoAsync(
+					idConversacionActual,
+					parametrosEnvio.idTicket,
+					userName,
+					contactoConversacionSeleccionado?.Celular,
+					nuevoMensaje,
+					parametrosEnvio.datos.Archivo,
+					respuestaHttpWhatsApp
+				);
+
+				nuevoMensaje.IdMensaje = idGenerado;
+				nuevoMensaje.EstadoLectura = "sent";
+				await InvokeAsync(StateHasChanged);
+			}
+			catch (Exception ex)
+			{
+				nuevoMensaje.EstadoLectura = "failed";
+				await InvokeAsync(StateHasChanged);
+				Console.WriteLine($"Error al subir o guardar archivo: {ex.Message}");
+			}
+		});
 	}
 
 	#region Metodos de comunicacion Servicios con UI

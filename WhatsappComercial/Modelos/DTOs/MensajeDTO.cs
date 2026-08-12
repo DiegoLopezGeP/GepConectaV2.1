@@ -14,6 +14,8 @@
         public long TamanoArchivo { get; set; }    // Tamaño en bytes
         public string? HashSha256 { get; set; }     // Firma SHA256 proveniente de WhatsApp
         public string? UrlAdjunto { get; set; }
+        // Propiedades Adjunto + mensaje
+        public string? Caption { get; set; }
     }
 }
 

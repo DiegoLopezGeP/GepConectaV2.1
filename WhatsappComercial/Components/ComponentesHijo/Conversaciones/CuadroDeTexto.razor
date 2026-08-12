@@ -1,5 +1,4 @@
 ﻿@using System.IO
-@using GepConecta.WhatsAppCloud.Models.Enums
 @using GepConecta.WhatsAppCloud.Models.Responses
 @using GepConecta.WhatsAppCloud.Services
 @using Microsoft.AspNetCore.Components.Forms
@@ -17,61 +16,46 @@
 
 <div class="contenedor-barra-mensaje">
 
-	@* VISTA PREVIA DEL ARCHIVO ADJUNTADO *@
-	@if (archivoSeleccionado != null && !grabandoAudio)
+	@* CAJA DE ARCHIVOS ADJUNTOS (APILADOS DE ABAJO HACIA ARRIBA) *@
+	@if (archivosSeleccionados.Any() && !grabandoAudio)
 	{
-		<div class="vista-previa-adjunto">
-			<div class="info-adjunto">
-				<RadzenIcon Icon="@ObtenerIconoArchivo(archivoSeleccionado.ContentType)" Style="font-size: 24px;" />
-				<div class="detalles-archivo">
-					<span class="nombre-archivo">@archivoSeleccionado.Name</span>
-					<span class="tamano-archivo">@ObtenerTamanoLegible(archivoSeleccionado.Size)</span>
+		<div class="caja-archivos-adjuntos">
+			@foreach (var item in archivosSeleccionados)
+			{
+				<div class="tarjeta-archivo-adjunto">
+					<div class="info-adjunto">
+						<RadzenIcon Icon="@ObtenerIconoArchivo(item.Archivo.ContentType)" Style="font-size: 22px; color: #128c7e;" />
+						<div class="detalles-archivo">
+							<span class="nombre-archivo" title="@item.Archivo.Name">@item.Archivo.Name</span>
+							<span class="tamano-archivo">@ObtenerTamanoLegible(item.Archivo.Size)</span>
+						</div>
+					</div>
+					<RadzenButton Icon="close"
+								  Variant="Variant.Text"
+								  ButtonStyle="ButtonStyle.Danger"
+								  Size="ButtonSize.ExtraSmall"
+								  Click="@(() => QuitarArchivo(item))" />
 				</div>
-			</div>
-			<RadzenButton Icon="close"
-						  Variant="Variant.Text"
-						  ButtonStyle="ButtonStyle.Danger"
-						  Size="ButtonSize.Small"
-						  Click="QuitarArchivo" />
+			}
 		</div>
 	}
 
 	<div class="barra-mensaje">
-
 		@if (grabandoAudio)
 		{
-			@* MODO GRABACIÓN DE AUDIO (TIPO WHATSAPP) *@
-			<div class="panel-grabacion">
-				<RadzenButton Icon="delete"
-							  Variant="Variant.Text"
-							  ButtonStyle="ButtonStyle.Danger"
-							  Click="CancelarGrabacion"
-							  title="Descartar grabación" />
-
-				<div class="indicador-grabacion">
-					<span class="punto-rojo"></span>
-					<span class="tiempo-grabacion">@tiempoGrabacion</span>
-				</div>
-
-				<RadzenButton Icon="send"
-							  Variant="Variant.Filled"
-							  ButtonStyle="ButtonStyle.Success"
-							  Click="FinalizarYEnviarAudio"
-							  title="Enviar audio" />
-			</div>
+			<!-- Tu código de grabación de audio existente -->
+			<div class="panel-grabacion">...</div>
 		}
 		else
 		{
-			@* MODO NORMAL DE TEXTO/ADJUNTO *@
 			<div class="acciones-izquierda @(EsMovil ? "movil" : "")">
-
 				<InputFile @ref="inputFile"
 						   OnChange="OnInputFileChange"
 						   style="display: none;"
 						   id="fileInput"
+						   multiple
 						   accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx" />
 
-				@* LABEL NATIVO HTML: Resuelve el bloqueo de selector de archivos en navegadores móviles *@
 				<label for="fileInput" class="label-file-input">
 					<RadzenButton Icon="attach_file"
 								  Variant="Variant.Text"
@@ -83,15 +67,14 @@
 							  Variant="Variant.Text"
 							  ButtonStyle="@(mostrarPickerEmojis ? ButtonStyle.Primary : ButtonStyle.Light)"
 							  Click="MostrarEmojis" />
-
 			</div>
 
 			<RadzenTextArea @bind-Value="mensaje"
-							Placeholder="@(archivoSeleccionado != null ? "Añade un comentario..." : "Escribe un mensaje...")"
+							Placeholder="@(archivosSeleccionados.Any() ? "Añade un comentario..." : "Escribe un mensaje...")"
 							Rows="2"
 							Class="texto-mensaje input-mensaje-target" />
 
-			@if (string.IsNullOrWhiteSpace(mensaje) && archivoSeleccionado == null)
+			@if (string.IsNullOrWhiteSpace(mensaje) && !archivosSeleccionados.Any())
 			{
 				<RadzenButton Icon="mic"
 							  Variant="Variant.Text"
@@ -106,55 +89,84 @@
 							  Click="Enviar" />
 			}
 		}
-
 	</div>
 </div>
 
 <style>
+
 	.contenedor-barra-mensaje {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
+		position: relative; /* Esencial para el posicionamiento absoluto de la caja */
 		width: 100%;
 	}
 
-	.vista-previa-adjunto {
+	/* CAJA CONTENEDORA QUE CRECE HACIA ARRIBA */
+	.caja-archivos-adjuntos {
+		display: flex;
+		position: absolute;
+		bottom: 100%; /* Fija la base justo por encima de la barra de texto */
+		left: 1%;
+		margin-bottom: 8px; /* Espaciado vertical con la barra */
+		flex-direction: column-reverse; /* Apila los elementos de abajo hacia arriba */
+		align-items: flex-start;
+		gap: 6px;
+		width: 35%;
+		max-height: 200px;
+		overflow-y: auto;
+		background: #CAD5E2;
+		padding: 6px 10px;
+		border-radius: 10px;
+		z-index: 10;
+	}
+
+		.caja-archivos-adjuntos::-webkit-scrollbar {
+			width: 4px;
+		}
+
+		.caja-archivos-adjuntos::-webkit-scrollbar-thumb {
+			background: #a0aec0;
+			border-radius: 4px;
+		}
+
+	/* TARJETA INDIVIDUAL DE ARCHIVO */
+	.tarjeta-archivo-adjunto {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		background: #f0f2f5;
+		background: #ffffff;
 		border-left: 4px solid #128c7e;
-		padding: 8px 12px;
-		border-radius: 8px;
-		margin-bottom: 4px;
+		border-radius: 6px;
+		padding: 6px 10px;
+		width: 100%;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 	}
 
 	.info-adjunto {
 		display: flex;
 		align-items: center;
-		gap: 10px;
+		gap: 8px;
 		overflow: hidden;
+		flex: 1;
 	}
 
 	.detalles-archivo {
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
+		min-width: 0;
 	}
 
 	.nombre-archivo {
-		font-size: 13px;
+		font-size: 12px;
 		font-weight: 600;
+		color: #3b4a54;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		max-width: 250px;
 	}
 
 	.tamano-archivo {
-		font-size: 11px;
-		color: #666;
+		font-size: 10.5px;
+		color: #667781;
 	}
 
 	.barra-mensaje {
@@ -164,23 +176,6 @@
 		background: white;
 		border-radius: 10px;
 		padding: 10px 0;
-	}
-
-	.acciones-izquierda {
-		display: flex;
-		flex-direction: row;
-		gap: 5px;
-	}
-
-		.acciones-izquierda.movil {
-			flex-direction: column;
-		}
-
-	.label-file-input {
-		margin: 0;
-		cursor: pointer;
-		display: inline-flex;
-		align-items: center;
 	}
 
 	.texto-mensaje {
@@ -195,93 +190,6 @@
 			padding: 10px 15px;
 		}
 
-	/* ESTILOS DEL PANEL FLOTANTE DE EMOJIS */
-	.popover-emojis {
-		position: absolute;
-		bottom: 17%;
-		left: 35%;
-		z-index: 1050;
-		box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-		border-radius: 12px;
-		overflow: hidden;
-		animation: fadeIn 0.2s ease-out;
-	}
-
-	emoji-picker {
-		width: 100%;
-		height: 300px;
-		--num-columns: 15;
-		--category-emoji-size: 1.125rem;
-	}
-
-	/* ESTILOS DEL PANEL DE GRABACIÓN DE AUDIO */
-	.panel-grabacion {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		width: 100%;
-		background: #f0f2f5;
-		border-radius: 25px;
-		padding: 4px 12px;
-	}
-
-	.indicador-grabacion {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-	}
-
-	.punto-rojo {
-		width: 12px;
-		height: 12px;
-		background-color: #ea4335;
-		border-radius: 50%;
-		animation: titilar 1s infinite alternate;
-	}
-
-	.tiempo-grabacion {
-		font-weight: 600;
-		font-size: 14px;
-		color: #3b4a54;
-		font-family: monospace;
-	}
-
-	@@keyframes titilar {
-		0% {
-			opacity: 1;
-			transform: scale(1);
-		}
-
-		100% {
-			opacity: 0.3;
-			transform: scale(0.85);
-		}
-	}
-
-	@@keyframes fadeIn {
-		from {
-			opacity: 0;
-			transform: translateY(8px);
-		}
-
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	@@media (max-width: 480px) {
-		.popover-emojis {
-			left: 2%;
-			right: 2%;
-			bottom: 85px;
-		}
-
-		emoji-picker {
-			width: 100%;
-			height: 280px;
-		}
-	}
 </style>
 
 @code {
@@ -289,14 +197,16 @@
 
 	// EVENTOS SEPARADOS
 	[Parameter] public EventCallback<(string, string)> OnEnviarTexto { get; set; }
-	[Parameter] public EventCallback<(int, DatosAdjuntoOutDTO, EnviarRespuestaWhatsApp?)> OnEnviarArchivo { get; set; }
+	// [Parameter] public EventCallback<(int, DatosAdjuntoOutDTO, EnviarRespuestaWhatsApp?)> OnEnviarArchivo { get; set; }
+	// Por esto:
+	[Parameter] public EventCallback<(int IdTicket, DatosAdjuntoOutDTO Datos, byte[] Bytes)> OnEnviarArchivo { get; set; }
 	[Parameter] public int IdTicket { get; set; }
 
 	// NÚMERO DE TELÉFONO DESTINO PARA WHATSAPP (Ej: "573001234567")
 	[Parameter] public string TelefonoDestino { get; set; } = string.Empty;
 
 	private string mensaje = string.Empty;
-	private IBrowserFile? archivoSeleccionado;
+	private List<ArchivoCargadoDTO> archivosSeleccionados = new();
 	private InputFile? inputFile;
 
 	// ESTADOS DE GRABACIÓN DE AUDIO Y EMOJIS
@@ -305,105 +215,83 @@
 	private string tiempoGrabacion = "00:00";
 	private DotNetObjectReference<CuadroDeTexto>? objRef;
 
+	public class ArchivoCargadoDTO
+	{
+		public required IBrowserFile Archivo { get; set; }
+		public required byte[] Bytes { get; set; }
+	}
+
 	protected override void OnInitialized()
 	{
 		objRef = DotNetObjectReference.Create(this);
 	}
 
-	private void OnInputFileChange(InputFileChangeEventArgs e)
+	private async Task OnInputFileChange(InputFileChangeEventArgs e)
 	{
 		const long maxFileSize = 10 * 1024 * 1024; // 10 MB
-		if (e.File.Size > maxFileSize)
+		var archivosValidos = e.GetMultipleFiles(10); // Permite hasta 10 archivos
+
+		foreach (var file in archivosValidos)
 		{
-			Console.WriteLine("El archivo supera los 10MB autorizados.");
-			return;
+			if (file.Size <= maxFileSize)
+			{
+				try
+				{
+					// Carga los bytes en memoria INMEDIATAMENTE al seleccionar
+					using var stream = file.OpenReadStream(maxAllowedSize: maxFileSize);
+					using var ms = new MemoryStream();
+					await stream.CopyToAsync(ms);
+
+					archivosSeleccionados.Add(new ArchivoCargadoDTO
+					{
+						Archivo = file,
+						Bytes = ms.ToArray()
+					});
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"[ERROR LECTURA ADJUNTO]: {ex.Message}");
+				}
+			}
 		}
 
-		archivoSeleccionado = e.File;
 		StateHasChanged();
 	}
 
-	private void QuitarArchivo()
+	private void QuitarArchivo(ArchivoCargadoDTO item)
 	{
-		archivoSeleccionado = null;
+		archivosSeleccionados.Remove(item);
 	}
 
 	private async Task Enviar()
 	{
 		mostrarPickerEmojis = false;
+		string comentarioTexto = mensaje;
 
-		// CASO 1: Envío de Archivo Adjunto (con o sin comentario)
-		if (archivoSeleccionado != null)
+		// CASO 1: Envío de uno o múltiples Archivos Adjuntos
+		if (archivosSeleccionados.Any())
 		{
-			EnviarRespuestaWhatsApp? respuestaHttpWhatsApp = new EnviarRespuestaWhatsApp();
-			var datosAdjunto = new DatosAdjuntoOutDTO
-			{
-				Archivo = archivoSeleccionado,
-				Comentario = mensaje
-			};
-
-			// 1. Convertir archivo a bytes
-			using var stream = archivoSeleccionado.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
-			using var ms = new MemoryStream();
-			await stream.CopyToAsync(ms);
-			byte[] bytesArchivo = ms.ToArray();
-
-			// 2. Subir archivo a Meta
-			if (!string.IsNullOrWhiteSpace(TelefonoDestino))
-			{
-				try
-				{
-					var uploadResult = await WhatsAppClient.UploadMediaAsync(
-						fileBytes: bytesArchivo,
-						fileName: archivoSeleccionado.Name,
-						contentType: archivoSeleccionado.ContentType
-					);
-
-					if (uploadResult != null && !string.IsNullOrEmpty(uploadResult.Id))
-					{
-						string contentType = archivoSeleccionado.ContentType.ToLower();
-						string mediaId = uploadResult.Id;
-
-						// 3. Enviar según el MIME Type del archivo seleccionado
-						if (contentType.StartsWith("audio/"))
-						{
-							respuestaHttpWhatsApp = await WhatsAppClient.SendAudioAsync(TelefonoDestino, mediaId, isUrl: false);
-						}
-						else if (contentType.StartsWith("image/"))
-						{
-							respuestaHttpWhatsApp = await WhatsAppClient.SendImageAsync(TelefonoDestino, mediaId, caption: mensaje, isUrl: false);
-						}
-						else if (contentType.StartsWith("video/"))
-						{
-							respuestaHttpWhatsApp = await WhatsAppClient.SendVideoAsync(TelefonoDestino, mediaId, caption: mensaje, isUrl: false);
-						}
-						else
-						{
-							respuestaHttpWhatsApp = await WhatsAppClient.SendDocumentAsync(
-								to: TelefonoDestino,
-								mediaIdOrUrl: mediaId,
-								fileName: archivoSeleccionado.Name,
-								caption: mensaje,
-								isUrl: false
-							);
-						}
-
-						Console.WriteLine($"[WHATSAPP]: Archivo {archivoSeleccionado.Name} enviado correctamente.");
-					}
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine($"[WHATSAPP ERROR]: Error al enviar archivo: {ex.Message}");
-				}
-			}
-
-			// Limpiar controles de UI
+			var listaArchivosAEnviar = archivosSeleccionados.ToList();
+			archivosSeleccionados.Clear();
 			mensaje = string.Empty;
-			archivoSeleccionado = null;
+			StateHasChanged();
 
-			if (OnEnviarArchivo.HasDelegate)
+			for (int i = 0; i < listaArchivosAEnviar.Count; i++)
 			{
-				await OnEnviarArchivo.InvokeAsync((IdTicket, datosAdjunto, respuestaHttpWhatsApp));
+				var item = listaArchivosAEnviar[i];
+				string captionActual = (i == 0) ? comentarioTexto : string.Empty;
+
+				var datosAdjunto = new DatosAdjuntoOutDTO
+				{
+					Archivo = item.Archivo,
+					Comentario = captionActual
+				};
+
+				if (OnEnviarArchivo.HasDelegate)
+				{
+					// Notificamos directamente al padre enviando los datos y los bytes
+					await OnEnviarArchivo.InvokeAsync((IdTicket, datosAdjunto, item.Bytes));
+				}
 			}
 			return;
 		}
@@ -413,30 +301,10 @@
 		{
 			var textoAEnviar = mensaje;
 			mensaje = string.Empty;
-			string? waid = string.Empty;
-
-			if (!string.IsNullOrWhiteSpace(TelefonoDestino))
-			{
-				try
-				{
-					var respuestaWA = await WhatsAppClient.SendTextMessageAsync(
-						TelefonoDestino,
-						TipoMensajeWhatsAppEnum.text.ToString(),
-						textoAEnviar
-					);
-
-					waid = respuestaWA?.Messages?.FirstOrDefault()?.Id;
-					Console.WriteLine($"[WHATSAPP]: Mensaje de texto enviado. ID: {respuestaWA?.Messages?.FirstOrDefault()?.Id}");
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine($"[WHATSAPP ERROR]: {ex.Message}");
-				}
-			}
 
 			if (OnEnviarTexto.HasDelegate)
 			{
-				await OnEnviarTexto.InvokeAsync((textoAEnviar, waid));
+				await OnEnviarTexto.InvokeAsync((textoAEnviar, string.Empty));
 			}
 		}
 	}

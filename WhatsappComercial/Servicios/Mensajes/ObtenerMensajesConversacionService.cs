@@ -36,7 +36,8 @@ namespace WhatsappComercial.Servicios.Mensajes
                     EsEntrante = row.Field<bool>("EsEntrante"),
                     EstadoLectura = row.Field<string>("EstadoLectura"),
                     TipoArchivo = row.Field<string>("TipoMensaje"),
-                    HashSha256 = row.Field<string>("HashSHA256")
+                    HashSha256 = row.Field<string>("HashSHA256"),
+                    Caption = row.Field<string?>("Caption")
                 })
                 .OrderBy(m => m.IdMensaje)
                 .ToList();

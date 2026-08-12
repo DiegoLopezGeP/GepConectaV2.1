@@ -1,27 +1,41 @@
 ﻿@using WhatsappComercial.Modelos.DTOs
 
-@if (Mensaje.TipoArchivo?.ToLower() == "image" || EsImagen(Mensaje.Texto))
-{
-    <MensajeImagen RutaArchivo="@Mensaje.Texto" Texto="@Mensaje.Texto" />
-}
-else if (Mensaje.TipoArchivo?.ToLower() == "audio" || EsAudio(Mensaje.Texto))
-{
-    <MensajeAudio RutaArchivo="@Mensaje.Texto" />
-}
-else if (Mensaje.TipoArchivo?.ToLower() == "video" || EsVideo(Mensaje.Texto))
-{
-    <MensajeVideo RutaArchivo="@Mensaje.Texto" Texto="@Mensaje.Texto" />
-}
-else if (Mensaje.TipoArchivo?.ToLower() == "document" || EsDocumento(Mensaje.Texto))
-{
-    <MensajeDocumento RutaArchivo="@Mensaje.Texto" NombreArchivo="@Mensaje.NombreArchivo" />
-}
-else
-{
-    <div class="texto-mensaje">@Mensaje.Texto</div>
-}
+<div class="contenedor-contenido-mensaje">
+    @if (Mensaje.TipoArchivo?.ToLower() == "image" || EsImagen(Mensaje.Texto))
+    {
+        <MensajeImagen RutaArchivo="@Mensaje.Texto" Texto="@Mensaje.Caption" />
+    }
+    else if (Mensaje.TipoArchivo?.ToLower() == "audio" || EsAudio(Mensaje.Texto))
+    {
+        <MensajeAudio RutaArchivo="@Mensaje.Texto" />
+    }
+    else if (Mensaje.TipoArchivo?.ToLower() == "video" || EsVideo(Mensaje.Texto))
+    {
+        <MensajeVideo RutaArchivo="@Mensaje.Texto" Texto="@Mensaje.Caption" />
+    }
+    else if (Mensaje.TipoArchivo?.ToLower() == "document" || EsDocumento(Mensaje.Texto))
+    {
+        <MensajeDocumento RutaArchivo="@Mensaje.Texto" NombreArchivo="@Mensaje.Caption" />
+    }
+    else
+    {
+        <div class="texto-mensaje">@Mensaje.Texto</div>
+    }
+
+    @* MOSTRAR LEYENDA / CAPTION ABAJO DE ARCHIVOS SI EXISTE Y NO SE HA PASADO AL SUBCOMPONENTE *@
+    @if (!string.IsNullOrWhiteSpace(Mensaje.Caption) && EsArchivoSinCaptionNativo())
+    {
+        <div class="texto-mensaje caption-adjunto">@Mensaje.Caption</div>
+    }
+</div>
 
 <style>
+    .contenedor-contenido-mensaje {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
     .texto-mensaje {
         white-space: pre-wrap;
         word-break: break-word;
@@ -29,20 +43,32 @@ else
         line-height: 19px;
         color: #111b21;
     }
+
+    .caption-adjunto {
+        margin-top: 4px;
+        font-size: 13.5px;
+    }
 </style>
 
 @code {
     [Parameter, EditorRequired] public MensajeDTO Mensaje { get; set; } = default!;
 
-    private bool EsImagen(string? ruta) => 
+    private bool EsArchivoSinCaptionNativo()
+    {
+        // Si es documento o audio, renderizamos la leyenda en un bloque de texto independiente debajo del adjunto
+        string tipo = Mensaje.TipoArchivo?.ToLower() ?? string.Empty;
+        return tipo == "document" || tipo == "audio" || EsDocumento(Mensaje.Texto) || EsAudio(Mensaje.Texto);
+    }
+
+    private bool EsImagen(string? ruta) =>
         new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" }.Any(ext => ruta?.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ?? false);
 
-    private bool EsAudio(string? ruta) => 
+    private bool EsAudio(string? ruta) =>
         new[] { ".mp3", ".ogg", ".wav", ".m4a", ".aac" }.Any(ext => ruta?.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ?? false);
 
-    private bool EsVideo(string? ruta) => 
+    private bool EsVideo(string? ruta) =>
         new[] { ".mp4", ".webm", ".avi" }.Any(ext => ruta?.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ?? false);
 
-    private bool EsDocumento(string? ruta) => 
+    private bool EsDocumento(string? ruta) =>
         new[] { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".zip", ".rar", ".csv" }.Any(ext => ruta?.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ?? false);
 }

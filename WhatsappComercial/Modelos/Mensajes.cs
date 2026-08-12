@@ -16,7 +16,7 @@
         public string?    NumTelefonoCliente { get; set; }
         public bool Leido { get; set; }
         public string? EstadoEnvio { get; set; }
-        public bool Caption { get; set; }
+        public string? Caption { get; set; }
 
     }
 }
