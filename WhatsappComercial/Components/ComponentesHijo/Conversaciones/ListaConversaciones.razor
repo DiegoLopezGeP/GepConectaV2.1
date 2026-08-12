@@ -123,11 +123,11 @@
 	{
 		var opciones = new DialogOptions
 		{
-			Width = esMovil ? "95%" : "40%",
+			Width = esMovil ? "95% !important" : "40% !important",
 			CloseDialogOnOverlayClick = false,
 			TitleContent = null,
 			ShowClose = true,
-			Style = esMovil ? "margin-top:50%;" : null,
+			Style = esMovil ? "margin-top:60%; border-radius: 10px; padding: 0.7rem !important;" : null,
 			ShowTitle = false
 
 		};
@@ -146,15 +146,16 @@
 	{
 		var opciones = new DialogOptions
 		{
-			Width = esMovil ? "95%" : "40%",
+			Width = esMovil ? "95%!important" : "40% !important",
 			CloseDialogOnOverlayClick = false,
 			TitleContent = null,
 			ShowClose = false,
+			ShowTitle = false
 		};
 
 		if (esMovil)
 		{
-			opciones.Style = "margin-top:5%";
+			opciones.Style = "margin-top:5%; border-radius: 10px; padding: 0.7rem !important;";
 		}
 
 		var result = await dialogService.OpenAsync<RegistroContacto>(

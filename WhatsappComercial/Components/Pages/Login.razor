@@ -1,129 +1,117 @@
 ﻿@page "/login"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Antiforgery
 @using Radzen
 @using Radzen.Blazor
 @attribute [AllowAnonymous]
 @inject NavigationManager Navigation
-@inject IJSRuntime JS
 
 <PageTitle>Iniciar Sesión - WhatsApp Comercial</PageTitle>
 
-<div class="login-wrapper">
-    <RadzenCard class="login-card rz-variant-flat rz-border-radius-3 rz-shadow-6">
+<div class="login-page">
+    <div class="login-wrapper">
+        <RadzenCard class="login-card">
 
-        <!-- Header del Formulario -->
-        <div class="login-header">
-            <div class="logo-container">
-                <RadzenImage Path="favicon.png" AlternateText="Logo" Style="width: 54px; height: 54px;" />
-            </div>
-            <RadzenText TextStyle="TextStyle.H5" class="rz-font-weight-bold rz-mb-1" Style="color: var(--rz-primary-darker);">
-                WhatsApp Comercial
-            </RadzenText>
-            <RadzenText TextStyle="TextStyle.Body2" class="rz-color-muted">
-                Ingresa tus credenciales corporativas
-            </RadzenText>
-        </div>
-
-        <!-- Alerta de Error -->
-        @if (!string.IsNullOrEmpty(mensajeError))
-        {
-            <RadzenAlert AlertStyle="AlertStyle.Danger"
-                         Variant="Variant.Flat"
-                         Shade="Shade.Lighter"
-                         AllowClose="false"
-                         Icon="error"
-                         class="rz-mb-4">
-                @mensajeError
-            </RadzenAlert>
-        }
-
-        <!-- Formulario Radzen -->
-        <RadzenTemplateForm Data="@loginModel" Submit="@((LoginModel args) => ProcesarLogin())">
-
-            <!-- Campo Usuario -->
-            <div class="rz-mb-4">
-                <RadzenFormField Text="Usuario de Red" Variant="Variant.Outlined" Style="width: 100%;">
-                    <Start>
-                        <RadzenIcon Icon="person" />
-                    </Start>
-                    <ChildContent>
-                        <RadzenTextBox Name="Username"
-                                       @bind-Value="loginModel.Username"
-                                       Placeholder="Ej. jperez"
-                                       AutoComplete="false"
-                                       Style="width: 100%;" />
-                    </ChildContent>
-                </RadzenFormField>
-                <RadzenRequiredValidator Component="Username" Text="El usuario es obligatorio" Popup="false" />
+            <!-- Encabezado con Logo y Título -->
+            <div class="login-header">
+                <div class="logo-container">
+                    <RadzenImage Path="favicon.png" AlternateText="Logo" class="logo-img" />
+                </div>
+                <h2 class="app-title">WhatsApp Comercial</h2>
+                <p class="app-subtitle">Ingresa tus credenciales corporativas</p>
             </div>
 
-            <!-- Campo Contraseña con Toggle de Visibilidad -->
-            <div class="rz-mb-4">
-                <RadzenFormField Text="Contraseña" Variant="Variant.Outlined" Style="width: 100%;">
-                    <Start>
-                        <RadzenIcon Icon="lock" />
-                    </Start>
-                    <ChildContent>
-                        @if (mostrarPassword)
-                        {
-                            <RadzenTextBox Name="Password"
-                                           @bind-Value="loginModel.Password"
-                                           Placeholder="••••••••"
-                                           Style="width: 100%;" />
-                        }
-                        else
-                        {
-                            <RadzenPassword Name="Password"
-                                            @bind-Value="loginModel.Password"
-                                            Placeholder="••••••••"
-                                            Style="width: 100%;" />
-                        }
-                    </ChildContent>
-                    <End>
-                        <RadzenButton Icon="@(mostrarPassword ? "visibility_off" : "visibility")"
-                                      ButtonStyle="ButtonStyle.Base"
-                                      Variant="Variant.Text"
-                                      Click="@ToggleMostrarPassword"
-                                      Type="Button"
-                                      Size="ButtonSize.Small"
-                                      Style="padding: 0; min-width: 32px;" />
-                    </End>
-                </RadzenFormField>
-                <RadzenRequiredValidator Component="Password" Text="La contraseña es obligatoria" Popup="false" />
+            <!-- Alerta de Error -->
+            @if (mostrarError)
+            {
+                <RadzenAlert AlertStyle="AlertStyle.Danger"
+                             Variant="Variant.Flat"
+                             Shade="Shade.Lighter"
+                             AllowClose="false"
+                             Icon="error_outline"
+                             class="login-alert">
+                    Usuario o contraseña incorrectos.
+                </RadzenAlert>
+            }
+
+            <!-- Formulario Nativo HTML -->
+            <form action="api/account/login" method="post" class="login-form">
+                <AntiforgeryToken />
+
+                <div class="form-group">
+                    <RadzenFormField Text="Usuario de Red" Variant="Variant.Outlined" Style="width: 100%;">
+                        <Start>
+                            <RadzenIcon Icon="person_outline" class="field-icon" />
+                        </Start>
+                        <ChildContent>
+                            <input type="text"
+                                   name="username"
+                                   class="custom-input"
+                                   placeholder="Ej. diego.lopez"
+                                   required
+                                   autofocus
+                                   autocomplete="username" />
+                        </ChildContent>
+                    </RadzenFormField>
+                </div>
+
+                <div class="form-group">
+                    <RadzenFormField Text="Contraseña" Variant="Variant.Outlined" Style="width: 100%;">
+                        <Start>
+                            <RadzenIcon Icon="lock_open" class="field-icon" />
+                        </Start>
+                        <ChildContent>
+                            <input type="password"
+                                   name="password"
+                                   class="custom-input"
+                                   placeholder="••••••••"
+                                   required
+                                   autocomplete="current-password" />
+                        </ChildContent>
+                    </RadzenFormField>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="rzi me-2">login</i> Iniciar Sesión
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <span>Acceso Seguro • Active Directory GEP</span>
             </div>
 
-            <!-- Botón Submit -->
-            <RadzenButton ButtonType="ButtonType.Submit"
-                          Text="@(cargando ? "Validando..." : "Iniciar Sesión")"
-                          Icon="@(cargando ? "" : "login")"
-                          IsBusy="@cargando"
-                          ButtonStyle="ButtonStyle.Primary"
-                          Size="ButtonSize.Large"
-                          Style="width: 100%; font-weight: 600;"
-                          class="rz-border-radius-2" />
-
-        </RadzenTemplateForm>
-    </RadzenCard>
+        </RadzenCard>
+    </div>
 </div>
 
 <style>
-    .login-wrapper {
+    /* Estructura Principal */
+    .login-page {
+        min-height: 100vh;
         display: flex;
-        justify-content: center;
         align-items: center;
-        min-height: 85vh;
-        background-color: var(--rz-body-background-color, #f4f6f9);
+        justify-content: center;
+        background: linear-gradient(135deg, #101828 0%, #1d2939 50%, #0f172a 100%);
         padding: 1.5rem;
+        box-sizing: border-box;
     }
 
-    .login-card {
+    .login-wrapper {
         width: 100%;
         max-width: 420px;
-        padding: 2rem !important;
-        background-color: #ffffff;
-        border: 1px solid var(--rz-border-color, #e0e0e0);
+        animation: fadeInScale 0.4s ease-out forwards;
     }
 
+    /* Tarjeta del Login */
+    .login-card {
+        background: #ffffff !important;
+        border-radius: 16px !important;
+        padding: 2.5rem 2rem !important;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* Encabezado y Logo */
     .login-header {
         text-align: center;
         margin-bottom: 2rem;
@@ -131,62 +119,148 @@
 
     .logo-container {
         display: inline-flex;
-        padding: 12px;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        background: #f0fdf4;
         border-radius: 50%;
-        background: #f0f4f8;
         margin-bottom: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1);
     }
 
-    /* Ajuste fino para la posición de iconos finales en RadzenFormField */
-    .rz-form-field-end {
+    .logo-img {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+    }
+
+    .app-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 0.25rem 0;
+        letter-spacing: -0.025em;
+    }
+
+    .app-subtitle {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin: 0;
+    }
+
+    /* Alerta */
+    .login-alert {
+        border-radius: 8px !important;
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem !important;
+    }
+
+    /* Formularios e Inputs */
+    .login-form {
         display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .form-group {
+        width: 100%;
+    }
+
+    .field-icon {
+        color: #64748b;
+        font-size: 1.25rem;
+    }
+
+    .custom-input {
+        width: 100%;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 0.95rem;
+        color: #0f172a;
+        padding: 0.25rem 0;
+    }
+
+        .custom-input::placeholder {
+            color: #94a3b8;
+        }
+
+    /* Botón de Enviar */
+    .submit-btn {
+        width: 100%;
+        display: inline-flex;
         align-items: center;
-        padding-right: 8px;
+        justify-content: center;
+        background-color: #2563eb;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 0.85rem 1rem;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.25);
+        margin-top: 0.5rem;
+    }
+
+        .submit-btn:hover {
+            background-color: #1d4ed8;
+            box-shadow: 0 6px 12px -2px rgba(37, 99, 235, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px -1px rgba(37, 99, 235, 0.2);
+        }
+
+    /* Pie de página */
+    .login-footer {
+        margin-top: 2rem;
+        text-align: center;
+        font-size: 0.75rem;
+        color: #94a3b8;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 1rem;
+    }
+
+    /* Animación */
+    @@keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    /* Ajustes para Pantallas Pequeñas */
+    @@media (max-width: 480px) {
+        .login-card {
+            padding: 2rem 1.5rem !important;
+            border-radius: 12px !important;
+        }
+
+        .app-title {
+            font-size: 1.35rem;
+        }
     }
 </style>
 
 @code {
-    private LoginModel loginModel = new();
-    private string mensajeError = string.Empty;
-    private bool cargando = false;
-    private bool mostrarPassword = false;
+    private bool mostrarError = false;
 
-    private void ToggleMostrarPassword()
+    protected override void OnInitialized()
     {
-        mostrarPassword = !mostrarPassword;
-    }
-
-    private async Task ProcesarLogin()
-    {
-        cargando = true;
-        mensajeError = string.Empty;
-
-        try
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (uri.Query.Contains("error=true"))
         {
-            bool exito = await JS.InvokeAsync<bool>("submitLogin", loginModel.Username, loginModel.Password);
-
-            if (exito)
-            {
-                Navigation.NavigateTo("/WhatsappCorporativo/Conversaciones", forceLoad: true);
-            }
-            else
-            {
-                mensajeError = "Usuario o contraseña incorrectos.";
-            }
+            mostrarError = true;
         }
-        catch (Exception)
-        {
-            mensajeError = "Error al intentar conectar con el servidor.";
-        }
-        finally
-        {
-            cargando = false;
-        }
-    }
-
-    public class LoginModel
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
     }
 }

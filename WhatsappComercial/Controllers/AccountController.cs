@@ -18,25 +18,25 @@ namespace WhatsappComercial.Controllers
         }
 
         [HttpPost("login")]
-        [IgnoreAntiforgeryToken] // Dispara el pase directo para peticiones AJAX sin token Antiforgery
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> Login([FromForm] string username, [FromForm] string password)
         {
             bool esValido = _ldapAuthService.ValidarCredenciales(username, password);
 
-        #if DEBUG
+#if DEBUG
             if (!esValido && username == "admin" && password == "admin")
             {
                 esValido = true;
             }
-        #endif
+#endif
 
             if (esValido)
             {
                 var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, username),
-                    new Claim(ClaimTypes.NameIdentifier, username)
-                };
+        {
+            new Claim(ClaimTypes.Name, username),
+            new Claim(ClaimTypes.NameIdentifier, username)
+        };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var authProperties = new AuthenticationProperties
@@ -50,17 +50,13 @@ namespace WhatsappComercial.Controllers
                     new ClaimsPrincipal(claimsIdentity),
                     authProperties);
 
-                return Ok(new { success = true, redirectUrl = "/Conversaciones" });
+                // LocalRedirect("~/") respeta automáticamente el app.UsePathBase("/WhatsappCorporativo")
+                // y te lleva a la pantalla principal de conversaciones sin importar el dominio o puerto.
+                return LocalRedirect("~/Conversaciones");
             }
 
-            return Unauthorized(new { success = false, message = "Usuario o contraseña incorrectos" });
-        }
-
-        [HttpGet("logout")]
-        public async Task<IActionResult> Logout()
-        {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return Redirect("/login");
+            // Si la autenticación falla, redirige de vuelta al login con flag de error
+            return LocalRedirect("~/login?error=true");
         }
     }
 }
