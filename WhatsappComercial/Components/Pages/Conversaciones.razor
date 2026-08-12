@@ -44,30 +44,37 @@
 <div class="contenedor-conversaciones @ClaseVista">
 
 	<div class="panel-lista">
-		<ListaConversaciones NombreUsuarioDA="@userName" InformacionUsuarioAutenticado="@infoUsuarioConectado" ListaDatosTarjeta="@ListaConversaciones" esMovil="@esMovil" OnAbrirConversacion="AbrirConversacion" IdConversacionActiva="@(conversacionSeleccionada?.IdConversacion ?? 0)"></ListaConversaciones>
+		<RadzenCard Style="height: 100%; width: 100%;">
+			<ListaConversaciones NombreUsuarioDA="@userName" InformacionUsuarioAutenticado="@infoUsuarioConectado" ListaDatosTarjeta="@ListaConversaciones" esMovil="@esMovil" OnAbrirConversacion="AbrirConversacion" IdConversacionActiva="@(conversacionSeleccionada?.IdConversacion ?? 0)"></ListaConversaciones>
+		</RadzenCard>
+
 	</div>
 	@if (conversacionSeleccionada?.IdConversacion > 0)
 	{
-		<div class="panel-chat">
-			<RadzenStack Gap="2%">
-				<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-					<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado" plantillaSeleccionada="@plantillaSeleccionada" OnFinalizarConversacion="ManejarFinalizarConversacion" Plantillas="@plantillas" OnUsarPlantilla="UsarPlantillaSeleccionada"></TarjetaDatosConversación>
+		<RadzenCard Style="height: 97.5%; margin: 1%;">
+			<div class="panel-chat">
+
+				<RadzenStack Gap="2%">
+					<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+						<TarjetaDatosConversación EsMovil="@esMovil" OnVolver="Volver" datosContactoConversacion="@contactoConversacionSeleccionado" plantillaSeleccionada="@plantillaSeleccionada" OnFinalizarConversacion="ManejarFinalizarConversacion" Plantillas="@plantillas" OnUsarPlantilla="UsarPlantillaSeleccionada" informacionUsuarioAutenticado="@infoUsuarioConectado"></TarjetaDatosConversación>
+					</RadzenStack>
+
+					<VisorMensajes IdConversacion="@(conversacionSeleccionada?.IdConversacion ?? 0)"
+								   Mensajes="@mensajesIniciales"
+								   CargandoMensajesAntiguos="@_cargandoMensajesAntiguos"
+								   DebeIrAlFinal="@_debeIrAlFinal"
+								   OnLlegoAlTope="CargarMensajesAntiguos">
+					</VisorMensajes>
+					<CuadroDeTexto EsMovil="@esMovil"
+								   OnEnviarTexto="ManejarEnvioTexto"
+								   OnEnviarArchivo="ManejarEnvioArchivo"
+								   IdTicket="@conversacionSeleccionada.IdTicket"
+								   TelefonoDestino="@contactoConversacionSeleccionado.Celular" />
 				</RadzenStack>
 
-				<VisorMensajes IdConversacion="@(conversacionSeleccionada?.IdConversacion ?? 0)"
-							   Mensajes="@mensajesIniciales"
-							   CargandoMensajesAntiguos="@_cargandoMensajesAntiguos"
-							   DebeIrAlFinal="@_debeIrAlFinal"
-							   OnLlegoAlTope="CargarMensajesAntiguos">
-				</VisorMensajes>
-				<CuadroDeTexto EsMovil="@esMovil"
-							   OnEnviarTexto="ManejarEnvioTexto"
-							   OnEnviarArchivo="ManejarEnvioArchivo"
-							   IdTicket="@conversacionSeleccionada.IdTicket"
-							   TelefonoDestino="@contactoConversacionSeleccionado.Celular" />
-			</RadzenStack>
-		</div>
 
+			</div>
+		</RadzenCard>
 		@* PANEL DE PLANTILLAS EN ESCRITORIO CON COMPONENTE HIJO *@
 		@if (!esMovil)
 		{
@@ -270,6 +277,7 @@
 	private async Task Volver()
 	{
 		vistaActual = VistaConversaciones.Lista;
+		conversacionSeleccionada = null;
 	}
 
 	private async Task AbrirConversacion(DatosTarjetaConversacionDTO conversacion)

@@ -1,10 +1,11 @@
 ﻿@using GepConecta.WhatsAppCloud.Models.Responses
 @using WhatsappComercial.Components.ComponentesHijo.Conversaciones
+@using WhatsappComercial.Modelos
 @using WhatsappComercial.Modelos.DTOs
 @inject TooltipService tooltipService
 @inject DialogService dialogService
 
-<RadzenCard Style="padding:20px; border-radius:12px; width: 100%;">
+<RadzenCard Style="padding: 10px 15px; border-radius:12px; width: 100%; margin: 1% 0">
 
 	@if (EsMovil)
 	{
@@ -13,7 +14,7 @@
 
 				<div class="fila-superior">
 					<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="width: 100%;">
-						<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+						<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Style="width: 55%;">
 							<div class="btn-atras" @onclick="Volver">
 								<RadzenIcon Icon="arrow_back" />
 							</div>
@@ -31,12 +32,15 @@
 											  Click="MostrarDetalles"
 											  Size="ButtonSize.Medium"
 											  MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Ver información" }))" />
-
-								<RadzenButton Icon="check_circle"
-											  Variant="Variant.Text"
-											  ButtonStyle="ButtonStyle.Danger"
-											  Click="FinalizarConversacion"
-											  MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Finalizar conversación" }))" />
+								@if (informacionUsuarioAutenticado.IdGrupoTrabajo == 12)
+								{
+									<RadzenButton Icon="check_circle"
+												  Variant="Variant.Text"
+												  ButtonStyle="ButtonStyle.Danger"
+												  Click="FinalizarConversacion"
+												  MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Finalizar conversación" }))" />
+								}
+								
 
 								<RadzenButton Icon="description"
 											  ButtonStyle="ButtonStyle.Warning"
@@ -59,13 +63,16 @@
 	{
 		<div class="encabezado-conversacion">
 			<RadzenText Text="Información de la conversación" TextStyle="TextStyle.H6" />
-
-			<RadzenButton Icon="check_circle"
-						  Text="Finalizar"
-						  ButtonStyle="ButtonStyle.Danger"
-						  Variant="Variant.Outlined"
-						  Click="FinalizarConversacion"
-						  MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Pulse para finalizar la conversación" }))" />
+			@if (informacionUsuarioAutenticado.IdGrupoTrabajo == 12)
+			{
+				<RadzenButton Icon="check_circle"
+							  Text="Finalizar"
+							  ButtonStyle="ButtonStyle.Danger"
+							  Variant="Variant.Outlined"
+							  Click="FinalizarConversacion"
+							  MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Pulse para finalizar la conversación" }))" />
+			}
+			
 		</div>
 
 		<RadzenRow Gap="20px">
@@ -197,8 +204,9 @@
 	}
 </style>
 
-@code {
+	@code {
 	[Parameter] public DatosContactoConversacionDTO? datosContactoConversacion { get; set; }
+	[Parameter] public GrupoUser informacionUsuarioAutenticado { get; set; }
 	[Parameter] public EventCallback OnVolver { get; set; }
 	[Parameter] public EventCallback<int> OnFinalizarConversacion { get; set; }
 	[Parameter] public bool EsMovil { get; set; }

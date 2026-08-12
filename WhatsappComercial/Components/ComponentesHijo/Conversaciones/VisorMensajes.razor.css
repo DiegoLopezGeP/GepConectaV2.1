@@ -1,0 +1,96 @@
+﻿.contenedor-chat {
+    height: 47vh;
+    padding: 15px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.chat-bg-doodle {
+    background-color: #f0f2f5; /* Fondo gris/azul clásico de chat */
+    /* Reemplaza la URL por un SVG de doodles transparente */
+    background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86d3830a-7392-11e7-876f-6be9f2449541.png');
+    background-repeat: repeat;
+    background-size: 400px;
+    opacity: 0.95; /* Controla la intensidad */
+}
+
+.lista-mensajes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+    overflow-y: auto;
+    /* IMPORTANTE: Desactivar animaciones nativas de scroll para evitar saltos */
+    scroll-behavior: auto !important;
+}
+
+/* Evita que el indicador de "Cargando..." descoloque el anclaje del scroll */
+.cargando-antiguos {
+    overflow-anchor: none;
+    text-align: center;
+    padding: 8px;
+    font-size: 13px;
+    color: #666;
+}
+
+.mensaje-entrante {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.mensaje-saliente {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.burbuja {
+    max-width: 75%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    word-break: break-word;
+    position: relative;
+    box-shadow: 0 1px 0.5px rgba(11, 20, 26, .13);
+}
+
+.mensaje-entrante .burbuja {
+    background: #ffffff;
+    color: #111b21;
+    border-top-left-radius: 0px;
+}
+
+.mensaje-saliente .burbuja {
+    background: #d9fdd3;
+    color: #111b21;
+    border-top-right-radius: 0px;
+    margin-right: 10px;
+}
+
+.hora {
+    margin-top: 4px;
+    text-align: right;
+    font-size: 10px;
+    color: #667781;
+    user-select: none;
+}
+
+.separador-fecha {
+    align-self: center;
+    background: #ffffff;
+    color: #54656f;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 8px 0;
+    box-shadow: 0 1px 1px rgba(11, 20, 26, .12);
+}
+
+@media (min-width: 769px) {
+
+}
+
+@media (max-width: 768px) {
+    .contenedor-chat {
+        height: 61.5vh;
+    } 
+}
