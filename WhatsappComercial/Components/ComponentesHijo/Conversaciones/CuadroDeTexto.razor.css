@@ -1,0 +1,119 @@
+﻿.contenedor-barra-mensaje {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.vista-previa-adjunto {
+    display: flex;
+    position: absolute;
+    align-items: center;
+    justify-content: space-between;
+    background: #DDE0D7;
+    border-left: 4px solid #128c7e;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    transform: translate(3px, -60px);
+}
+
+.info-adjunto {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.detalles-archivo {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.nombre-archivo {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px;
+}
+
+.tamano-archivo {
+    font-size: 11px;
+    color: #666;
+}
+
+.barra-mensaje {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    border-radius: 10px;
+    padding: 10px 0;
+}
+
+.acciones-izquierda {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+    .acciones-izquierda.movil {
+        flex-direction: column;
+    }
+
+
+
+/* ESTILOS DEL PANEL DE GRABACIÓN DE AUDIO */
+.panel-grabacion {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: #f0f2f5;
+    border-radius: 25px;
+    padding: 4px 12px;
+}
+
+.indicador-grabacion {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.punto-rojo {
+    width: 12px;
+    height: 12px;
+    background-color: #ea4335;
+    border-radius: 50%;
+    animation: titilar 1s infinite alternate;
+}
+
+.tiempo-grabacion {
+    font-weight: 600;
+    font-size: 14px;
+    color: #3b4a54;
+    font-family: monospace;
+}
+
+@keyframes titilar {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0.3;
+        transform: scale(0.85);
+    }
+}
+
+@media (max-width: 768px) {
+    .vista-previa-adjunto {
+        transform: translate(3px, -58px);
+        width: 88%;
+    }
+}
+

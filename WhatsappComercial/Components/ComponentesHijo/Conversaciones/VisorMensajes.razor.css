@@ -12,6 +12,7 @@
     background-repeat: repeat;
     background-size: 400px;
     opacity: 0.95; /* Controla la intensidad */
+    margin: 1%;
 }
 
 .lista-mensajes {
@@ -91,6 +92,7 @@
 
 @media (max-width: 768px) {
     .contenedor-chat {
-        height: 61.5vh;
+        height: 56.5vh;
+        
     } 
 }

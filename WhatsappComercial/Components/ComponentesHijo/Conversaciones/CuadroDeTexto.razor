@@ -7,6 +7,14 @@
 @implements IDisposable
 @inject IJSRuntime JS
 
+<!-- POPOVER / PANEL FLOTANTE DE EMOJIS -->
+@if (mostrarPickerEmojis)
+{
+	<div class="popover-emojis">
+		<emoji-picker id="pickerEmojiElement"></emoji-picker>
+	</div>
+}
+
 <div class="contenedor-barra-mensaje">
 
 	@* VISTA PREVIA DEL ARCHIVO ADJUNTADO *@
@@ -63,14 +71,17 @@
 						   id="fileInput"
 						   accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx" />
 
-				<RadzenButton Icon="attach_file"
-							  Variant="Variant.Text"
-							  ButtonStyle="ButtonStyle.Light"
-							  Click="AbrirSelectorArchivos" />
+				@* LABEL NATIVO HTML: Resuelve el bloqueo de selector de archivos en navegadores móviles *@
+				<label for="fileInput" class="label-file-input">
+					<RadzenButton Icon="attach_file"
+								  Variant="Variant.Text"
+								  ButtonStyle="ButtonStyle.Light"
+								  style="pointer-events: none;" />
+				</label>
 
 				<RadzenButton Icon="mood"
 							  Variant="Variant.Text"
-							  ButtonStyle="ButtonStyle.Light"
+							  ButtonStyle="@(mostrarPickerEmojis ? ButtonStyle.Primary : ButtonStyle.Light)"
 							  Click="MostrarEmojis" />
 
 			</div>
@@ -78,7 +89,7 @@
 			<RadzenTextArea @bind-Value="mensaje"
 							Placeholder="@(archivoSeleccionado != null ? "Añade un comentario..." : "Escribe un mensaje...")"
 							Rows="2"
-							Class="texto-mensaje" />
+							Class="texto-mensaje input-mensaje-target" />
 
 			@if (string.IsNullOrWhiteSpace(mensaje) && archivoSeleccionado == null)
 			{
@@ -101,6 +112,7 @@
 
 <style>
 	.contenedor-barra-mensaje {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
@@ -151,7 +163,7 @@
 		gap: 10px;
 		background: white;
 		border-radius: 10px;
-		padding:10px 0;
+		padding: 10px 0;
 	}
 
 	.acciones-izquierda {
@@ -164,6 +176,13 @@
 			flex-direction: column;
 		}
 
+	.label-file-input {
+		margin: 0;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+	}
+
 	.texto-mensaje {
 		flex: 1;
 	}
@@ -175,6 +194,25 @@
 			border-radius: 20px;
 			padding: 10px 15px;
 		}
+
+	/* ESTILOS DEL PANEL FLOTANTE DE EMOJIS */
+	.popover-emojis {
+		position: absolute;
+		bottom: 17%;
+		left: 35%;
+		z-index: 1050;
+		box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+		border-radius: 12px;
+		overflow: hidden;
+		animation: fadeIn 0.2s ease-out;
+	}
+
+	emoji-picker {
+		width: 100%;
+		height: 300px;
+		--num-columns: 15;
+		--category-emoji-size: 1.125rem;
+	}
 
 	/* ESTILOS DEL PANEL DE GRABACIÓN DE AUDIO */
 	.panel-grabacion {
@@ -219,6 +257,31 @@
 			transform: scale(0.85);
 		}
 	}
+
+	@@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@@media (max-width: 480px) {
+		.popover-emojis {
+			left: 2%;
+			right: 2%;
+			bottom: 85px;
+		}
+
+		emoji-picker {
+			width: 100%;
+			height: 280px;
+		}
+	}
 </style>
 
 @code {
@@ -236,19 +299,15 @@
 	private IBrowserFile? archivoSeleccionado;
 	private InputFile? inputFile;
 
-	// ESTADOS DE GRABACIÓN DE AUDIO
+	// ESTADOS DE GRABACIÓN DE AUDIO Y EMOJIS
 	private bool grabandoAudio = false;
+	private bool mostrarPickerEmojis = false;
 	private string tiempoGrabacion = "00:00";
 	private DotNetObjectReference<CuadroDeTexto>? objRef;
 
 	protected override void OnInitialized()
 	{
 		objRef = DotNetObjectReference.Create(this);
-	}
-
-	private async Task AbrirSelectorArchivos()
-	{
-		await JS.InvokeVoidAsync("eval", "document.getElementById('fileInput').click()");
 	}
 
 	private void OnInputFileChange(InputFileChangeEventArgs e)
@@ -271,6 +330,8 @@
 
 	private async Task Enviar()
 	{
+		mostrarPickerEmojis = false;
+
 		// CASO 1: Envío de Archivo Adjunto (con o sin comentario)
 		if (archivoSeleccionado != null)
 		{
@@ -306,7 +367,6 @@
 						// 3. Enviar según el MIME Type del archivo seleccionado
 						if (contentType.StartsWith("audio/"))
 						{
-							// Nota: Meta no soporta caption/comentario en audios
 							respuestaHttpWhatsApp = await WhatsAppClient.SendAudioAsync(TelefonoDestino, mediaId, isUrl: false);
 						}
 						else if (contentType.StartsWith("image/"))
@@ -319,7 +379,6 @@
 						}
 						else
 						{
-							// Cualquier otro tipo (PDF, Excel, Word, Zip, etc.) se envía como documento
 							respuestaHttpWhatsApp = await WhatsAppClient.SendDocumentAsync(
 								to: TelefonoDestino,
 								mediaIdOrUrl: mediaId,
@@ -342,7 +401,6 @@
 			mensaje = string.Empty;
 			archivoSeleccionado = null;
 
-			// Notificar al componente padre de Blazor (para guardar en BD local, refrescar chat, etc.)
 			if (OnEnviarArchivo.HasDelegate)
 			{
 				await OnEnviarArchivo.InvokeAsync((IdTicket, datosAdjunto, respuestaHttpWhatsApp));
@@ -357,7 +415,6 @@
 			mensaje = string.Empty;
 			string? waid = string.Empty;
 
-			// 1. Enviar vía WhatsApp Cloud API
 			if (!string.IsNullOrWhiteSpace(TelefonoDestino))
 			{
 				try
@@ -377,7 +434,6 @@
 				}
 			}
 
-			// 2. Notificar al evento interno de Blazor
 			if (OnEnviarTexto.HasDelegate)
 			{
 				await OnEnviarTexto.InvokeAsync((textoAEnviar, waid));
@@ -385,9 +441,35 @@
 		}
 	}
 
+	// LÓGICA DEL PICKER DE EMOJIS
+	private async Task MostrarEmojis()
+	{
+		mostrarPickerEmojis = !mostrarPickerEmojis;
+
+		if (mostrarPickerEmojis)
+		{
+			await Task.Delay(50); // Tiempo para que el DOM renderice <emoji-picker>
+			await JS.InvokeVoidAsync("emojiHelper.inicializar", objRef, "pickerEmojiElement");
+		}
+	}
+
+	[JSInvokable]
+	public void OnEmojiSeleccionado(string emoji)
+	{
+		// Concatenamos el emoji al mensaje actual en C#
+		mensaje += emoji;
+
+		// // Cerramos el panel de emojis
+		// mostrarPickerEmojis = false;
+
+		// Forzamos el renderizado de Blazor con el nuevo texto
+		StateHasChanged();
+	}
+
 	// LÓGICA DE GRABACIÓN DE AUDIO
 	private async Task GrabarAudio()
 	{
+		mostrarPickerEmojis = false;
 		bool ok = await JS.InvokeAsync<bool>("grabadorAudio.iniciar", objRef);
 		if (ok)
 		{
@@ -436,7 +518,6 @@
 				return;
 			}
 
-			// Obtenemos el stream de audio del JS
 			var streamRef = await JS.InvokeAsync<IJSStreamReference>("grabadorAudio.obtenerStreamAudio");
 
 			await using Stream stream = await streamRef.OpenReadStreamAsync(
@@ -447,20 +528,15 @@
 			await stream.CopyToAsync(memoryStream, cts.Token);
 			byte[] bytesAudio = memoryStream.ToArray();
 
-			// ---------------------------------------------------------------------------------------
-			// APLICACIÓN DE LA OPCIÓN 2: Determinar extensión válida sin fallback a .webm
-			// ---------------------------------------------------------------------------------------
 			string contentType = resultado.ContentType?.ToLower().Trim() ?? "audio/ogg";
 
-			// Mapeamos el tipo MIME recibido a una extensión compatible con Meta y con tu reproductor
 			string extension = contentType switch
 			{
 				var c when c.Contains("mp4") => ".mp4",
 				var c when c.Contains("aac") => ".aac",
-				_ => ".ogg" // Forzamos OGG por defecto para notas de voz
+				_ => ".ogg"
 			};
 
-			// Aseguramos que el contentType que va a Meta sea un MIMEType limpio de la Cloud API
 			string contentTypeMeta = extension switch
 			{
 				".mp4" => "audio/mp4",
@@ -469,14 +545,11 @@
 			};
 
 			string nombreArchivo = $"{IdTicket}_audio_note_{DateTime.Now:yyyyMMdd_HHmmss}{extension}";
-			// ---------------------------------------------------------------------------------------
 
-			// 1. SUBIR AUDIO A META Y ENVIAR A WHATSAPP
 			if (!string.IsNullOrWhiteSpace(TelefonoDestino))
 			{
 				try
 				{
-					// Subir nota de voz (.ogg / .mp4 / .aac)
 					var uploadResult = await WhatsAppClient.UploadMediaAsync(
 						fileBytes: bytesAudio,
 						fileName: nombreArchivo,
@@ -485,7 +558,6 @@
 
 					if (uploadResult != null && !string.IsNullOrEmpty(uploadResult.Id))
 					{
-						// Enviar mensaje de audio
 						var respuestaWA = await WhatsAppClient.SendAudioAsync(
 							to: TelefonoDestino,
 							mediaIdOrUrl: uploadResult.Id,
@@ -501,7 +573,6 @@
 				}
 			}
 
-			// 2. CREAR OBJETO PARA USO LOCAL EN BLAZOR (BD / CHAT UI)
 			IBrowserFile audioBrowserFile = new MemoryBrowserFile(
 				nombreArchivo,
 				bytesAudio,
@@ -550,14 +621,11 @@
 		return $"{dblSuf:0.##} {sufijos[i]}";
 	}
 
-	private async Task MostrarEmojis() { }
-
 	public void Dispose()
 	{
 		objRef?.Dispose();
 	}
 
-	// CLASES DTO / WRAPPERS AUXILIARES
 	public class DatosAdjuntoOutDTO
 	{
 		public required IBrowserFile Archivo { get; set; }
@@ -570,7 +638,6 @@
 		public long Tamano { get; set; }
 	}
 
-	// Wrapper para convertir los bytes del micrófono a un IBrowserFile compatible
 	public class MemoryBrowserFile : IBrowserFile
 	{
 		private readonly byte[] _bytes;

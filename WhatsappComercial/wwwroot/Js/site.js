@@ -61,3 +61,22 @@ window.blazorInterop = {
         }
     }
 };
+window.emojiHelper = {
+    inicializar: function (dotNetHelper, pickerId) {
+        const picker = document.getElementById(pickerId);
+        if (!picker) return;
+
+        // Limpiamos listeners previos para evitar duplicados al abrir/cerrar varias veces
+        picker.replaceWith(picker.cloneNode(true));
+        const nuevoPicker = document.getElementById(pickerId);
+
+        nuevoPicker.addEventListener('emoji-click', event => {
+            const emoji = event.detail.unicode;
+
+            if (emoji) {
+                // Enviamos el emoji directamente a C#
+                dotNetHelper.invokeMethodAsync('OnEmojiSeleccionado', emoji);
+            }
+        });
+    }
+};
