@@ -5,35 +5,88 @@
 
 <RadzenComponents @rendermode="InteractiveServer" />
 
-<div class="page">
-   @*  <div class="sidebar">
-        <NavMenu />
-    </div> *@
+<div class="layout-wrapper">
+    <!-- CABECERA SUPERIOR (HEADER) -->
+    <header class="app-header">
+        
+        <!-- SECCIÓN IZQUIERDA: LOGO Y MENÚ -->
+        <div class="header-left">
+            <div class="brand-container">
+                <!-- Icono/Logo tipo GepConecta -->
+                <div class="brand-icon">
+                    <RadzenIcon Icon="chat" Style="font-size: 22px; color: white;" />
+                </div>
+                <span class="brand-name">GepConecta</span>
+            </div>
 
-    <main>
-        <div class="top-row px-4">
-            <RadzenText Text="@nombreUsuarioDA"></RadzenText>
+            <!-- Botón Menú Hamburguesa -->
+            <RadzenButton Icon="menu" 
+                          Variant="Variant.Text" 
+                          ButtonStyle="ButtonStyle.Base" 
+                          class="btn-menu-toggle" />
         </div>
 
-        <article>
-@*             content px-4 *@
-            @Body
-        </article>
+        <!-- SECCIÓN DERECHA: NOTIFICACIONES Y PERFIL -->
+        <div class="header-right">
+            
+            <!-- BOTÓN DE NOTIFICACIONES -->
+            <div class="notif-wrapper">
+                <button class="notif-btn" @onclick="AbrirNotificaciones" title="Notificaciones">
+                    <RadzenIcon Icon="notifications" Style="font-size: 20px; color: #475569;" />
+                    @if (notificacionesNoLeidas > 0)
+                    {
+                        <span class="notif-badge">
+                            @(notificacionesNoLeidas > 99 ? "99+" : notificacionesNoLeidas)
+                        </span>
+                    }
+                </button>
+            </div>
+
+            <!-- PERFIL DEL USUARIO -->
+            <div class="user-profile-btn">
+                <!-- Avatar / Foto de perfil -->
+                <div class="avatar-container">
+                    <img src="favicon.png" alt="Avatar" class="avatar-img" />
+                </div>
+
+                <!-- Info Usuario -->
+                <div class="user-info">
+                    <span class="user-name">@(string.IsNullOrEmpty(nombreUsuarioDA) ? "Diego Lopez" : nombreUsuarioDA)</span>
+                    <span class="user-role">Asesor</span>
+                </div>
+
+                <!-- Flecha Desplegable -->
+                <RadzenIcon Icon="expand_more" Style="font-size: 18px; color: #64748b;" />
+            </div>
+
+        </div>
+    </header>
+
+    <!-- ÁREA DE CONTENIDO DE LA PÁGINA -->
+    <main class="app-body">
+        @Body
     </main>
 </div>
 
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+@code {
+    string nombreUsuarioDA = string.Empty;
+    private int notificacionesNoLeidas = 2;
 
-@code{
-	string nombreUsuarioDA = string.Empty;
+    protected override void OnInitialized()
+    {
+        try
+        {
+            obtenerUsuario.ObtenerUsuarioActualAsync();
+            nombreUsuarioDA = obtenerUsuario.NombreCompleto;
+        }
+        catch
+        {
+            // Fallback si no está cargado el servicio aún
+        }
+    }
 
-	protected override void OnInitialized()
-	{
-        obtenerUsuario.ObtenerUsuarioActualAsync();
-        nombreUsuarioDA = obtenerUsuario.NombreCompleto;
-	}
+    private void AbrirNotificaciones()
+    {
+        Console.WriteLine("Abrir panel de notificaciones");
+    }
 }

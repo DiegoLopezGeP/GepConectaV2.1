@@ -1,13 +1,17 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
 @using WhatsappComercial.Components.ComponentesHijo.Redirect
+
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(Program).Assembly">
         <Found Context="routeData">
-            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)">
+
+            <AuthorizeRouteView RouteData="@routeData">
                 <NotAuthorized>
-                    <!-- Si intenta acceder sin autenticarse, lo redirige al login -->
                     <RedirectToLogin />
                 </NotAuthorized>
+                <Authorizing>
+                    <p>Cargando...</p>
+                </Authorizing>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />
         </Found>

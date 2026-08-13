@@ -1,112 +1,221 @@
-.page {
+/* RESET Y ESTRUCTURA GENERAL */
+.layout-wrapper {
+    min-height: 100vh;
+    background-color: #f1f5f9; /* Fondo gris claro suave igual a la imagen */
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* HEADER FLOTANTE / TARJETA BLANCA */
+.app-header {
+    background: #ffffff;
+    height: 64px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 16px;
+}
+
+/* IZQUIERDA: LOGO Y HAMBURGUESA */
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.brand-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand-icon {
+    width: 38px;
+    height: 38px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+}
+
+.brand-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -0.02em;
+}
+
+.btn-menu-toggle {
+    color: #64748b !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+/* DERECHA: NOTIFICACIONES Y USUARIO */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* CONTENEDOR CAMPANA DE NOTIFICACIONES */
+.notif-wrapper {
     position: relative;
+}
+
+.notif-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+    .notif-btn:hover {
+        background-color: #f1f5f9;
+    }
+
+/* BADGE ROJO SOBRE LA CAMPANA */
+.notif-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background-color: #ef4444;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    height: 16px;
+    min-width: 16px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 2px solid #ffffff;
+}
+
+/* BOTÓN PERFIL USUARIO */
+.user-profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+    .user-profile-btn:hover {
+        background-color: #f8fafc;
+    }
+
+.avatar-container {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #e2e8f0;
+    border: 1px solid #cbd5e1;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.user-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.user-role {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+/* CUERPO DEL CONTENIDO */
+.app-body {
+    flex: 1;
     display: flex;
     flex-direction: column;
 }
 
-main {
-    flex: 1;
-}
-
-.sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
-}
-
-.top-row {
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #d6d5d5;
-    justify-content: flex-end;
-    height: 3.5rem;
-    display: flex;
-    align-items: center;
-}
-
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        white-space: nowrap;
-        margin-left: 1.5rem;
-        text-decoration: none;
+@media (max-width: 768px) {
+    .layout-wrapper {
+        padding: 8px 8px; /* Menos margen exterior para aprovechar la pantalla */
     }
 
-    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
-        text-decoration: underline;
+    .app-header {
+        padding: 0 12px; /* Reducimos el padding interno */
+        height: 56px; /* Hacemos el header un poco más delgado */
+        margin-bottom: 10px;
     }
 
-    .top-row ::deep a:first-child {
-        overflow: hidden;
-        text-overflow: ellipsis;
+    .header-left {
+        gap: 10px; /* Reducimos el espacio entre el logo y el botón hamburguesa */
     }
 
-.nav-scrollable {
-    width: 260px;
-    transition: width .25s ease;
-    overflow: hidden;
-}
-
-    .nav-scrollable.ocultar {
-        width: 0;
+    /* Ocultamos el texto "GepConecta" en móviles muy pequeños para ahorrar espacio */
+    .brand-name {
+        font-size: 1.1rem;
     }
 
-    .nav-scrollable.mostrar {
-        width: 260px;
+    .header-right {
+        gap: 10px;
     }
 
-@media (max-width: 640.98px) {
-    .top-row {
-        justify-content: space-between;
+    /* Ocultamos la información escrita del usuario en móvil, dejamos solo la foto */
+    .user-info {
+        display: none;
     }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        margin-left: 0;
+    .user-profile-btn {
+        gap: 4px;
+        padding: 2px;
+    }
+
+    .avatar-container {
+        width: 32px;
+        height: 32px;
     }
 }
 
-@media (min-width: 641px) {
-    .page {
-        flex-direction: row;
+/* Smartphones Pequeños (Pantallas menores a 480px) */
+@media (max-width: 480px) {
+    /* Si el logo estorba demasiado en teléfonos muy angostos, ocultamos el texto y dejamos solo el icono */
+    .brand-name {
+        display: none;
     }
 
-    .sidebar {
-        width: 250px;
-        height: 100vh;
-        position: sticky;
-        top: 0;
+    .brand-icon {
+        width: 34px;
+        height: 34px;
     }
 
-    .top-row {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
-
-    .top-row.auth ::deep a:first-child {
-        flex: 1;
-        text-align: right;
-        width: 0;
-    }
-
-    .top-row, article {
-        padding-left: 2rem !important;
-        padding-right: 1.5rem !important;
+    .notif-btn {
+        width: 34px;
+        height: 34px;
     }
 }
-
-#blazor-error-ui {
-    color-scheme: light only;
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-    box-sizing: border-box;
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
-    position: fixed;
-    width: 100%;
-    z-index: 1000;
-}
-
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-    }
