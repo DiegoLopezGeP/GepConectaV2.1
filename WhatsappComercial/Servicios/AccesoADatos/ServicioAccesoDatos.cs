@@ -107,6 +107,8 @@ namespace WhatsappComercial.Servicios.AccesoADatos
             DataTable dtConsulta = ServicioDatos.TraerTablaParametros(tabla, campos, condicion, AplicacionCRM);
             return dtConsulta;
         }
+
+
         #endregion
 
         #region Inserciones

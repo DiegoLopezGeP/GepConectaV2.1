@@ -158,10 +158,28 @@ namespace GepConecta.WhatsAppCloud.Models.Webhook
         [JsonPropertyName("status")]
         public string? Status { get; set; } // "sent", "delivered", "read", "failed"
 
+        // ✅ CORREGIDO: Ahora es una Lista de errores
+        [JsonPropertyName("errors")]
+        public List<WebhookStatusErrors>? Errors { get; set; }
+
         [JsonPropertyName("timestamp")]
         public string? Timestamp { get; set; }
 
         [JsonPropertyName("recipient_id")]
         public string? RecipientId { get; set; }
+    }
+    public class WebhookStatusErrors
+    {
+        [JsonPropertyName("code")]
+        public int? Code { get; set; } // Meta lo envía como entero (ej. 131026)
+
+        [JsonPropertyName("title")]
+        public string? Title { get; set; }
+
+        [JsonPropertyName("message")]
+        public string? Message { get; set; }
+
+        [JsonPropertyName("error_data")]
+        public object? ErrorData { get; set; } // O JsonElement? por si Meta envía un objeto complejo en error_data
     }
 }

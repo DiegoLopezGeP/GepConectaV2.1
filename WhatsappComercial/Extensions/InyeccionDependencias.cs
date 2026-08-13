@@ -99,6 +99,8 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<IBusquedaContactoAfiliaciones, BusquedaContactoAfiliaciones>();
             //Servicio para Validar las credenciales contra el directorio activo LDAP
             services.AddScoped<ILdapAuthService, LdapAuthService>();
+            //Servicio para obtener los parametros de una plantilla
+            services.AddScoped<IObtenerParametrosPlantilla, ObtenerParametrosPlantillas>();
 
 
             //Servicio para representar el formulario de registro de contacto

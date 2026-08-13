@@ -1,7 +1,12 @@
-﻿@using GepConecta.WhatsAppCloud.Models.Responses
+﻿@using System.Text.Encodings.Web
+@using System.Text.RegularExpressions
+@using System.Text.Json
+@using GepConecta.WhatsAppCloud.Models.Responses
 @using GepConecta.WhatsAppCloud.Services
+@using WhatsappComercial.Interfaces.Plantillas
 @using WhatsappComercial.Modelos.DTOs
 @inject IWhatsAppCloudClient WhatsAppClient
+@inject IObtenerParametrosPlantilla obtenerParametrosPlantilla
 
 <RadzenStack Gap="1rem" Style="padding: 5px;">
     <RadzenLabel Text="Seleccione Una Plantilla" Style="font-weight: bold; font-size: 14px;" />
@@ -32,24 +37,34 @@
 
                 @if (DetallePlantillaMeta is not null)
                 {
-                    @* 1. Renderizado del Header (Encabezado) *@
+                    @* 1. Renderizado del Header de Imagen *@
+                    @if (EsHeaderImagen && !string.IsNullOrEmpty(UrlImagenHeader))
+                    {
+                        <div style="margin-bottom: 12px; text-align: center;">
+                            <img src="@UrlImagenHeader"
+                                 alt="Encabezado de Plantilla"
+                                 style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);" />
+                        </div>
+                    }
+
+                    @* 1.1 Renderizado del Header de Texto *@
                     @if (HeaderComponente is not null && !string.IsNullOrEmpty(HeaderComponente.Texto))
                     {
                         <strong style="display: block; margin-bottom: 8px; color: #222;">
-                            @HeaderComponente.Texto
+                            @((MarkupString)FormatearTextoWhatsApp(HeaderComponente.Texto))
                         </strong>
                     }
 
-                    @* 2. Renderizado del Body (Cuerpo del mensaje) *@
+                    @* 2. Renderizado del Body (Cuerpo del mensaje con formato HTML) *@
                     <p style="white-space: pre-line; color: #333; margin-bottom: 12px; font-size: 14px; line-height: 1.4;">
-                        @BodyTextoFormateado
+                        @((MarkupString)FormatearTextoWhatsApp(BodyTextoFormateado))
                     </p>
 
                     @* 3. Renderizado del Footer (Pie de página) *@
                     @if (FooterComponente is not null && !string.IsNullOrEmpty(FooterComponente.Texto))
                     {
                         <small style="display: block; color: #777; margin-top: 8px; font-size: 12px;">
-                            @FooterComponente.Texto
+                            @((MarkupString)FormatearTextoWhatsApp(FooterComponente.Texto))
                         </small>
                     }
 
@@ -60,11 +75,11 @@
                         <RadzenStack Gap="0.5rem">
                             @foreach (var boton in BotonesComponente.Botones)
                             {
-                                <RadzenButton Variant="Variant.Outlined" 
-                                              ButtonStyle="ButtonStyle.Secondary" 
-                                              Size="ButtonSize.Small" 
-                                              Text="@boton.Texto" 
-                                              Style="width: 100%; text-transform: none; border-color: #ccc; color: #007bff; background: #fff;" 
+                                <RadzenButton Variant="Variant.Outlined"
+                                              ButtonStyle="ButtonStyle.Secondary"
+                                              Size="ButtonSize.Small"
+                                              Text="@boton.Texto"
+                                              Style="width: 100%; text-transform: none; border-color: #ccc; color: #007bff; background: #fff;"
                                               Disabled="true" />
                             }
                         </RadzenStack>
@@ -73,7 +88,7 @@
                 else
                 {
                     <p style="white-space: pre-line; color: #333;">
-                        @PlantillaSeleccionada.CuerpoMensaje
+                        @((MarkupString)FormatearTextoWhatsApp(PlantillaSeleccionada.CuerpoMensaje))
                     </p>
                 }
             </div>
@@ -89,9 +104,9 @@
     </RadzenCard>
 
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-        <RadzenButton ButtonStyle="ButtonStyle.Primary" 
-                      Variant="Variant.Text" 
-                      Shade="Shade.Light" 
+        <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                      Variant="Variant.Text"
+                      Shade="Shade.Light"
                       Text="Enviar Plantilla"
                       Icon="send"
                       Disabled="@(PlantillaSeleccionada is null || CargandoContenido)"
@@ -103,51 +118,41 @@
     [Parameter] public List<PlantillaDTO> Plantillas { get; set; } = new();
     [Parameter] public PlantillaDTO? PlantillaSeleccionada { get; set; }
     [Parameter] public EventCallback<PlantillaDTO?> PlantillaSeleccionadaChanged { get; set; }
-
-    // EventCallback compatible con el manejador de Conversaciones.razor
+    [Parameter] public DatosTarjetaConversacionDTO? conversacionSeleccionada { get; set; }
     [Parameter] public EventCallback<(PlantillaMetaResponseDTO, PlantillaDTO)> OnUsarPlantilla { get; set; }
 
     private PlantillaMetaResponseDTO? DetallePlantillaMeta { get; set; }
     private bool CargandoContenido { get; set; } = false;
+    private string TextoCuerpoFormateado { get; set; } = string.Empty;
 
-    private ComponentePlantillaDTO? HeaderComponente => 
+    private ComponentePlantillaDTO? HeaderComponente =>
         DetallePlantillaMeta?.Componentes?.FirstOrDefault(c => c.Tipo.Equals("HEADER", StringComparison.OrdinalIgnoreCase));
 
-    private ComponentePlantillaDTO? BodyComponente => 
+    private ComponentePlantillaDTO? BodyComponente =>
         DetallePlantillaMeta?.Componentes?.FirstOrDefault(c => c.Tipo.Equals("BODY", StringComparison.OrdinalIgnoreCase));
 
-    private ComponentePlantillaDTO? FooterComponente => 
+    private ComponentePlantillaDTO? FooterComponente =>
         DetallePlantillaMeta?.Componentes?.FirstOrDefault(c => c.Tipo.Equals("FOOTER", StringComparison.OrdinalIgnoreCase));
 
-    private ComponentePlantillaDTO? BotonesComponente => 
+    private ComponentePlantillaDTO? BotonesComponente =>
         DetallePlantillaMeta?.Componentes?.FirstOrDefault(c => c.Tipo.Equals("BUTTONS", StringComparison.OrdinalIgnoreCase));
 
-    private string BodyTextoFormateado
-    {
-        get
-        {
-            if (BodyComponente is null || string.IsNullOrEmpty(BodyComponente.Texto))
-                return PlantillaSeleccionada?.CuerpoMensaje ?? string.Empty;
+    private bool EsHeaderImagen =>
+        HeaderComponente?.Ejemplo?.HeadersArchivos is not null &&
+        HeaderComponente.Ejemplo.HeadersArchivos.Any();
 
-            string texto = BodyComponente.Texto;
+    private string? UrlImagenHeader =>
+        HeaderComponente?.Ejemplo?.HeadersArchivos?.FirstOrDefault();
 
-            var ejemplos = BodyComponente.Ejemplo?.TextoCuerpoVariables?.FirstOrDefault();
-            if (ejemplos != null && ejemplos.Any())
-            {
-                for (int i = 0; i < ejemplos.Count; i++)
-                {
-                    texto = texto.Replace($"{{{i + 1}}}", $"[{ejemplos[i]}]");
-                }
-            }
-
-            return texto;
-        }
-    }
+    private string BodyTextoFormateado => string.IsNullOrEmpty(TextoCuerpoFormateado)
+        ? (PlantillaSeleccionada?.CuerpoMensaje ?? string.Empty)
+        : TextoCuerpoFormateado;
 
     private async Task OnSeleccionChanged(object value)
     {
         PlantillaSeleccionada = value as PlantillaDTO;
         DetallePlantillaMeta = null;
+        TextoCuerpoFormateado = string.Empty;
 
         if (PlantillaSeleccionada is not null && !string.IsNullOrWhiteSpace(PlantillaSeleccionada.Id))
         {
@@ -157,15 +162,24 @@
             try
             {
                 DetallePlantillaMeta = await WhatsAppClient.ObtenerContenidoPlantillaAsync(PlantillaSeleccionada.Id);
+                var parametrosPlantillas = await obtenerParametrosPlantilla.ObtenerParametrosPlantilla(PlantillaSeleccionada.Id, conversacionSeleccionada);
 
-                if (!string.IsNullOrEmpty(BodyTextoFormateado))
+                // Mantenemos el texto base intacto con sus {1}, {2} sin alterar
+                string textoBase = BodyComponente?.Texto ?? PlantillaSeleccionada.CuerpoMensaje ?? string.Empty;
+
+                // Aplicar reemplazo de parámetros de la BD/Objeto
+                if (parametrosPlantillas is not null)
                 {
-                    PlantillaSeleccionada.CuerpoMensaje = BodyTextoFormateado;
+                    textoBase = ReemplazarParametrosEnTexto(textoBase, parametrosPlantillas, DetallePlantillaMeta);
                 }
+
+                TextoCuerpoFormateado = textoBase;
+                PlantillaSeleccionada.CuerpoMensaje = TextoCuerpoFormateado;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[ERROR AL OBTENER PLANTILLA]: {ex.Message}");
+                TextoCuerpoFormateado = PlantillaSeleccionada.CuerpoMensaje ?? string.Empty;
             }
             finally
             {
@@ -181,13 +195,123 @@
     {
         if (PlantillaSeleccionada is not null)
         {
-            // Nos aseguramos de que el DTO local lleve el cuerpo procesado
-            if (!string.IsNullOrEmpty(BodyTextoFormateado))
+            if (!string.IsNullOrEmpty(TextoCuerpoFormateado))
             {
-                PlantillaSeleccionada.CuerpoMensaje = BodyTextoFormateado;
+                PlantillaSeleccionada.CuerpoMensaje = TextoCuerpoFormateado;
             }
 
             await OnUsarPlantilla.InvokeAsync((DetallePlantillaMeta ?? new PlantillaMetaResponseDTO(), PlantillaSeleccionada));
         }
+    }
+
+    private string ReemplazarParametrosEnTexto(string textoBase, object? parametros, PlantillaMetaResponseDTO? plantillaMetaResponseDTO)
+    {
+        if (string.IsNullOrWhiteSpace(textoBase) || parametros is null)
+            return textoBase;
+
+        try
+        {
+            Dictionary<string, string> mapaParametros = new(StringComparer.OrdinalIgnoreCase);
+            List<string> listaValoresOrdenados = new();
+
+            // 1. Extraer claves y valores del objeto/diccionario 'parametros'
+            if (parametros is IEnumerable<Dictionary<string, object?>> listaDict)
+            {
+                var primerRegistro = listaDict.FirstOrDefault();
+                if (primerRegistro != null)
+                {
+                    foreach (var kvp in primerRegistro)
+                    {
+                        string val = kvp.Value?.ToString() ?? string.Empty;
+                        mapaParametros[kvp.Key] = val;
+                        listaValoresOrdenados.Add(val);
+                    }
+                }
+            }
+            else if (parametros is Dictionary<string, object?> dictObjeto)
+            {
+                foreach (var kvp in dictObjeto)
+                {
+                    string val = kvp.Value?.ToString() ?? string.Empty;
+                    mapaParametros[kvp.Key] = val;
+                    listaValoresOrdenados.Add(val);
+                }
+            }
+            else
+            {
+                var json = JsonSerializer.Serialize(parametros);
+                using var doc = JsonDocument.Parse(json);
+
+                if (doc.RootElement.ValueKind == JsonValueKind.Array && doc.RootElement.GetArrayLength() > 0)
+                {
+                    var primerElemento = doc.RootElement[0];
+                    foreach (var prop in primerElemento.EnumerateObject())
+                    {
+                        string val = prop.Value.ToString();
+                        mapaParametros[prop.Name] = val;
+                        listaValoresOrdenados.Add(val);
+                    }
+                }
+                else if (doc.RootElement.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (var prop in doc.RootElement.EnumerateObject())
+                    {
+                        string val = prop.Value.ToString();
+                        mapaParametros[prop.Name] = val;
+                        listaValoresOrdenados.Add(val);
+                    }
+                }
+            }
+
+            // 2. Asignar también los índices numéricos (1, 2, 3...) según el orden
+            for (int i = 0; i < listaValoresOrdenados.Count; i++)
+            {
+                string posicion = (i + 1).ToString();
+                if (!mapaParametros.ContainsKey(posicion))
+                {
+                    mapaParametros[posicion] = listaValoresOrdenados[i];
+                }
+            }
+
+            string textoResultado = textoBase;
+
+            // 3. Reemplazar sobre el texto original
+            foreach (var param in mapaParametros)
+            {
+                string claveEscapada = Regex.Escape(param.Key);
+                string valor = param.Value;
+
+                // Soporta {1}, {{1}}, [1], {Nombre}, {{Nombre}}, etc.
+                textoResultado = Regex.Replace(textoResultado, $@"\{{\{{\s*{claveEscapada}\s*\}}\}}", valor, RegexOptions.IgnoreCase);
+                textoResultado = Regex.Replace(textoResultado, $@"\{{\s*{claveEscapada}\s*\}}", valor, RegexOptions.IgnoreCase);
+                textoResultado = Regex.Replace(textoResultado, $@"\[\[\s*{claveEscapada}\s*\]\]", valor, RegexOptions.IgnoreCase);
+                textoResultado = Regex.Replace(textoResultado, $@"\[\s*{claveEscapada}\s*\]", valor, RegexOptions.IgnoreCase);
+            }
+
+            return textoResultado;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR REEMPLAZANDO PARÁMETROS]: {ex.Message}");
+            return textoBase;
+        }
+    }
+
+    private string FormatearTextoWhatsApp(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return string.Empty;
+
+        string htmlEscaped = HtmlEncoder.Default.Encode(texto);
+
+        htmlEscaped = Regex.Replace(htmlEscaped, @"```(.*?)```", "<code>$1</code>", RegexOptions.Singleline);
+        htmlEscaped = Regex.Replace(htmlEscaped, @"\*_([^*_]+)_\*", "<strong><em>$1</em></strong>");
+        htmlEscaped = Regex.Replace(htmlEscaped, @"_\*([^*_]+)\*_", "<em><strong>$1</strong></em>");
+        htmlEscaped = Regex.Replace(htmlEscaped, @"(?<=\s|^|\W)\*([^\*]+)\*(?=\s|$|\W)", "<strong>$1</strong>");
+        htmlEscaped = Regex.Replace(htmlEscaped, @"(?<=\s|^|\W)_([^_]+)_(?=\s|$|\W)", "<em>$1</em>");
+        htmlEscaped = Regex.Replace(htmlEscaped, @"(?<=\s|^|\W)~([^~]+)~(?=\s|$|\W)", "<del>$1</del>");
+        htmlEscaped = Regex.Replace(htmlEscaped, @"`([^`]+)`", "<code>$1</code>");
+
+        return htmlEscaped;
     }
 }

@@ -19,11 +19,11 @@
                 <span class="brand-name">GepConecta</span>
             </div>
 
-            <!-- Botón Menú Hamburguesa -->
+@*             <!-- Botón Menú Hamburguesa -->
             <RadzenButton Icon="menu" 
                           Variant="Variant.Text" 
                           ButtonStyle="ButtonStyle.Base" 
-                          class="btn-menu-toggle" />
+                          class="btn-menu-toggle" /> *@
         </div>
 
         <!-- SECCIÓN DERECHA: NOTIFICACIONES Y PERFIL -->
@@ -31,7 +31,7 @@
             
             <!-- BOTÓN DE NOTIFICACIONES -->
             <div class="notif-wrapper">
-                <button class="notif-btn" @onclick="AbrirNotificaciones" title="Notificaciones">
+@*                 <button class="notif-btn" @onclick="AbrirNotificaciones" title="Notificaciones">
                     <RadzenIcon Icon="notifications" Style="font-size: 20px; color: #475569;" />
                     @if (notificacionesNoLeidas > 0)
                     {
@@ -39,14 +39,14 @@
                             @(notificacionesNoLeidas > 99 ? "99+" : notificacionesNoLeidas)
                         </span>
                     }
-                </button>
+                </button> *@
             </div>
 
             <!-- PERFIL DEL USUARIO -->
             <div class="user-profile-btn">
                 <!-- Avatar / Foto de perfil -->
                 <div class="avatar-container">
-                    <img src="favicon.png" alt="Avatar" class="avatar-img" />
+                    <img src="@(!string.IsNullOrEmpty(fotoUsuario) ? fotoUsuario : "favicon.ico")" alt="Avatar" class="avatar-img" />
                 </div>
 
                 <!-- Info Usuario -->
@@ -70,6 +70,8 @@
 
 @code {
     string nombreUsuarioDA = string.Empty;
+    string fotoUsuario = string.Empty;
+
     private int notificacionesNoLeidas = 2;
 
     protected override void OnInitialized()
@@ -78,6 +80,7 @@
         {
             obtenerUsuario.ObtenerUsuarioActualAsync();
             nombreUsuarioDA = obtenerUsuario.NombreCompleto;
+            fotoUsuario = obtenerUsuario.FotoUsuario;
         }
         catch
         {

@@ -1,4 +1,6 @@
-﻿@using WhatsappComercial.Modelos.DTOs
+﻿@using System.Text.Encodings.Web
+@using System.Text.RegularExpressions
+@using WhatsappComercial.Modelos.DTOs
 
 <div class="contenedor-contenido-mensaje">
     @if (Mensaje.TipoArchivo?.ToLower() == "image" || EsImagen(Mensaje.Texto))
@@ -19,13 +21,13 @@
     }
     else
     {
-        <div class="texto-mensaje">@Mensaje.Texto</div>
+        <div class="texto-mensaje">@((MarkupString)FormatearTextoWhatsApp(Mensaje.Texto))</div>
     }
 
     @* MOSTRAR LEYENDA / CAPTION ABAJO DE ARCHIVOS SI EXISTE Y NO SE HA PASADO AL SUBCOMPONENTE *@
     @if (!string.IsNullOrWhiteSpace(Mensaje.Caption) && EsArchivoSinCaptionNativo())
     {
-        <div class="texto-mensaje caption-adjunto">@Mensaje.Caption</div>
+        <div class="texto-mensaje caption-adjunto">@((MarkupString)FormatearTextoWhatsApp(Mensaje.Caption))</div>
     }
 </div>
 
@@ -71,4 +73,43 @@
 
     private bool EsDocumento(string? ruta) =>
         new[] { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".zip", ".rar", ".csv" }.Any(ext => ruta?.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ?? false);
+
+    /// <summary>
+    /// Limpia cualquier corchete/llave residual (como [, ], {, }) y convierte el formato WhatsApp a HTML seguro.
+    /// </summary>
+    private string FormatearTextoWhatsApp(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return string.Empty;
+
+        // 1. Decodificar por si el texto trae entidades HTML (ej. &#xF3;, &#xA;)
+        string textoLimpio = System.Net.WebUtility.HtmlDecode(texto);
+
+        // 2. Eliminar cualquier corchete o llave suelta o combinada ([ ], { }, [ }, { ])
+        textoLimpio = Regex.Replace(textoLimpio, @"[\[\]\{\}]", "");
+
+        // 3. Escapar el HTML básico por seguridad XSS
+        string htmlEscaped = HtmlEncoder.Default.Encode(textoLimpio);
+
+        // 4. Bloques de código: ```texto```
+        htmlEscaped = Regex.Replace(htmlEscaped, @"```(.*?)```", "<code>$1</code>", RegexOptions.Singleline);
+
+        // 5. Negrita + Cursiva combinados: *_texto_* o _*texto*_
+        htmlEscaped = Regex.Replace(htmlEscaped, @"\*_([^*_]+)_\*", "<strong><em>$1</em></strong>");
+        htmlEscaped = Regex.Replace(htmlEscaped, @"_\*([^*_]+)\*_", "<em><strong>$1</strong></em>");
+
+        // 6. Negrita: *texto*
+        htmlEscaped = Regex.Replace(htmlEscaped, @"(?<=\s|^|\W)\*([^\*]+)\*(?=\s|$|\W)", "<strong>$1</strong>");
+
+        // 7. Cursiva: _texto_
+        htmlEscaped = Regex.Replace(htmlEscaped, @"(?<=\s|^|\W)_([^_]+)_(?=\s|$|\W)", "<em>$1</em>");
+
+        // 8. Tachado: ~texto~
+        htmlEscaped = Regex.Replace(htmlEscaped, @"(?<=\s|^|\W)~([^~]+)~(?=\s|$|\W)", "<del>$1</del>");
+
+        // 9. Monoespaciado simple: `texto`
+        htmlEscaped = Regex.Replace(htmlEscaped, @"`([^`]+)`", "<code>$1</code>");
+
+        return htmlEscaped;
+    }
 }
