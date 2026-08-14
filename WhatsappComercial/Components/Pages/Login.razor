@@ -14,9 +14,9 @@
 
             <!-- Encabezado con Logo y Título -->
             <div class="login-header">
-                <div class="logo-container">
-                    <RadzenImage Path="favicon.png" AlternateText="Logo" class="logo-img" />
-                </div>
+                @* <div class="logo-container"> *@
+                    <RadzenImage Path="images/Logo.png" AlternateText="Logo" class="logo-img" />
+@*                 </div> *@
                 <h2 class="app-title">WhatsApp Comercial</h2>
                 <p class="app-subtitle">Ingresa tus credenciales corporativas</p>
             </div>
@@ -61,13 +61,24 @@
                             <RadzenIcon Icon="lock_open" class="field-icon" />
                         </Start>
                         <ChildContent>
-                            <input type="password"
+                            <!-- El tipo de input cambia dinámicamente -->
+                            <input type="@tipoInput"
                                    name="password"
                                    class="custom-input"
                                    placeholder="••••••••"
                                    required
                                    autocomplete="current-password" />
                         </ChildContent>
+                        <!-- Botón para alternar visibilidad -->
+                        <End>
+                            <RadzenButton Icon="@iconoOpcion"
+                                          ButtonStyle="ButtonStyle.Light"
+                                          Variant="Variant.Text"
+                                          Size="ButtonSize.Small"
+                                          Click="@AlternarVisibilidad"
+                                          Style="color: #64748b; padding: 0 4px; min-width: auto;"
+                                          type="button" />
+                        </End>
                     </RadzenFormField>
                 </div>
 
@@ -130,8 +141,8 @@
     }
 
     .logo-img {
-        width: 44px;
-        height: 44px;
+        width: 150px;
+        height: 100px;
         object-fit: contain;
     }
 
@@ -139,7 +150,7 @@
         font-size: 1.5rem;
         font-weight: 700;
         color: #1e293b;
-        margin: 0 0 0.25rem 0;
+        margin: 1.5rem 0 0.25rem 0;
         letter-spacing: -0.025em;
     }
 
@@ -254,6 +265,11 @@
 
 @code {
     private bool mostrarError = false;
+    private bool mostrarContrasena = false;
+
+    // Propiedades calculadas dinámicas
+    private string tipoInput => mostrarContrasena ? "text" : "password";
+    private string iconoOpcion => mostrarContrasena ? "visibility_off" : "visibility";
 
     protected override void OnInitialized()
     {
@@ -262,5 +278,10 @@
         {
             mostrarError = true;
         }
+    }
+
+    private void AlternarVisibilidad()
+    {
+        mostrarContrasena = !mostrarContrasena;
     }
 }
