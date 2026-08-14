@@ -263,19 +263,22 @@
 			Width = "90%",
 			CloseDialogOnOverlayClick = true,
 			ShowClose = true,
-			Style = "margin-top: 10%; border-radius: 12px;"
+			Style = "margin-top: 10%; border-radius: 12px;",
+			ShowTitle = false
 		};
 
 		await dialogService.OpenAsync<SelectorPlantillas>(
-			"Seleccionar Plantilla",
+			"",
 			new Dictionary<string, object?>
 			{
-			{ "Plantillas", Plantillas },
-			{ "PlantillaSeleccionada", plantillaSeleccionada },
-			{ "PlantillaSeleccionadaChanged", EventCallback.Factory.Create<PlantillaDTO?>(this, (p) => {
-				plantillaSeleccionada = p;
-				StateHasChanged();
+				{ "Plantillas", Plantillas },
+				{ "PlantillaSeleccionada", plantillaSeleccionada },
+				{"conversacionSeleccionada", datosContactoConversacion },
+				{ "PlantillaSeleccionadaChanged", EventCallback.Factory.Create<PlantillaDTO?>(this, (p) => {
+					plantillaSeleccionada = p;
+					StateHasChanged();
 			})},
+
 			{ "OnUsarPlantilla", EventCallback.Factory.Create<(PlantillaMetaResponseDTO, PlantillaDTO)>(this, async (detalleMeta) => {
 				// 1. Primero se notifica al componente padre
 				await OnUsarPlantilla.InvokeAsync(detalleMeta);

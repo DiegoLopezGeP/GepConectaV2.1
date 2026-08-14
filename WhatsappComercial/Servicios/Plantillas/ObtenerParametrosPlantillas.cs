@@ -13,12 +13,12 @@ namespace WhatsappComercial.Servicios.Plantillas
             _servicioAccesoDatos = servicioAccesoDatos;
         }
 
-        public async Task<object?> ObtenerParametrosPlantilla(string idPlantilla, DatosTarjetaConversacionDTO datosTarjetaConversacionDTO)
+        public async Task<object?> ObtenerParametrosPlantilla(string idPlantilla, DatosContactoConversacionDTO datosContactoConversacionDTO)
         {
             try
             {
                 string[] param = { idPlantilla.ToString() };
-                int idConversacion = datosTarjetaConversacionDTO.IdConversacion;
+                int idConversacion = datosContactoConversacionDTO.IdConversacion;
                 // 1. Consultar nodo de la acción
                 DataTable dtAccionNodo = await _servicioAccesoDatos.TraerTablaConArregloAsincrono(62, param);
 

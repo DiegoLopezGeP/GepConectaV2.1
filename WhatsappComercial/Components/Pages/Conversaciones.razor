@@ -85,7 +85,7 @@
 				<SelectorPlantillas Plantillas="@plantillas"
 									@bind-PlantillaSeleccionada="plantillaSeleccionada"
 									OnUsarPlantilla="UsarPlantillaSeleccionada" 
-									conversacionSeleccionada="@conversacionSeleccionada" />
+									conversacionSeleccionada="@contactoConversacionSeleccionado" />
 			</div>
 		}
 	}
@@ -115,6 +115,11 @@
 		.btn-atras:active {
 			transform: scale(0.95);
 		}
+	@@media (max-width: 768px) {
+		.rz-dialog:not(.rz-dialog-confirm):not(.rz-dialog-alert) {
+			width: 95% !important;	
+		}
+	}
 </style>
 
 @code {
@@ -144,14 +149,16 @@
 	{
 		var opciones = new DialogOptions
 		{
-			Width = "90%",
+			Width = "90% !important",
 			CloseDialogOnOverlayClick = true,
 			ShowClose = true,
-			Style = "margin-top: 10%; border-radius: 12px;"
+			Style = "margin-top: 10%; border-radius: 12px;",
+			ShowTitle = true
+			
 		};
 
 		await dialogService.OpenAsync<SelectorPlantillas>(
-			"Seleccionar Plantilla",
+			"",
 			new Dictionary<string, object?>
 			{
 				{ "Plantillas", plantillas },

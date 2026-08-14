@@ -5,6 +5,6 @@ namespace WhatsappComercial.Interfaces.Plantillas
 {
     public interface IObtenerParametrosPlantilla
     {
-        Task<object> ObtenerParametrosPlantilla(string idPlantilla, DatosTarjetaConversacionDTO DatosTarjetaConversacionDTO);
+        Task<object> ObtenerParametrosPlantilla(string idPlantilla, DatosContactoConversacionDTO DatosContactoConversacionDTO);
     }
 }
