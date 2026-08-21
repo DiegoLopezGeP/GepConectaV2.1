@@ -110,7 +110,7 @@ namespace WhatsappComercial.Servicios.Contactos
 
             var cliente = new Clientes
             {
-                NumIdentificacionCliente = afiliacion.Identificacion,
+                NumIdentificacionCliente = afiliacion.NroIdentificacion,
                 NombreCompletoCliente = afiliacion.NombreContacto,
                 NumCelularCliente = afiliacion.CelularContacto,
                 CorreoElectronico = afiliacion.CorreoElectronico,
@@ -187,7 +187,7 @@ namespace WhatsappComercial.Servicios.Contactos
 
             AutocompletarDesdeModelo(new Pagaduria
             {
-                Identificacion = afil.Identificacion,
+                Identificacion = afil.NroIdentificacion,
                 Pagadurias = afil.NombreContacto,
                 Celular = afil.CelularContacto
             }, modelo);
@@ -206,7 +206,7 @@ namespace WhatsappComercial.Servicios.Contactos
 
             AutocompletarDesdeModelo(new BaseCobranzas
             {
-                Cedula = afil.Identificacion,
+                Cedula = afil.NroIdentificacion,
                 Nombre = afil.NombreContacto,
                 Telefono = afil.CelularContacto
             }, modelo);

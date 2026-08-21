@@ -86,7 +86,7 @@
 									  Title="Celular"
 									  Width="140px" />
 				<RadzenDataGridColumn TItem="Contacto"
-									  Property="@nameof(Contacto.Identificacion)"
+									  Property="@nameof(Contacto.NroIdentificacion)"
 									  Title="Identificación"
 									  Width="140px" />
 				<RadzenDataGridColumn TItem="Contacto"
@@ -417,14 +417,14 @@
 			new DialogOptions() { Width = "600px", Resizable = true, Draggable = true }
 		);
 
-		if (resultado is bool seActualizo && seActualizo)
-		{
-			notificacion.Notify(
-				NotificationSeverity.Success,
-				"Éxito",
-				"Contacto actualizado correctamente.");
+		// if (resultado is bool seActualizo && seActualizo)
+		// {
+		// 	notificacion.Notify(
+		// 		NotificationSeverity.Success,
+		// 		"Éxito",
+		// 		"Contacto actualizado correctamente.");
 
-			await BuscarContacto();
-		}
+		// 	await BuscarContacto();
+		// }
 	}
 }

@@ -53,7 +53,7 @@ namespace WhatsappComercial.Servicios.Contactos
                     IdContacto = Convert.ToInt32(row["IdBeneficiario"]),
                     NombreContacto = nombreCompleto,
                     CelularContacto = row.Table.Columns.Contains("Telefonos") ? (row.Field<string>("Telefonos") ?? string.Empty) : string.Empty,
-                    Identificacion = row.Table.Columns.Contains("Identificacion") ? (row.Field<string>("Identificacion") ?? string.Empty) : string.Empty,
+                    NroIdentificacion = row.Table.Columns.Contains("Identificacion") ? (row.Field<string>("Identificacion") ?? string.Empty) : string.Empty,
                 });
             }
 
@@ -91,7 +91,7 @@ namespace WhatsappComercial.Servicios.Contactos
                     IdContacto = row["IdCliente"] != DBNull.Value ? Convert.ToInt32(row["IdCliente"]) : 0,
                     NombreContacto = nombreCompleto,
                     CelularContacto = row["Celular"] != DBNull.Value ? row.Field<string>("Celular") ?? string.Empty : string.Empty,
-                    Identificacion = row["Identificacion"] != DBNull.Value ? row.Field<string>("Identificacion") ?? string.Empty : string.Empty,
+                    NroIdentificacion = row["Identificacion"] != DBNull.Value ? row.Field<string>("Identificacion") ?? string.Empty : string.Empty,
                     CorreoElectronico = row["Email"] != DBNull.Value ? row.Field<string>("Email") ?? string.Empty : string.Empty
                 });
             }

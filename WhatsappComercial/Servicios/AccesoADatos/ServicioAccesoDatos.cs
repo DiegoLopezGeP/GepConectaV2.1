@@ -269,16 +269,42 @@ namespace WhatsappComercial.Servicios.AccesoADatos
 
         public void ActualizarRegistro<T>(T objeto, string nombreTabla)
         {
+            if (objeto == null) return;
+
             DataTable tablaEsquema = ServicioDatos.TraerEsquemaTabla(nombreTabla, Aplicacion);
+
+            if (tablaEsquema == null || tablaEsquema.Columns.Count == 0)
+            {
+                throw new InvalidOperationException($"El esquema de la tabla '{nombreTabla}' no devolvió ninguna columna.");
+            }
+
             DataRow fila = tablaEsquema.NewRow();
-            PropertyInfo[] propiedades = typeof(T).GetProperties();
+
+            // SOLUCIÓN CLAVE: Usar GetType() del objeto en ejecución en lugar de typeof(T)
+            PropertyInfo[] propiedades = objeto.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
             foreach (PropertyInfo propiedad in propiedades)
             {
-                if (tablaEsquema.Columns.Contains(propiedad.Name) && propiedad.CanRead)
+                DataColumn? columna = tablaEsquema.Columns
+                    .Cast<DataColumn>()
+                    .FirstOrDefault(c => c.ColumnName.Equals(propiedad.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (columna != null && propiedad.CanRead)
                 {
-                    object valor = propiedad.GetValue(objeto) ?? DBNull.Value;
-                    fila[propiedad.Name] = valor;
+                    object? valor = propiedad.GetValue(objeto);
+
+                    if (valor == null)
+                    {
+                        fila[columna.ColumnName] = DBNull.Value;
+                    }
+                    else if (propiedad.PropertyType.IsEnum || Nullable.GetUnderlyingType(propiedad.PropertyType)?.IsEnum == true)
+                    {
+                        fila[columna.ColumnName] = Convert.ToInt32(valor);
+                    }
+                    else
+                    {
+                        fila[columna.ColumnName] = valor;
+                    }
                 }
             }
 

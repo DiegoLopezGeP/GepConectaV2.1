@@ -26,7 +26,8 @@ namespace WhatsappComercial.Servicios.WebSocketService
 
             configuracion = servicioAccesoDatos.TraerTablaNombre("Configuraciones");
             _configuracionEstatica.EstablecerConfiguracion(configuracion);
-            _webSocketUri = _configuracionEstatica.TraerConfiguracionPorCondicion("UrlWebSocket");
+            //_webSocketUri = _configuracionEstatica.TraerConfiguracionPorCondicion("UrlWebSocket");
+            _webSocketUri = _configuracionEstatica.TraerConfiguracionPorCondicion("UrlWebSocketWatCom");
 
             DataTable esquemaMensaje = servicioAccesoDatos.EsquemaTabla("Mensajes");
             _configuracionEstatica.EstablecerEsquema(esquemaMensaje);

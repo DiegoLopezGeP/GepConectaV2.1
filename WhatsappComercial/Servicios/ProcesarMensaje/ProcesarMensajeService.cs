@@ -29,10 +29,6 @@ namespace WhatsappComercial.Servicios.ProcesarMensaje
             {
                 if (string.IsNullOrWhiteSpace(mensaje)) return;
 
-
-
-
-
                 // 1. Deserializar el JSON recibido a nuestro DTO principal
                 var payload = JsonSerializer.Deserialize<WebhookPayloadWhatsApp>(mensaje);
                 var value = payload?.Entry?.FirstOrDefault()?.Changes?.FirstOrDefault()?.Value;

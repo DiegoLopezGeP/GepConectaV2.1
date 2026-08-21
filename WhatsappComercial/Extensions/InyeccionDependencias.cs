@@ -101,6 +101,8 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<ILdapAuthService, LdapAuthService>();
             //Servicio para obtener los parametros de una plantilla
             services.AddScoped<IObtenerParametrosPlantilla, ObtenerParametrosPlantillas>();
+            //Servicio para actualizar contactos
+            services.AddScoped<IActualizarContacto, ActualizarContactoService>();
 
 
             //Servicio para representar el formulario de registro de contacto

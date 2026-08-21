@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using WhatsappComercial.Enums;
 using WhatsappComercial.Interfaces.Contactos;
 using WhatsappComercial.Modelos;
 using WhatsappComercial.Servicios.AccesoADatos;
@@ -37,7 +38,7 @@ namespace WhatsappComercial.Servicios.Contactos
                     IdContacto = row.Field<int>("IdBeneficiario"),
                     NombreContacto = row.Field<string>("NombreCompleto") ?? string.Empty,
                     CelularContacto = row.Field<string>("Telefono") ?? string.Empty,
-                    Identificacion = row.Field<string>("Identificacion") ?? string.Empty
+                    NroIdentificacion = row.Field<string>("Identificacion") ?? string.Empty
                 });
             }
 
@@ -60,7 +61,7 @@ namespace WhatsappComercial.Servicios.Contactos
                     IdContacto = row.Field<int>("IdRegistro"),
                     NombreContacto = row.Field<string>("Nombre") ?? string.Empty,
                     CelularContacto = row.Field<string>("Telefonos") ?? string.Empty,
-                    Identificacion = row.Field<string>("cedula") ?? string.Empty
+                    NroIdentificacion = row.Field<string>("cedula") ?? string.Empty
                 });
             }
 
@@ -83,7 +84,7 @@ namespace WhatsappComercial.Servicios.Contactos
                     IdContacto = row.Field<int>("IdBaseTelemercadeo"),
                     NombreContacto = row.Field<string>("Nombre") ?? string.Empty,
                     CelularContacto = row.Field<string>("Celular") ?? string.Empty,
-                    Identificacion = row.Field<string>("Identificacion") ?? string.Empty
+                    NroIdentificacion = row.Field<string>("Identificacion") ?? string.Empty
                 });
             }
 
@@ -107,7 +108,7 @@ namespace WhatsappComercial.Servicios.Contactos
                     IdContacto = row.Field<int>("IdCliente"),
                     NombreContacto = row.Field<string>("NombreCompletoCliente") ?? string.Empty,
                     CelularContacto = row.Field<string>("numCelularCliente") ?? string.Empty,
-                    Identificacion = row.Field<string>("NumIdentificacionCliente") ?? string.Empty,
+                    NroIdentificacion = row.Field<string>("NumIdentificacionCliente") ?? string.Empty,
                     CorreoElectronico = row.Field<string>("CorreoElectronico") ?? string.Empty
                     
                     // Agrega aquí las demás propiedades
@@ -121,7 +122,11 @@ namespace WhatsappComercial.Servicios.Contactos
         {
             try
             {
-                DataTable dtContacto = _servicioAccesoDatos.TraerTablaParametros("Contactos", "IdContacto, NombreContacto, CelularContacto", $"CelularContacto like '%{filtroBusqueda}%'");
+                // Sanitizar comillas simples para prevenir inyección SQL básica en la cláusula Where
+                string filtroSanitizado = (filtroBusqueda ?? string.Empty).Replace("'", "''");
+
+                DataTable dtContacto = _servicioAccesoDatos.TraerTablaParametros("Contactos", "IdContacto, Prefijo, NombreContacto, CelularContacto, NroIdentificacion, Genero, NombreInstitucion",
+                    $"CelularContacto like '%{filtroSanitizado}%' or NroIdentificacion like '%{filtroBusqueda}%' or NombreContacto like '%{filtroBusqueda}%'");
 
                 List<Contacto> contactos = new();
 
@@ -130,11 +135,19 @@ namespace WhatsappComercial.Servicios.Contactos
 
                 foreach (DataRow row in dtContacto.Rows)
                 {
+                    // Manejo seguro del valor entero del género
+                    int valorGenero = row.IsNull("Genero") ? 0 : Convert.ToInt32(row["Genero"]);
+
                     contactos.Add(new Contacto
                     {
                         IdContacto = row.Field<int>("IdContacto"),
+                        Prefijo = row.Field<string>("Prefijo") ?? string.Empty,
                         NombreContacto = row.Field<string>("NombreContacto") ?? string.Empty,
-                        CelularContacto = row.Field<string>("CelularContacto") ?? string.Empty
+                        CelularContacto = row.Field<string>("CelularContacto") ?? string.Empty,
+                        NroIdentificacion = row.Field<string>("NroIdentificacion") ?? string.Empty,
+                        //CorreoElectronico = row.Field<string>("CorreoElectronico") ?? string.Empty,
+                        NombreInstitucion = row.Field<string>("NombreInstitucion") ?? string.Empty,
+                        Genero = (GeneroEnum)valorGenero
                     });
                 }
 
@@ -142,7 +155,6 @@ namespace WhatsappComercial.Servicios.Contactos
             }
             catch (Exception ex)
             {
-                // Si tienes un logger, regístralo aquí.
                 Console.WriteLine(ex.ToString());
                 throw;
             }
