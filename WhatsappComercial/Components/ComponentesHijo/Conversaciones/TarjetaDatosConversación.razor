@@ -32,7 +32,7 @@
 											  Click="MostrarDetalles"
 											  Size="ButtonSize.Medium"
 											  MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Text = "Ver información" }))" />
-								@if (informacionUsuarioAutenticado.IdGrupoTrabajo == 12)
+								@if (informacionUsuarioAutenticado.IdGrupoTrabajo != 12)
 								{
 									<RadzenButton Icon="check_circle"
 												  Variant="Variant.Text"
@@ -242,7 +242,7 @@
 	private async Task MostrarDetalles()
 	{
 		await dialogService.OpenAsync<DetallesConversacionMovil>(
-			"Información de la conversación",
+			"",
 			new Dictionary<string, object?>
 			{
 				{ nameof(DetallesConversacionMovil.datosContactoConversacion), datosContactoConversacion }
@@ -250,9 +250,10 @@
 			new DialogOptions
 			{
 				Width = "90%",
-				Style = "transform: translateY(35%);",
+				Style = "transform: translateY(35%); margin: 5%; border-radius: 10px; ",
 				CloseDialogOnOverlayClick = true,
-				ShowClose = true
+				ShowClose = true,
+				ShowTitle = false
 			});
 	}
 

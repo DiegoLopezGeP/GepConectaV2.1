@@ -1,37 +1,106 @@
 ﻿@using WhatsappComercial.Modelos.DTOs
-<RadzenStack Gap="15px" Style="margin: 30px 15px;">
 
-    <RadzenText Text="@datosContactoConversacion.NombreCliente" TextStyle="TextStyle.H6"/>
-
-    <RadzenText>
-        <strong>Identificación:</strong> @datosContactoConversacion.Identificacion
-    </RadzenText>
-
-    <RadzenText>
-        <strong>Celular:</strong> @datosContactoConversacion.Celular
-    </RadzenText>
-
-    <RadzenText>
-        <strong>Estado:</strong> @datosContactoConversacion.EstadoConversacion
-    </RadzenText>
-
-    <RadzenText>
-        <strong>Ticket:</strong> #@datosContactoConversacion.IdTicket
-    </RadzenText>
-
-    <RadzenText>
-        <strong>Fecha inicio:</strong> @datosContactoConversacion.FechaInicioConversacion?.ToString("dd/MM/yyyy HH:mm")
-    </RadzenText>
-
-    <RadzenText>
-        <strong>Fecha finalización:</strong>
-        @(datosContactoConversacion.FechaFinConversacion?.ToString("dd/MM/yyyy HH:mm") ?? "En curso")
-    </RadzenText>
-
-</RadzenStack>
-
-@code{
+@if (datosContactoConversacion != null)
+{
+    <RadzenCard Class="rz-p-4 rz-shadow-2 rz-border-radius-2" Style="max-width: 450px; background-color: var(--rz-panel-background-color);">
+        <RadzenStack Gap="1.25rem">
+            
+            <!-- Encabezado con Avatar y Nombre -->
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                <RadzenIcon Icon="account_circle" IconStyle="IconStyle.Primary" Style="font-size: 2.75rem;" />
+                <RadzenStack Gap="0">
+                    <RadzenText TextStyle="TextStyle.H6" Class="rz-m-0 rz-font-weight-bold" Style="color: var(--rz-text-title-color);">
+                        @(datosContactoConversacion.NombreCliente ?? "Sin Nombre")
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0 rz-text-color-secondary">
+                        Ticket: <strong>#@datosContactoConversacion.IdTicket</strong>
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenStack>
 
 
+
+            <!-- Lista de Datos en Cuadrícula -->
+            <RadzenRow RowGap="0.75rem" ColumnGap="1rem">
+                
+                <!-- Celular -->
+                <RadzenColumn Size="12" SizeSM="6">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="phone" Style="font-size: 1.1rem; color: var(--rz-primary);" />
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0 rz-text-color-secondary">Celular</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0 rz-font-weight-semibold">
+                                @(datosContactoConversacion.Celular ?? "N/A")
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <!-- Identificación -->
+                <RadzenColumn Size="12" SizeSM="6">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="badge" Style="font-size: 1.1rem; color: var(--rz-primary);" />
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0 rz-text-color-secondary">Identificación</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0 rz-font-weight-semibold">
+                                @(datosContactoConversacion.Identificacion ?? "N/A")
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <!-- Estado -->
+                <RadzenColumn Size="12">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="info" Style="font-size: 1.1rem; color: var(--rz-primary);" />
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0 rz-text-color-secondary">Estado</RadzenText>
+                            <div>
+                                <RadzenBadge BadgeStyle="@ObtenerEstiloEstado(datosContactoConversacion.EstadoConversacion.ToString())" 
+                                             Text="@(datosContactoConversacion.EstadoConversacion.ToString()?? "Desconocido")" 
+                                             IsPill="true" />
+                            </div>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenColumn>
+
+            </RadzenRow>
+
+
+
+            <!-- Fechas de Inicio y Fin -->
+            <RadzenStack Gap="0.5rem">
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                    <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0 rz-text-color-secondary">
+                        <RadzenIcon Icon="calendar_today" Style="font-size: 0.9rem; vertical-align: middle;" /> Fecha inicio:
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0 rz-font-weight-bold">
+                        @(datosContactoConversacion.FechaInicioConversacion?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")
+                    </RadzenText>
+                </RadzenStack>
+
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                    <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0 rz-text-color-secondary">
+                        <RadzenIcon Icon="event_available" Style="font-size: 0.9rem; vertical-align: middle;" /> Fecha finalización:
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0 rz-font-weight-bold">
+                        @(datosContactoConversacion.FechaFinConversacion?.ToString("dd/MM/yyyy HH:mm") ?? "En curso")
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenStack>
+
+        </RadzenStack>
+    </RadzenCard>
+}
+
+@code {
     [Parameter] public DatosContactoConversacionDTO datosContactoConversacion { get; set; }
+
+    private BadgeStyle ObtenerEstiloEstado(string estado) => estado?.ToLower() switch
+    {
+        var e when e.Contains("abierta") || e.Contains("activo") || e.Contains("en curso") => BadgeStyle.Success,
+        var e when e.Contains("pendiente") || e.Contains("espera") => BadgeStyle.Warning,
+        var e when e.Contains("cerrada") || e.Contains("finalizada") => BadgeStyle.Secondary,
+        _ => BadgeStyle.Info
+    };
 }
