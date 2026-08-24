@@ -1,0 +1,82 @@
+﻿@using WhatsappComercial.Modelos.DTOs
+
+
+    
+    @if (errorMensajeSeleccionado != null)
+    {
+        <!-- Encabezado con Ícono y Código de Error -->
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mb-4">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenIcon Icon="error_outline" IconStyle="IconStyle.Danger" Style="font-size: 2rem;" />
+                <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H2" Class="rz-m-0 rz-text-danger-dark font-weight-bold">
+                    @errorMensajeSeleccionado.TituloError
+                </RadzenText>
+            </RadzenStack>
+
+            <RadzenBadge BadgeStyle="BadgeStyle.Danger" IsPill="true" Class="rz-px-3 rz-py-2" Style="font-size: 0.9rem;">
+                Código: @errorMensajeSeleccionado.CodigoError
+            </RadzenBadge>
+        </RadzenStack>
+
+        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-color-muted rz-mb-4">
+            Detalle técnico del incidente registrado para este mensaje.
+        </RadzenText>
+
+
+
+        <!-- Sección: Detalle del Error -->
+        <div class="rz-mb-3">
+            <RadzenText TextStyle="TextStyle.Caption" Class="rz-color-muted rz-text-uppercase font-weight-bold rz-mb-1">
+                Detalle Técnico
+            </RadzenText>
+            <RadzenCard Variant="Variant.Flat" Class="rz-background-color-danger-lighter rz-p-3">
+                <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0" Style="font-family: monospace; word-break: break-word;">
+                    @(string.IsNullOrWhiteSpace(errorMensajeSeleccionado.DetalleError) ? "Sin detalle adicional." : errorMensajeSeleccionado.DetalleError)
+                </RadzenText>
+            </RadzenCard>
+        </div>
+
+        <!-- Sección: Explicación del Error -->
+        <div class="rz-mb-3">
+            <RadzenText TextStyle="TextStyle.Caption" Class="rz-color-muted rz-text-uppercase font-weight-bold rz-mb-1">
+                Explicación
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Body1" Class="rz-m-0">
+                @(string.IsNullOrWhiteSpace(errorMensajeSeleccionado.ExplicacionError) ? "No hay explicación registrada." : errorMensajeSeleccionado.ExplicacionError)
+            </RadzenText>
+        </div>
+
+        <!-- Sección: Posible Solución -->
+        <div class="rz-mb-4">
+            <RadzenCard Variant="Variant.Flat" Class="rz-background-color-success-lighter rz-p-3 rz-border-radius-2">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" Gap="0.5rem">
+                    <RadzenIcon Icon="check_circle_outline" IconStyle="IconStyle.Success" Class="rz-mt-1" />
+
+                    <!-- Renderizar HTML dinámico -->
+                    <div class="rz-m-0" style="font-size: 0.9rem; line-height: 1.5;">
+                        @if (string.IsNullOrWhiteSpace(errorMensajeSeleccionado.PosibleSolucion))
+                        {
+                            <span>Consulte con el administrador del sistema.</span>
+                        }
+                        else
+                        {
+                            @((MarkupString)errorMensajeSeleccionado.PosibleSolucion)
+                        }
+                    </div>
+                </RadzenStack>
+            </RadzenCard>
+        </div>
+    }
+    else
+    {
+        <RadzenStack AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Class="rz-p-4">
+            <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" Style="width: 100%;" />
+            <RadzenText TextStyle="TextStyle.Caption" Class="rz-mt-2">Cargando información del error...</RadzenText>
+        </RadzenStack>
+    }
+
+
+
+@code {
+    [Parameter] public ErrorMensaje errorMensajeSeleccionado { get; set; }
+}

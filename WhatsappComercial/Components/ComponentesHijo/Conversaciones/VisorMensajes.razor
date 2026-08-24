@@ -1,173 +1,211 @@
-﻿@using WhatsappComercial.Modelos.DTOs
+﻿@using WhatsappComercial.Interfaces.Mensajes
+@using WhatsappComercial.Modelos.DTOs
 @implements IAsyncDisposable
 @inject IJSRuntime JS
+@inject IObtenerErrorMensaje obtenerErrorMensaje
+@inject DialogService dialogService
 
 <div class="contenedor-chat chat-bg-doodle">
 
-	<div class="lista-mensajes" @ref="_elementoLista">
+    <div class="lista-mensajes" @ref="_elementoLista">
 
-		@if (CargandoMensajesAntiguos)
-		{
-			<div class="cargando-antiguos">Cargando mensajes anteriores...</div>
-		}
+        @if (CargandoMensajesAntiguos)
+        {
+            <div class="cargando-antiguos">Cargando mensajes anteriores...</div>
+        }
 
-		@{
-			DateTime? ultimoDia = null;
-		}
+        @{
+            DateTime? ultimoDia = null;
+        }
 
-		@foreach (var mensaje in Mensajes.OrderBy(m => m.Fecha))
-		{
-			if (ultimoDia != mensaje.Fecha.Date)
-			{
-				ultimoDia = mensaje.Fecha.Date;
+        @foreach (var mensaje in Mensajes.OrderBy(m => m.Fecha))
+        {
+            if (ultimoDia != mensaje.Fecha.Date)
+            {
+                ultimoDia = mensaje.Fecha.Date;
 
-				<div class="separador-fecha">
-					@ObtenerTextoFecha(mensaje.Fecha)
-				</div>
-			}
+                <div class="separador-fecha">
+                    @ObtenerTextoFecha(mensaje.Fecha)
+                </div>
+            }
 
-			<div class="@(mensaje.EsEntrante ? "mensaje-entrante" : "mensaje-saliente")">
-				<div class="burbuja">
+            <div class="@(mensaje.EsEntrante ? "mensaje-entrante" : "mensaje-saliente")">
+                <div class="burbuja">
 
-					@* Componente encargado de renderizar Texto, Imagen, Audio, Video o Documento *@
-					<MensajeContenido Mensaje="mensaje" />
+                    @* Componente encargado de renderizar Texto, Imagen, Audio, Video o Documento *@
+                    <MensajeContenido Mensaje="mensaje" />
 
-					<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
 
-						<div class="hora">@mensaje.Fecha.ToString("hh:mm tt")</div>
+                        <div class="hora">@mensaje.Fecha.ToString("hh:mm tt")</div>
 
-						@* Se muestran los íconos de estado ÚNICAMENTE si el mensaje NO es entrante (saliente) *@
-						@if (!mensaje.EsEntrante)
-						{
-							@switch (mensaje.EstadoLectura)
-							{
-								case "sent":
-									<RadzenIcon Icon="check" Style="color: gray; font-size: large;"></RadzenIcon>
-									break;
+                        @* Se muestran los íconos de estado ÚNICAMENTE si el mensaje NO es entrante (saliente) *@
+                        @if (!mensaje.EsEntrante)
+                        {
+                            @switch (mensaje.EstadoLectura)
+                            {
+                                case "sent":
+                                    <RadzenIcon Icon="check" Style="color: gray; font-size: large;"></RadzenIcon>
+                                    break;
 
-								case "delivered":
-									<RadzenIcon Icon="done_all" Style="color: gray; font-size: large;"></RadzenIcon>
-									break;
+                                case "delivered":
+                                    <RadzenIcon Icon="done_all" Style="color: gray; font-size: large;"></RadzenIcon>
+                                    break;
 
-								case "read":
-									<RadzenIcon Icon="done_all" Style="color: dodgerblue; font-size: large;"></RadzenIcon>
-									break;
+                                case "read":
+                                    <RadzenIcon Icon="done_all" Style="color: dodgerblue; font-size: large;"></RadzenIcon>
+                                    break;
 
-								case "failed":
-									<RadzenIcon Icon="dangerous" Style="color: #E7180B; font-size: large; cursor: pointer;"></RadzenIcon>
-									break;
-							}
-						}
+                                case "failed":
+                                    <RadzenIcon Icon="dangerous" Style="color: #E7180B; font-size: large; cursor: pointer;" @onclick="() => MostrarError(mensaje.Waid)"></RadzenIcon>
 
-					</RadzenStack>
+                                    break;
+                            }
+                        }
 
-				</div>
-			</div>
-		}
+                    </RadzenStack>
 
-	</div>
+                </div>
+            </div>
+        }
+
+    </div>
 </div>
 
 <style>
-	
+
 </style>
 
 @code {
-	[Parameter] public int IdConversacion { get; set; } = 0;
-	[Parameter] public List<MensajeDTO> Mensajes { get; set; } = new();
-	[Parameter] public bool CargandoMensajesAntiguos { get; set; }
-	[Parameter] public EventCallback OnLlegoAlTope { get; set; }
-	[Parameter] public bool DebeIrAlFinal { get; set; }
+    [Parameter] public int IdConversacion { get; set; } = 0;
+    [Parameter] public List<MensajeDTO> Mensajes { get; set; } = new();
+    [Parameter] public bool CargandoMensajesAntiguos { get; set; }
+    [Parameter] public EventCallback OnLlegoAlTope { get; set; }
+    [Parameter] public bool DebeIrAlFinal { get; set; }
 
-	private ElementReference _elementoLista;
-	private IJSObjectReference? _modulo;
-	private DotNetObjectReference<VisorMensajes>? _referenciaDotNet;
+    private ElementReference _elementoLista;
+    private IJSObjectReference? _modulo;
+    private DotNetObjectReference<VisorMensajes>? _referenciaDotNet;
 
-	private int _idConversacionAnterior = -1;
-	private bool _pendienteRestaurarScroll = false;
-	private int _totalMensajesAnterior = 0;
+    private int _idConversacionAnterior = -1;
+    private bool _pendienteRestaurarScroll = false;
+    private int _totalMensajesAnterior = 0;
 
-	protected override void OnParametersSet()
-	{
-		// Detectar si cambió la conversación
-		if (IdConversacion != _idConversacionAnterior && IdConversacion > 0)
-		{
-			_idConversacionAnterior = IdConversacion;
-			_totalMensajesAnterior = Mensajes.Count;
-			DebeIrAlFinal = true;
-			_pendienteRestaurarScroll = false;
-			return;
-		}
+    protected override void OnParametersSet()
+    {
+        // Detectar si cambió la conversación
+        if (IdConversacion != _idConversacionAnterior && IdConversacion > 0)
+        {
+            _idConversacionAnterior = IdConversacion;
+            _totalMensajesAnterior = Mensajes.Count;
+            DebeIrAlFinal = true;
+            _pendienteRestaurarScroll = false;
+            return;
+        }
 
-		// Si se agregó un mensaje nuevo AL FINAL (por envío o tiempo real), forzamos bajar el scroll
-		if (Mensajes.Count > _totalMensajesAnterior && !_pendienteRestaurarScroll)
-		{
-			DebeIrAlFinal = true;
-		}
+        // Si se agregó un mensaje nuevo AL FINAL (por envío o tiempo real), forzamos bajar el scroll
+        if (Mensajes.Count > _totalMensajesAnterior && !_pendienteRestaurarScroll)
+        {
+            DebeIrAlFinal = true;
+        }
 
-		_totalMensajesAnterior = Mensajes.Count;
-	}
+        _totalMensajesAnterior = Mensajes.Count;
+    }
 
-	protected override async Task OnAfterRenderAsync(bool firstRender)
-	{
-		if (firstRender)
-		{
-			_modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/scrollInfinito.js");
-			_referenciaDotNet = DotNetObjectReference.Create(this);
-			await _modulo.InvokeVoidAsync("inicializar", _elementoLista, _referenciaDotNet);
-		}
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./js/scrollInfinito.js");
+            _referenciaDotNet = DotNetObjectReference.Create(this);
+            await _modulo.InvokeVoidAsync("inicializar", _elementoLista, _referenciaDotNet);
+        }
 
-		if (_modulo is null) return;
+        if (_modulo is null) return;
 
-		// ESCENARIO A: Si acabamos de insertar mensajes antiguos
-		if (_pendienteRestaurarScroll)
-		{
-			_pendienteRestaurarScroll = false;
-			await _modulo.InvokeVoidAsync("restaurarPosicionScroll");
-			return;
-		}
+        // ESCENARIO A: Si acabamos de insertar mensajes antiguos
+        if (_pendienteRestaurarScroll)
+        {
+            _pendienteRestaurarScroll = false;
+            await _modulo.InvokeVoidAsync("restaurarPosicionScroll");
+            return;
+        }
 
-		// ESCENARIO B: Si abrimos el chat por primera vez o llegó un mensaje nuevo
-		if (DebeIrAlFinal)
-		{
-			DebeIrAlFinal = false;
-			await _modulo.InvokeVoidAsync("irAlFinal", _elementoLista);
-		}
-	}
+        // ESCENARIO B: Si abrimos el chat por primera vez o llegó un mensaje nuevo
+        if (DebeIrAlFinal)
+        {
+            DebeIrAlFinal = false;
+            await _modulo.InvokeVoidAsync("irAlFinal", _elementoLista);
+        }
+    }
 
-	[JSInvokable]
-	public async Task NotificarScrollArriba()
-	{
-		if (CargandoMensajesAntiguos) return;
+    [JSInvokable]
+    public async Task NotificarScrollArriba()
+    {
+        if (CargandoMensajesAntiguos) return;
 
-		// Marcamos que en el próximo renderizado del DOM debemos compensar la altura
-		_pendienteRestaurarScroll = true;
+        // Marcamos que en el próximo renderizado del DOM debemos compensar la altura
+        _pendienteRestaurarScroll = true;
 
-		if (OnLlegoAlTope.HasDelegate)
-		{
-			await OnLlegoAlTope.InvokeAsync();
-		}
-	}
+        if (OnLlegoAlTope.HasDelegate)
+        {
+            await OnLlegoAlTope.InvokeAsync();
+        }
+    }
 
-	private string ObtenerTextoFecha(DateTime fecha)
-	{
-		var hoy = DateTime.Today;
-		var dia = fecha.Date;
+    private string ObtenerTextoFecha(DateTime fecha)
+    {
+        var hoy = DateTime.Today;
+        var dia = fecha.Date;
 
-		if (dia == hoy) return "Hoy";
-		if (dia == hoy.AddDays(-1)) return "Ayer";
-		if (dia >= hoy.AddDays(-7)) return fecha.ToString("dddd");
-		return fecha.ToString("dd 'de' MMMM 'de' yyyy");
-	}
+        if (dia == hoy) return "Hoy";
+        if (dia == hoy.AddDays(-1)) return "Ayer";
+        if (dia >= hoy.AddDays(-7)) return fecha.ToString("dddd");
+        return fecha.ToString("dd 'de' MMMM 'de' yyyy");
+    }
 
-	public async ValueTask DisposeAsync()
-	{
-		_referenciaDotNet?.Dispose();
+    public async ValueTask DisposeAsync()
+    {
+        _referenciaDotNet?.Dispose();
 
-		if (_modulo is not null)
-		{
-			try { await _modulo.DisposeAsync(); }
-			catch (JSDisconnectedException) { }
-		}
-	}
+        if (_modulo is not null)
+        {
+            try { await _modulo.DisposeAsync(); }
+            catch (JSDisconnectedException) { }
+        }
+    }
+
+    public async Task MostrarError(string idMensajeWhatsApp)
+    {
+        /* Paso a paso:
+         * 1. Obtener el error de forma asíncrona pasando el DTO requerido.
+         * 2. Configurar los parámetros para el diálogo.
+         * 3. Abrir el componente NotificacionError en el dialogService.
+         */
+
+        // 1. Obtener el mensaje de error usando la llamada asíncrona
+        MensajeDTO mensajeDto = new MensajeDTO { Waid = idMensajeWhatsApp };
+        ErrorMensaje errormensajeSeleccionado = await obtenerErrorMensaje.ObtenerErrorMensajeSeleccionado(mensajeDto);
+
+        // 2. Configurar parámetros para el componente NotificacionError.razor
+        var parametros = new Dictionary<string, object>
+        {
+            { "errorMensajeSeleccionado", errormensajeSeleccionado }
+        };
+
+        // 3. Abrir el diálogo con la sintaxis correcta (ejemplo para Radzen o MudBlazor)
+        var resultadoDialog = await dialogService.OpenAsync<NotificacionError>(
+            "",
+            parametros,
+            new DialogOptions()
+            {
+                Draggable = true,
+                Style = "transform: translateY(10%); padding: 4%; border - radius: 10px; ",
+                ShowTitle = true,
+                ShowClose = true
+            }
+        );
+
+        Console.WriteLine($"El mensaje seleccionado es: {idMensajeWhatsApp}");
+    }
 }

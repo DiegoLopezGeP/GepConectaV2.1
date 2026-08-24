@@ -103,6 +103,8 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<IObtenerParametrosPlantilla, ObtenerParametrosPlantillas>();
             //Servicio para actualizar contactos
             services.AddScoped<IActualizarContacto, ActualizarContactoService>();
+            //Servicio para obtener el error de un mensaje desde la tabla de log
+            services.AddScoped<IObtenerErrorMensaje, ObtenerErrorMensaje>();
 
 
             //Servicio para representar el formulario de registro de contacto
