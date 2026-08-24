@@ -36,6 +36,7 @@
 @inject IFinalizarConversacion finalizarConversacion
 @inject IObtenerPlantillas obtenerPlantillas
 @inject IWhatsAppCloudClient WhatsAppClient
+@inject IObtenerErrorMensaje obtenerErrorMensaje
 @inject ILogger<Conversaciones> Logger
 @inject NotificationService notificationService
 @inject DialogService dialogService
@@ -370,20 +371,20 @@
 
 		var idConversacionActual = conversacionSeleccionada.IdConversacion;
 
-		// 1. RENDER OPTIMISTA INSTANTÁNEO (Se muestra en pantalla de inmediato)
+		// 1. RENDER OPTIMISTA INSTANTÁNEO
 		var nuevoMensaje = new MensajeDTO
 		{
 			IdMensaje = 0,
 			Texto = infoMensajeSaliente.texto,
-			Waid = null, // Aún no lo tenemos
+			Waid = null,
 			Fecha = DateTime.Now,
 			EsEntrante = false,
-			EstadoLectura = "pending" // Puedes usar un estado "pendiente" temporal
+			EstadoLectura = "sent"
 		};
 
 		mensajesIniciales.Add(nuevoMensaje);
 		_debeIrAlFinal = true;
-		StateHasChanged(); // La UI se actualiza inmediatamente para el usuario
+		StateHasChanged();
 
 		cacheMensajes.AgregarMensaje(idConversacionActual, nuevoMensaje);
 
@@ -392,8 +393,9 @@
 		{
 			try
 			{
-				// Envío a WhatsApp Cloud API
 				string? waidReal = null;
+				bool hubErrorMeta = false;
+
 				if (!string.IsNullOrWhiteSpace(contactoConversacionSeleccionado?.Celular))
 				{
 					var respuestaWA = await WhatsAppClient.SendTextMessageAsync(
@@ -401,12 +403,40 @@
 						TipoMensajeWhatsAppEnum.text.ToString(),
 						infoMensajeSaliente.texto
 					);
-					waidReal = respuestaWA?.Messages?.FirstOrDefault()?.Id;
+
+					// Caso A: Meta devolvió el mensaje exitosamente
+					if (respuestaWA?.Messages != null && respuestaWA.Messages.Any())
+					{
+						waidReal = respuestaWA.Messages.First().Id;
+						nuevoMensaje.EstadoLectura = "sent";
+					}
+					// Caso B: Meta devolvió un código de error
+					else if (respuestaWA?.Error != null)
+					{
+						hubErrorMeta = true;
+						nuevoMensaje.EstadoLectura = "failed";
+
+						// Crear y guardar el registro en LogsEnvioMensaje
+						var logError = new LogsEnvioMensajes
+						{
+							CodigoError = respuestaWA.Error.Code,
+							IdConversacion = idConversacionActual,
+							IdMensajeWhatsApp = string.Empty,
+							DetalleError = respuestaWA.Error.Message,
+							FechaEstado = DateTime.Now,
+							FechaRegistroLog = DateTime.Now,
+							UsuarioEnvioMensaje = userName,
+							NumeroReceptor = contactoConversacionSeleccionado.Celular
+						};
+
+						// Guardar log de error en BD
+						await obtenerErrorMensaje.GuardarLogError(logError);
+					}
 				}
 
 				nuevoMensaje.Waid = waidReal;
 
-				// Guardado en BD
+				// 3. SIEMPRE se guarda en la tabla Mensajes (con "sent" o "failed")
 				var idGenerado = await enviarMensaje.EnviarMensajeTextoAsync(
 					idConversacionActual,
 					userName,
@@ -414,16 +444,14 @@
 					nuevoMensaje
 				);
 
-				// Actualización final del mensaje
 				nuevoMensaje.IdMensaje = idGenerado;
-				nuevoMensaje.EstadoLectura = "sent";
 				await InvokeAsync(StateHasChanged);
 			}
 			catch (Exception ex)
 			{
-				nuevoMensaje.EstadoLectura = "failed"; // Opcional: marcar como fallido si hubo error
+				nuevoMensaje.EstadoLectura = "failed";
 				await InvokeAsync(StateHasChanged);
-				Console.WriteLine($"Error enviando o guardando mensaje de texto: {ex.Message}");
+				Console.WriteLine($"Error crítico en el proceso de envío: {ex.Message}");
 			}
 		});
 	}

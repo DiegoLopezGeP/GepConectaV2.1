@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using WhatsappComercial.Interfaces.Mensajes;
+using WhatsappComercial.Modelos;
 using WhatsappComercial.Modelos.DTOs;
 using WhatsappComercial.Servicios.AccesoADatos;
 
@@ -13,6 +14,19 @@ namespace WhatsappComercial.Servicios.Mensajes
 		{
 			_servicioAccesoDatos = servicioAccesoDatos;
 		}
+
+        public async Task GuardarLogError(LogsEnvioMensajes logError)
+        {
+            try
+            {
+                _servicioAccesoDatos.GrabarRegistro(logError, "LogsEnvioMensajes");
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+        }
 
         public async Task<ErrorMensaje> ObtenerErrorMensajeSeleccionado(MensajeDTO mensaje)
         {

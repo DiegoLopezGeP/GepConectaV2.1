@@ -206,6 +206,10 @@ namespace GepConecta.WhatsAppCloud.Services
         private async Task<T?> EnviarPeticionMetaAsync<T>(string endPoint, object payload)
         {
             string responseJson = await EnviarPeticionMetaRawAsync(endPoint, payload);
+
+            if (string.IsNullOrWhiteSpace(responseJson))
+                return default;
+
             return JsonConvert.DeserializeObject<T>(responseJson);
         }
 
@@ -233,7 +237,7 @@ namespace GepConecta.WhatsAppCloud.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     string errorDetail = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"[META ERROR HTTP {(int)response.StatusCode}]: {errorDetail}");
+return errorDetail;
                 }
 
                 return await response.Content.ReadAsStringAsync();
