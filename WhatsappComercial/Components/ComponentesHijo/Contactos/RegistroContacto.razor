@@ -132,8 +132,21 @@
 
             <!-- Acciones -->
             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" class="rz-mt-4 rz-pt-3 rz-border-top">
-                <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Click="@(() => dialogService.Close(false))" />
-                <RadzenButton Text="Guardar Contacto" Icon="save" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" IsBusy="@isSaving" BusyText="Guardando..." />
+                <RadzenButton Text="Cancelar"
+                              ButtonStyle="ButtonStyle.Light"
+                              Variant="Variant.Flat"
+                              Shade="Shade.Lighter"
+                              Size="@(EsMovil ? ButtonSize.Small : ButtonSize.Medium)"
+                              Click="@(() => dialogService.Close(false))" />
+
+                <RadzenButton Text="Guardar Contacto"
+                              Icon="save"
+                              ButtonType="ButtonType.Submit"
+                              ButtonStyle="ButtonStyle.Success"
+                              Shade="Shade.Lighter"
+                              Size="@(EsMovil ? ButtonSize.Small : ButtonSize.Medium)"
+                              IsBusy="@isSaving"
+                              BusyText="Guardando..." />
             </RadzenStack>
         </RadzenTemplateForm>
     }
@@ -147,6 +160,7 @@
 
 @code {
     [Parameter] public GrupoUser? grupoUser { get; set; }
+    [Parameter] public bool EsMovil { get; set; }
 
     private TipoContactoEnum tipoContactoEnum = TipoContactoEnum.Titular;
     private List<CampoEsquemaDTO> camposEsquema = new();

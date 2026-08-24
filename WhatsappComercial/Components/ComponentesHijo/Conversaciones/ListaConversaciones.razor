@@ -124,6 +124,7 @@
 		var opciones = new DialogOptions
 		{
 			Width = esMovil ? "95% !important" : "40% !important",
+			Resizable = true,
 			CloseDialogOnOverlayClick = false,
 			TitleContent = null,
 			ShowClose = true,
@@ -137,7 +138,8 @@
 			new Dictionary<string, object?>
 			{
 				{ "NombreUsuarioDA", NombreUsuarioDA },
-				{ "InformacionUsuarioAutenticado", InformacionUsuarioAutenticado }
+				{ "InformacionUsuarioAutenticado", InformacionUsuarioAutenticado }, 
+				{ "EsMovil", esMovil}
 			},
 			opciones);
 	}
@@ -162,7 +164,8 @@
 			"",
 			new Dictionary<string, object>
 			{
-			{ nameof(RegistroContacto.grupoUser), InformacionUsuarioAutenticado }
+				{ nameof(RegistroContacto.grupoUser), InformacionUsuarioAutenticado },
+				{ "EsMovil", esMovil}
 			},
 			opciones);
 	}

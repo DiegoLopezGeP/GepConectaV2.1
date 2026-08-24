@@ -10,115 +10,161 @@
 @inject IFormularioContactoService FormularioService
 @inject IActualizarContacto ActualizarContactoService
 
-<RadzenStack Gap="1rem" class="rz-p-2">
-    <!-- Cabecera -->
-    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-        <RadzenIcon Icon="save_as" IconStyle="IconStyle.Primary" Style="font-size: 1.75rem;" />
-        <RadzenText TextStyle="TextStyle.H6" class="rz-m-0 rz-font-weight-bold">
-            Editar Contacto
-        </RadzenText>
+<style>
+    /* Ajustes finos de presentación y alineación */
+    .form-editar-container {
+        max-width: 100%;
+    }
+
+    .custom-form-field .rz-form-field-content {
+        background-color: var(--rz-body-background-color, #ffffff);
+    }
+
+    .checkbox-container {
+        border: 1px solid var(--rz-border-color, #e0e0e0);
+        border-radius: 6px;
+        min-height: 48px;
+        padding: 0 0.75rem;
+        background-color: var(--rz-body-background-color, #ffffff);
+    }
+</style>
+
+<RadzenStack Gap="1.25rem" Style="padding: 1.5rem;">
+
+    <!-- Cabecera Limpia con Divider integrado -->
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" class="rz-pb-2 rz-border-bottom">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.75rem">
+            <div class="rz-display-flex rz-align-items-center rz-justify-content-center rz-background-color-primary-lighter rz-border-radius-2" style="width: 40px; height: 40px;">
+                <RadzenIcon Icon="edit_square" IconStyle="IconStyle.Primary" Style="font-size: 1.5rem;" />
+            </div>
+            <div>
+                <RadzenText TextStyle="TextStyle.H6" class="rz-m-0 rz-font-weight-bold">
+                    Editar Contacto
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Caption" class="rz-m-0 rz-color-subtle">
+                    Actualice los campos del registro dinámico
+                </RadzenText>
+            </div>
+        </RadzenStack>
     </RadzenStack>
 
     @if (isLoading)
     {
-        <RadzenStack AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" class="rz-my-4">
-            <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
-            <RadzenText TextStyle="TextStyle.Caption" class="rz-mt-2">Cargando campos del contacto...</RadzenText>
+        <RadzenStack AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" class="rz-my-5">
+            <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+            <RadzenText TextStyle="TextStyle.Body2" class="rz-mt-3 rz-color-subtle">Cargando campos del formulario...</RadzenText>
         </RadzenStack>
     }
     else if (camposEsquema.Any())
     {
-        <RadzenTemplateForm TItem="Dictionary<string, object?>" Data="@modeloDinamico" Submit="@Guardar" class="rz-p-1">
-            <RadzenStack Gap="1.25rem">
+        <RadzenTemplateForm TItem="Dictionary<string, object?>" Data="@modeloDinamico" Submit="@Guardar" class="rz-p-0">
+            <RadzenStack Gap="1.5rem">
 
-                <RadzenRow RowGap="1rem" ColumnGap="1rem">
+                <!-- Rejilla de Campos -->
+                <RadzenRow RowGap="1.25rem" ColumnGap="1rem">
                     @foreach (var campo in camposEsquema)
                     {
                         <RadzenColumn Size="12" SizeMD="@ObtenerAnchoColumna(campo)">
-                            <RadzenFormField Text="@(campo.EsObligatorio ? $"{campo.Etiqueta} *" : campo.Etiqueta)"
-                                             Variant="Variant.Outlined"
-                                             Style="width: 100%; color:dimgrey">
-                                <ChildContent>
-                                    @if (campo.TipoDato.IsEnum)
-                                    {
-                                        <RadzenDropDown TValue="object"
-                                                        Name="@campo.NombreCampo"
-                                                        Data="@Enum.GetValues(campo.TipoDato)"
-                                                        Value="@GetValor(campo.NombreCampo)"
-                                                        ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
-                                                        Style="width: 100%;" />
-                                    }
-                                    else if (campo.TipoDato == typeof(bool))
-                                    {
-                                        <div class="rz-p-2 rz-display-flex rz-align-items-center">
-                                            <RadzenCheckBox Name="@campo.NombreCampo"
-                                                            TValue="bool"
-                                                            Value="@GetValorBool(campo.NombreCampo)"
-                                                            ValueChanged="@(val => SetValor(campo.NombreCampo, val))" />
-                                            <RadzenLabel Text=" Confirmar / Activar" class="rz-ml-2" />
-                                        </div>
-                                    }
-                                    else if (campo.TipoDato == typeof(DateTime) || campo.TipoDato == typeof(DateTime?))
-                                    {
-                                        <RadzenDatePicker Name="@campo.NombreCampo"
-                                                          DateFormat="dd/MM/yyyy"
-                                                          TValue="DateTime?"
-                                                          Value="@GetValorDateTime(campo.NombreCampo)"
-                                                          ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
-                                                          Style="width: 100%;" />
-                                    }
-                                    else if (campo.TipoDato == typeof(int) || campo.TipoDato == typeof(int?) ||
-                                             campo.TipoDato == typeof(decimal) || campo.TipoDato == typeof(decimal?))
-                                    {
-                                        <RadzenNumeric Name="@campo.NombreCampo"
-                                                       TValue="decimal?"
-                                                       Value="@GetValorDecimal(campo.NombreCampo)"
-                                                       ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
-                                                       Style="width: 100%;" />
-                                    }
-                                    else
-                                    {
-                                        <RadzenTextBox Name="@campo.NombreCampo"
-                                                       Value="@GetValorString(campo.NombreCampo)"
-                                                       ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
-                                                       Style="width: 100%;" />
-                                    }
-                                </ChildContent>
-                                <Start>
-                                    <RadzenIcon Icon="@ObtenerIconoCampo(campo.NombreCampo)" />
-                                </Start>
-                                <Helper>
-                                    @if (campo.EsObligatorio)
-                                    {
-                                        <RadzenCustomValidator Component="@campo.NombreCampo"
-                                                               Validator="@(() => ValidarCampoObligatorio(campo.NombreCampo))"
-                                                               Text="@campo.MensajeError"
-                                                               Popup="false" />
-                                    }
-                                </Helper>
-                            </RadzenFormField>
+
+                            @if (campo.TipoDato == typeof(bool))
+                            {
+                                <!-- Caso especial: Checkbox estructurado igual que un FormField -->
+                                <RadzenStack Gap="0.25rem">
+                                    <RadzenText TextStyle="TextStyle.Caption" class="rz-m-0 rz-color-subtle rz-font-weight-bold">
+                                        @(campo.EsObligatorio ? $"{campo.Etiqueta} *" : campo.Etiqueta)
+                                    </RadzenText>
+                                    <div class="rz-display-flex rz-align-items-center checkbox-container">
+                                        <RadzenCheckBox Name="@campo.NombreCampo"
+                                                        TValue="bool"
+                                                        Value="@GetValorBool(campo.NombreCampo)"
+                                                        ValueChanged="@(val => SetValor(campo.NombreCampo, val))" />
+                                        <RadzenLabel Text="Confirmar / Activar" Component="@campo.NombreCampo" class="rz-ml-2 rz-m-0" Style="cursor: pointer;" />
+                                    </div>
+                                </RadzenStack>
+                            }
+                            else
+                            {
+                                <RadzenFormField Text="@(campo.EsObligatorio ? $"{campo.Etiqueta} *" : campo.Etiqueta)"
+                                                 Variant="Variant.Outlined"
+                                                 Class="custom-form-field"
+                                                 Style="width: 100%;">
+                                    <ChildContent>
+                                        @if (campo.TipoDato.IsEnum)
+                                        {
+                                            <RadzenDropDown TValue="object"
+                                                            Name="@campo.NombreCampo"
+                                                            Data="@Enum.GetValues(campo.TipoDato)"
+                                                            Value="@GetValor(campo.NombreCampo)"
+                                                            ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
+                                                            Style="width: 100%;" />
+                                        }
+                                        else if (campo.TipoDato == typeof(DateTime) || campo.TipoDato == typeof(DateTime?))
+                                        {
+                                            <RadzenDatePicker Name="@campo.NombreCampo"
+                                                              DateFormat="dd/MM/yyyy"
+                                                              TValue="DateTime?"
+                                                              Value="@GetValorDateTime(campo.NombreCampo)"
+                                                              ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
+                                                              Style="width: 100%;" />
+                                        }
+                                        else if (campo.TipoDato == typeof(int) || campo.TipoDato == typeof(int?) ||
+                                                 campo.TipoDato == typeof(decimal) || campo.TipoDato == typeof(decimal?))
+                                        {
+                                            <RadzenNumeric Name="@campo.NombreCampo"
+                                                           TValue="decimal?"
+                                                           Value="@GetValorDecimal(campo.NombreCampo)"
+                                                           ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
+                                                           Style="width: 100%;" />
+                                        }
+                                        else
+                                        {
+                                            <RadzenTextBox Name="@campo.NombreCampo"
+                                                           Value="@GetValorString(campo.NombreCampo)"
+                                                           ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
+                                                           Style="width: 100%;" />
+                                        }
+                                    </ChildContent>
+                                    <Start>
+                                        <RadzenIcon Icon="@ObtenerIconoCampo(campo.NombreCampo)" />
+                                    </Start>
+                                    <Helper>
+                                        @if (campo.EsObligatorio)
+                                        {
+                                            <RadzenCustomValidator Component="@campo.NombreCampo"
+                                                                   Validator="@(() => ValidarCampoObligatorio(campo.NombreCampo))"
+                                                                   Text="@campo.MensajeError"
+                                                                   Popup="false" />
+                                        }
+                                    </Helper>
+                                </RadzenFormField>
+                            }
                         </RadzenColumn>
                     }
                 </RadzenRow>
 
-                <!-- Botones de Acción -->
+                <!-- Pie de página con Botones alineados y consistentes -->
                 <RadzenStack Orientation="Orientation.Horizontal"
                              JustifyContent="JustifyContent.End"
+                             AlignItems="AlignItems.Center"
                              Gap="0.75rem"
                              class="rz-pt-3 rz-mt-2 rz-border-top">
 
                     <RadzenButton Text="Cancelar"
-                                  Icon="cancel"
-                                  ButtonStyle="ButtonStyle.Base"
+                                  Icon="close"
+                                  ButtonStyle="ButtonStyle.Light"
                                   Variant="Variant.Flat"
+                                  Shade="Shade.Lighter"
+                                  Size="@(EsMovil ? ButtonSize.Small : ButtonSize.Medium)"
                                   Click="@(() => DialogService.Close(false))" />
 
                     <RadzenButton ButtonType="ButtonType.Submit"
                                   Text="Guardar Cambios"
-                                  Icon="save"
+                                  Icon="check"
                                   IsBusy="@isSaving"
                                   BusyText="Guardando..."
-                                  ButtonStyle="ButtonStyle.Primary"
+                                  ButtonStyle="ButtonStyle.Success"
+                                  Shade="Shade.Lighter"
+                                  Size="@(EsMovil ? ButtonSize.Small : ButtonSize.Medium)"
                                   Variant="Variant.Filled" />
                 </RadzenStack>
 
@@ -127,7 +173,7 @@
     }
     else
     {
-        <RadzenAlert AlertStyle="AlertStyle.Warning" AllowClose="false" Variant="Variant.Flat">
+        <RadzenAlert AlertStyle="AlertStyle.Warning" AllowClose="false" Variant="Variant.Flat" class="rz-m-0">
             No se encontraron campos configurados para este tipo de contacto.
         </RadzenAlert>
     }
@@ -136,6 +182,7 @@
 @code {
     [Parameter] public Contacto ContactoModel { get; set; } = new();
     [Parameter] public TipoContactoEnum TipoContacto { get; set; }
+    [Parameter] public bool EsMovil { get; set; }
 
     private List<CampoEsquemaDTO> camposEsquema = new();
     private Dictionary<string, object?> modeloDinamico = new();
@@ -152,17 +199,14 @@
         isLoading = true;
         try
         {
-            // 1. Obtener la definición de campos del tipo de contacto
             var res = FormularioService.GenerarEsquema(TipoContacto);
             camposEsquema = res.Campos;
             modeloDinamico = res.ModeloInicial ?? new Dictionary<string, object?>();
 
-            // 2. Extraer propiedades de ContactoModel y volcarlas al modeloDinamico
             if (ContactoModel != null)
             {
                 var propiedades = ContactoModel.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-                // Mapeo dinámico de campos visuales
                 foreach (var campo in camposEsquema)
                 {
                     var prop = propiedades.FirstOrDefault(p => p.Name.Equals(campo.NombreCampo, StringComparison.OrdinalIgnoreCase));
@@ -173,8 +217,6 @@
                     }
                 }
 
-                // 3. ASIGNACIÓN EXPLICITA DE ID DE CONTACTO
-                // Se fuerza la inclusión de las posibles variaciones de nombres de ID en el diccionario
                 var propId = propiedades.FirstOrDefault(p =>
                     p.Name.Equals("IDContacto", StringComparison.OrdinalIgnoreCase) ||
                     p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase) ||
@@ -205,7 +247,6 @@
         {
             isSaving = true;
 
-            // Persistir los cambios del modelo dinámico
             await ActualizarContactoService.ActualizarContactoDinamicoAsync(TipoContacto, model);
 
             NotificationService.Notify(NotificationSeverity.Success, "Éxito", "El contacto fue actualizado correctamente.");
@@ -224,7 +265,6 @@
         }
     }
 
-    // --- Helpers de Renderizado y Lectura del Diccionario ---
     private int ObtenerAnchoColumna(CampoEsquemaDTO campo)
     {
         if (campo.TipoDato == typeof(bool) ||
@@ -233,9 +273,9 @@
             campo.NombreCampo.Contains("Direccion", StringComparison.OrdinalIgnoreCase) ||
             campo.NombreCampo.Contains("Observacion", StringComparison.OrdinalIgnoreCase))
         {
-            return 12; // Ancho completo
+            return 12;
         }
-        return 6; // 2 Columnas
+        return 6;
     }
 
     private string ObtenerIconoCampo(string nombreCampo) => nombreCampo.ToLower() switch
@@ -243,7 +283,7 @@
         var n when n.Contains("nombre") => "person",
         var n when n.Contains("identificacion") || n.Contains("documento") || n.Contains("cedula") => "badge",
         var n when n.Contains("celular") || n.Contains("telefono") => "phone",
-        var n when n.Contains("correo") || n.Contains("email") => "email",
+        var n when n.Contains("correo") || n.Contains("email") => "alternate_email",
         var n when n.Contains("fecha") => "calendar_today",
         _ => "edit"
     };
