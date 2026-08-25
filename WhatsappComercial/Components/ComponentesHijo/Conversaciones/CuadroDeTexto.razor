@@ -72,7 +72,8 @@
 			<RadzenTextArea @bind-Value="mensaje"
 							Placeholder="@(archivosSeleccionados.Any() ? "Añade un comentario..." : "Escribe un mensaje...")"
 							Rows="2"
-							Class="texto-mensaje input-mensaje-target" />
+							Class="texto-mensaje input-mensaje-target"
+							@onfocus="CerrarEmojis" />
 
 			@if (string.IsNullOrWhiteSpace(mensaje) && !archivosSeleccionados.Any())
 			{
@@ -526,6 +527,14 @@
 		public Stream OpenReadStream(long maxAllowedSize = 512000, CancellationToken cancellationToken = default)
 		{
 			return new MemoryStream(_bytes);
+		}
+	}
+	private void CerrarEmojis()
+	{
+		if (mostrarPickerEmojis)
+		{
+			mostrarPickerEmojis = false;
+			StateHasChanged();
 		}
 	}
 }

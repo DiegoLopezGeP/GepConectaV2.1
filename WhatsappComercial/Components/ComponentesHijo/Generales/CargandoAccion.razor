@@ -1,0 +1,96 @@
+﻿@if (IsLoading)
+{
+    <div class="spinner-overlay @(IsGlobal ? "spinner-global" : "spinner-local")">
+        <div class="spinner-contenedor">
+            <div class="spinner-aro"></div>
+            @if (!string.IsNullOrWhiteSpace(Mensaje))
+            {
+                <span class="spinner-mensaje">@Mensaje</span>
+            }
+        </div>
+    </div>
+}
+
+<style>
+    /* Contenedor Overlay con fondo semitransparente */
+    .spinner-overlay {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(2px);
+        z-index: 9999;
+    }
+
+    /* Modo Global: Bloquea toda la pantalla */
+    .spinner-global {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+    }
+
+    /* Modo Local: Requiere que el padre tenga `position: relative;` */
+    .spinner-local {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: inherit;
+    }
+
+    /* Caja de contenido central */
+    .spinner-contenedor {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    /* Animación del Aro Giratorio */
+    .spinner-aro {
+        width: 42px;
+        height: 42px;
+        border: 4px solid #e0e0e0;
+        border-top: 4px solid #128c7e; /* Color primario / WhatsApp style */
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    /* Texto de carga */
+    .spinner-mensaje {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #495057;
+        font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+@code {
+    /// <summary>
+    /// Controla si el spinner debe mostrarse u ocultarse.
+    /// </summary>
+    [Parameter] public bool IsLoading { get; set; } = false;
+
+    /// <summary>
+    /// Mensaje opcional a mostrar debajo del spinner (Ej: "Cargando datos...").
+    /// </summary>
+    [Parameter] public string Mensaje { get; set; } = "Cargando...";
+
+    /// <summary>
+    /// Si es true, cubre toda la pantalla (fixed). Si es false, se ajusta al contenedor padre (absolute).
+    /// </summary>
+    [Parameter] public bool IsGlobal { get; set; } = true;
+}

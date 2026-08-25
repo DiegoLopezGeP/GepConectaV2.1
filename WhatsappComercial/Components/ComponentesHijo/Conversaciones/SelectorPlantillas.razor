@@ -3,10 +3,12 @@
 @using System.Text.Json
 @using GepConecta.WhatsAppCloud.Models.Responses
 @using GepConecta.WhatsAppCloud.Services
+@using WhatsappComercial.Components.ComponentesHijo.Generales
 @using WhatsappComercial.Interfaces.Plantillas
 @using WhatsappComercial.Modelos.DTOs
 @inject IWhatsAppCloudClient WhatsAppClient
 @inject IObtenerParametrosPlantilla obtenerParametrosPlantilla
+@inject NotificationService notificacionService 
 
 <div class="plantilla-contenedor-movil">
     <RadzenStack Gap="0.75rem" Style="width: 100%; padding: 10px;">
@@ -116,7 +118,7 @@
         </RadzenStack>
     </RadzenStack>
 </div>
-
+<CargandoAccion IsLoading="@(cargandoAccion)" IsGlobal="true" Mensaje="Enviando plantilla..."></CargandoAccion>
 <style>
     /* Estilos Generales / Desktop */
     .plantilla-contenedor-movil {
@@ -260,7 +262,7 @@
     private bool EsHeaderImagen =>
         HeaderComponente?.Ejemplo?.HeadersArchivos is not null &&
         HeaderComponente.Ejemplo.HeadersArchivos.Any();
-
+    private bool cargandoAccion = false;
     private string? UrlImagenHeader =>
         HeaderComponente?.Ejemplo?.HeadersArchivos?.FirstOrDefault();
 
@@ -313,14 +315,35 @@
 
     private async Task OnUsarPlantillaClick()
     {
-        if (PlantillaSeleccionada is not null)
+        try
         {
-            if (!string.IsNullOrEmpty(TextoCuerpoFormateado))
-            {
-                PlantillaSeleccionada.CuerpoMensaje = TextoCuerpoFormateado;
-            }
+            cargandoAccion = true;
 
-            await OnUsarPlantilla.InvokeAsync((DetallePlantillaMeta ?? new PlantillaMetaResponseDTO(), PlantillaSeleccionada));
+            if (PlantillaSeleccionada is not null)
+            {
+                if (!string.IsNullOrEmpty(TextoCuerpoFormateado))
+                {
+                    PlantillaSeleccionada.CuerpoMensaje = TextoCuerpoFormateado;
+                }
+
+                if (OnUsarPlantilla.HasDelegate)
+                {
+                    await OnUsarPlantilla.InvokeAsync((DetallePlantillaMeta ?? new PlantillaMetaResponseDTO(), PlantillaSeleccionada));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR PLANTILLA]: {ex.Message}");
+
+            notificacionService.Notify(
+                NotificationSeverity.Error,
+                "Error",
+                "Ocurrió un error al aplicar la plantilla.");
+        }
+        finally
+        {
+            cargandoAccion = false;
         }
     }
 

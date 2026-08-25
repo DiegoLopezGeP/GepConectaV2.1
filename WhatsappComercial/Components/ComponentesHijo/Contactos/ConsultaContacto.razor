@@ -1,5 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.SignalR
+@using WhatsappComercial.Components.ComponentesHijo.Generales
 @using WhatsappComercial.Enums
 @using WhatsappComercial.Hubs
 @using WhatsappComercial.Interfaces.Cache
@@ -129,6 +130,8 @@
         </RadzenStack>
     </RadzenStack>
 </div>
+
+<CargandoAccion IsLoading="@cargandoAccion" IsGlobal="true"></CargandoAccion>
 @code
 {
     [Parameter] public string? NombreUsuarioDA { get; set; }
@@ -142,6 +145,7 @@
     private Contacto? contactoSeleccionado;
     private List<Contacto> contactos = new();
     private List<Contacto> contactosFiltrados = new();
+    private bool cargandoAccion = false;
 
     protected override void OnInitialized()
     {
@@ -192,6 +196,8 @@
     {
         try
         {
+            cargandoAccion = true;
+
             if (contactoSeleccionado is null)
             {
                 notificacion.Notify(
@@ -320,6 +326,11 @@
                 NotificationSeverity.Error,
                 "Error",
                 ex.Message);
+        }
+        finally
+        {
+            await Task.Delay(3000);
+            cargandoAccion = false;
         }
     }
 

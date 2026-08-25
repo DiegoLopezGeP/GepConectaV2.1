@@ -47,6 +47,8 @@ namespace WhatsappComercial.Extensions
             services.AddHostedService<InicializadorCacheConversaciones>();
             //HosterService para iniciar el worker de persistencia de estados de mensajes
             services.AddHostedService<WorkerPersistenciaEstados>();
+            //HosterService para iniciar el worker de persistencia de Logs de errores en Api Meta
+            services.AddHostedService<WorkerPersistenciaLogs>();
 
 
             //Servicio Web Acceso Datos
@@ -107,6 +109,7 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<IObtenerErrorMensaje, ObtenerErrorMensaje>();
 
 
+
             //Servicio para representar el formulario de registro de contacto
             services.AddScoped<IFormularioContactoService, FormularioContactoService>();
 
@@ -124,7 +127,10 @@ namespace WhatsappComercial.Extensions
             services.AddSingleton<ICacheMensajes, CacheMensajes>();
             //Servicio para notificar a la UI
             services.AddSingleton<INotificarUI, NotificarUIService>();
+            //Servicio para registrar La actualizacion de estados de mensaje en cola.
             services.AddSingleton<IColaEstadoMensajes, ColaEstadoMensajesService>();
+            //Servicio para registrar Logs de error del API Meta en cola para posteriormente insertarla en DB
+            services.AddSingleton<IColaLogsEnvio, ColaLogsEnvioService>();
 
 
 

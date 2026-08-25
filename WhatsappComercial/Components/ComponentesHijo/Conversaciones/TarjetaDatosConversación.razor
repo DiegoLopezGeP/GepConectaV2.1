@@ -202,6 +202,69 @@
 		padding: 4px;
 		border-radius: 50%;
 	}
+	/* Estilos específicos para el diálogo de finalizar conversación */
+	.dialogo-finalizar-custom {
+		border-radius: 12px !important;
+		box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.15) !important;
+	}
+
+		/* Encabezado del modal */
+		.dialogo-finalizar-custom .rz-dialog-titlebar {
+			background-color: #f8f9fa;
+			border-bottom: 1px solid #e9ecef;
+			border-top-left-radius: 12px;
+			border-top-right-radius: 12px;
+			padding: 1rem 1.25rem;
+			font-weight: 600;
+			color: #212529;
+		}
+
+		/* Contenido del mensaje */
+		.dialogo-finalizar-custom .rz-dialog-content {
+			padding: 1.5rem;
+			font-size: 0.95rem;
+			color: #495057;
+		}
+
+		/* Pie del modal y contenedores de botones */
+		.dialogo-finalizar-custom .rz-dialog-footer {
+			padding: 1rem 1.25rem;
+			border-top: 1px solid #e9ecef;
+			background-color: #f8f9fa;
+			border-bottom-left-radius: 12px;
+			border-bottom-right-radius: 12px;
+		}
+
+			/* Botón de Confirmación (OkButton) */
+			.dialogo-finalizar-custom .rz-button-primary,
+			.dialogo-finalizar-custom .rz-dialog-footer button:last-child {
+				background-color: #dc3545 !important; /* Rojo destructivo */
+				border-color: #dc3545 !important;
+				color: #ffffff !important;
+				border-radius: 6px;
+				font-weight: 600;
+			}
+
+				.dialogo-finalizar-custom .rz-button-primary:hover,
+				.dialogo-finalizar-custom .rz-dialog-footer button:last-child:hover {
+					background-color: #bb2d3b !important;
+					border-color: #b02a37 !important;
+				}
+
+			/* Botón de Cancelar */
+			.dialogo-finalizar-custom .rz-button-secondary,
+			.dialogo-finalizar-custom .rz-dialog-footer button:first-child {
+				background-color: #6c757d !important;
+				border-color: #6c757d !important;
+				color: #ffffff !important;
+				border-radius: 6px;
+			}
+
+				.dialogo-finalizar-custom .rz-button-secondary:hover,
+				.dialogo-finalizar-custom .rz-dialog-footer button:first-child:hover {
+					background-color: #5c636a !important;
+					border-color: #565e64 !important;
+				}
 </style>
 
 	@code {
@@ -230,7 +293,10 @@
 			new ConfirmOptions()
 			{
 				OkButtonText = "Sí, Finalizar",
-				CancelButtonText = "Cancelar"
+				CancelButtonText = "Cancelar",
+				CssClass = "dialogo-finalizar-custom", 
+				Style = "padding: 15px;"
+				// Clase contenedora para personalizar
 			});
 
 		if (confirmacion == true)
