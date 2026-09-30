@@ -137,7 +137,7 @@ namespace WhatsappComercial.Servicios.ProcesarMensaje
                 TipoArchivo = tipo.ToLower(),
                 NombreArchivo = fileName,
                 EstadoLectura = "delivered",
-                Caption = mensajeWA?.Image?.Caption
+                Caption = caption
             };
 
             // 5. ACTUALIZAR CACHÉ Y NOTIFICAR A BLAZOR EN TIEMPO REAL
@@ -162,7 +162,7 @@ namespace WhatsappComercial.Servicios.ProcesarMensaje
                     Leido = false,
                     MimeTypeMensaje = mimeType,
                     EstadoEnvio = "delivered",
-                    Caption = mensajeWA.Image.Caption
+                    Caption = caption
                 };
 
                 // Insertar en la BD y obtener consecutivo generado

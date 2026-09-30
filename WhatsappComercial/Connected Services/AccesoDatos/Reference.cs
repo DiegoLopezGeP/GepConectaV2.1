@@ -879,11 +879,13 @@ namespace AccesoDatos
         {
             if ((endpointConfiguration == EndpointConfiguration.AccesoDatosSoap))
             {
-                return new System.ServiceModel.EndpointAddress("http://192.168.1.50:8081/AccesoDatos.asmx");
+                //return new System.ServiceModel.EndpointAddress("http://192.168.1.50:8081/AccesoDatos.asmx");
+                return new System.ServiceModel.EndpointAddress("http://192.168.1.50/accesodatos.asmx");
             }
             if ((endpointConfiguration == EndpointConfiguration.AccesoDatosSoap12))
             {
-                return new System.ServiceModel.EndpointAddress("http://192.168.1.50:8081/AccesoDatos.asmx");
+                //return new System.ServiceModel.EndpointAddress("http://192.168.1.50:8081/AccesoDatos.asmx");
+                return new System.ServiceModel.EndpointAddress("http://192.168.1.50/accesodatos.asmx");
             }
             throw new System.InvalidOperationException(string.Format("No se pudo encontrar un punto de conexión con el nombre \"{0}\".", endpointConfiguration));
         }

@@ -107,6 +107,8 @@ namespace WhatsappComercial.Extensions
             services.AddScoped<IActualizarContacto, ActualizarContactoService>();
             //Servicio para obtener el error de un mensaje desde la tabla de log
             services.AddScoped<IObtenerErrorMensaje, ObtenerErrorMensaje>();
+            //Servicio para obtener el link del archivo multimedia para las plantillas multimedia
+            services.AddScoped<IObtenerLinkMultimediaPlantilla, ObtenerLinkMultimediaPlantilla>();
 
 
 

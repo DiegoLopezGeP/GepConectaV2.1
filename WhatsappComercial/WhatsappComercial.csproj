@@ -22,8 +22,8 @@
     <PackageReference Include="System.ServiceModel.Federation" Version="4.10.*" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="wwwroot\Images\" />
     <Folder Include="wwwroot\audio\" />
+    <Folder Include="wwwroot\Images\ImagenesPlantillas\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GepConecta.WhatsAppCloud\GepConecta.WhatsAppCloud.csproj" />

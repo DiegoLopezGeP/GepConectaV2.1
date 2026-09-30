@@ -1,7 +1,8 @@
 {
   "ExtendedData": {
     "inputs": [
-      "http://192.168.1.50:8082/AccesoDatos.asmx"
+      //"http://192.168.1.50:8081/ACCESODATOS.ASMX?wsdl"
+      "http://192.168.1.50/ACCESODATOS.ASMX?wsdl"
     ],
     "collectionTypes": [
       "System.Array",

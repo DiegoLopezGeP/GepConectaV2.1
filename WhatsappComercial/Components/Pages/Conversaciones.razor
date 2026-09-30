@@ -37,6 +37,7 @@
 @inject IObtenerPlantillas obtenerPlantillas
 @inject IWhatsAppCloudClient WhatsAppClient
 @inject IObtenerErrorMensaje obtenerErrorMensaje
+@inject IObtenerLinkMultimediaPlantilla obtenerLink
 @inject ILogger<Conversaciones> Logger
 @inject NotificationService notificationService
 @inject DialogService dialogService
@@ -155,7 +156,7 @@
 			ShowClose = true,
 			Style = "margin-top: 10%; border-radius: 12px;",
 			ShowTitle = true
-			
+
 		};
 
 		await dialogService.OpenAsync<SelectorPlantillas>(
@@ -684,7 +685,7 @@
 				{
 					Codigo = !string.IsNullOrEmpty(detalleMeta?.Idioma) ? detalleMeta.Idioma : "es_CO"
 				},
-				Componentes = ConstruirComponentesEnvioPlantilla(detalleMeta)
+				Componentes = await ConstruirComponentesEnvioPlantilla(detalleMeta)
 			}
 		};
 
@@ -740,7 +741,7 @@
 		}
 	}
 
-	private List<ComponenteEnvioDTO> ConstruirComponentesEnvioPlantilla(PlantillaMetaResponseDTO? detalleMeta)
+	private async Task<List<ComponenteEnvioDTO>> ConstruirComponentesEnvioPlantilla(PlantillaMetaResponseDTO? detalleMeta)
 	{
 		var listaComponentes = new List<ComponenteEnvioDTO>();
 
@@ -769,17 +770,21 @@
 			{
 				if (comp.Format?.Equals("IMAGE", StringComparison.OrdinalIgnoreCase) == true && comp.Ejemplo?.HeadersArchivos?.Any() == true)
 				{
+					// Obtenemos el link dinámico/estático del servicio
+					string obtenerLinkImagen = await obtenerLink.ObtenerLinkPlantilla(detalleMeta.Id.ToString());
+
 					listaComponentes.Add(new ComponenteEnvioDTO
 					{
 						Tipo = "header",
 						Parametros = new List<ParametroEnvioDTO>
+					{
+						new ParametroEnvioDTO
 						{
-							new ParametroEnvioDTO
-							{
-								Tipo = "image",
-								Imagen = new RecursoMultimediaDTO { Link = comp.Ejemplo.HeadersArchivos.First() }
-							}
+							Tipo = "image",
+							// Asignamos la variable 'obtenerLinkImagen' que obtuviste asincrónicamente
+							Imagen = new RecursoMultimediaDTO { Link = obtenerLinkImagen }
 						}
+					}
 					});
 				}
 			}

@@ -19,17 +19,24 @@ namespace WhatsappComercial.Servicios.Plantillas
             {
                 string[] param = { idPlantilla.ToString() };
                 int idConversacion = datosContactoConversacionDTO.IdConversacion;
+
                 // 1. Consultar nodo de la acción
                 DataTable dtAccionNodo = await _servicioAccesoDatos.TraerTablaConArregloAsincrono(62, param);
 
-                // Validar si la consulta devolvió filas
+                // Validar si la consulta devolvió filas (Si no, devolvemos un objeto vacío en lugar de null)
                 if (dtAccionNodo == null || dtAccionNodo.Rows.Count == 0)
                 {
-                    return null;
+                    return new Dictionary<string, object?>();
                 }
 
                 // Tomar la primera fila REAL devuelta por la BD
                 DataRow drAccionNodo = dtAccionNodo.Rows[0];
+
+                // Validar si NroConsulta es DBNull o menor/igual a 0 (Significa que la plantilla no necesita parámetros)
+                if (drAccionNodo["NroConsulta"] == DBNull.Value || Convert.ToInt32(drAccionNodo["NroConsulta"]) <= 0)
+                {
+                    return new Dictionary<string, object?>(); // Pasa "como si nada" con un objeto vacío
+                }
 
                 // Obtener el número de consulta dinámico
                 int nroConsulta = Convert.ToInt32(drAccionNodo["NroConsulta"]);
@@ -37,13 +44,13 @@ namespace WhatsappComercial.Servicios.Plantillas
                 // 2. Consultar los parámetros reales de la plantilla
                 DataTable dtParametrosPlantilla = await _servicioAccesoDatos.TraerTablaConArregloAsincrono(nroConsulta, [idConversacion.ToString()]);
 
+                // Si la consulta no trae datos, devolvemos objeto vacío
                 if (dtParametrosPlantilla == null || dtParametrosPlantilla.Rows.Count == 0)
                 {
-                    return null;
+                    return new Dictionary<string, object?>();
                 }
 
                 // 3. Convertir el DataTable a un formato limpio de objeto (Diccionario/Lista de objetos)
-                // Esto permite que se serialice perfectamente a JSON o C# dinámico
                 var listaParametros = new List<Dictionary<string, object?>>();
 
                 foreach (DataRow row in dtParametrosPlantilla.Rows)
