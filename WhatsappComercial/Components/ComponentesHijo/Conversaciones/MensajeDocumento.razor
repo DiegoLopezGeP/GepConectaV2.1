@@ -1,12 +1,26 @@
-﻿<div class="tarjeta-documento">
+﻿@using System.IO
+@inject IJSRuntime JSRuntime
+
+<div class="tarjeta-documento">
     <div class="icono-doc">
-        <i class="@ObtenerIcono(NombreArchivo)"></i>
+        <RadzenIcon Icon="@IconoMostrar" />
     </div>
     <div class="detalles-doc">
-        <span class="nombre-doc">@(NombreArchivo ?? "Documento")</span>
-        <a href="@RutaArchivo" download target="_blank" class="btn-descargar">
-            <RadzenIcon Icon="download"></RadzenIcon>
-        </a>
+        <span class="nombre-doc" title="@NombreMostrar">@NombreMostrar</span>
+        <button type="button"
+                @onclick="DescargarDirecto"
+                class="btn-descargar"
+                disabled="@cargando"
+                title="Descargar archivo">
+            @if (cargando)
+            {
+                <RadzenIcon Icon="sync" class="spinner-rotar" />
+            }
+            else
+            {
+                <RadzenIcon Icon="download" />
+            }
+        </button>
     </div>
 </div>
 
@@ -19,17 +33,24 @@
         padding: 8px 12px;
         border-radius: 8px;
         min-width: 200px;
+        max-width: 300px;
     }
 
     .icono-doc {
-        font-size: 24px;
+        font-size: 28px;
         color: #54656f;
+        display: flex;
+        align-items: center;
     }
 
     .detalles-doc {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
         overflow: hidden;
+        gap: 8px;
     }
 
     .nombre-doc {
@@ -38,13 +59,42 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        color: #111b21;
     }
 
     .btn-descargar {
-        font-size: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         color: #00a884;
-        text-decoration: none;
-        font-weight: bold;
+        background: transparent;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+
+        .btn-descargar:hover:not(:disabled) {
+            color: #008069;
+        }
+
+        .btn-descargar:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+
+    .spinner-rotar {
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
     }
 </style>
 
@@ -52,15 +102,85 @@
     [Parameter] public string? RutaArchivo { get; set; }
     [Parameter] public string? NombreArchivo { get; set; }
 
-    private string ObtenerIcono(string? nombre)
+    private bool cargando = false;
+
+    private string NombreMostrar
     {
-        var ext = Path.GetExtension(nombre)?.ToLower();
-        return ext switch
+        get
         {
-            ".pdf" => "rzi rzi-file-pdf",
-            ".doc" or ".docx" => "rzi rzi-file-word",
-            ".xls" or ".xlsx" => "rzi rzi-file-excel",
-            _ => "rzi rzi-file"
-        };
+            if (!string.IsNullOrWhiteSpace(NombreArchivo))
+                return NombreArchivo;
+
+            if (!string.IsNullOrWhiteSpace(RutaArchivo))
+            {
+                string[] partes = RutaArchivo.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+                if (partes.Length > 0)
+                    return partes.Last();
+            }
+
+            return "Documento.pdf";
+        }
+    }
+
+    private string IconoMostrar
+    {
+        get
+        {
+            var ext = Path.GetExtension(NombreMostrar)?.ToLower();
+            return ext switch
+            {
+                ".pdf" => "picture_as_pdf",
+                ".doc" or ".docx" => "description",
+                ".xls" or ".xlsx" => "grid_on",
+                ".txt" => "article",
+                ".zip" or ".rar" or ".7z" => "folder_zip",
+                _ => "insert_drive_file"
+            };
+        }
+    }
+
+    private async Task DescargarDirecto()
+    {
+        if (string.IsNullOrWhiteSpace(RutaArchivo))
+            return;
+
+        try
+        {
+            cargando = true;
+
+            // 1. Construir la ruta física exacta del servidor
+            string rutaFisica = RutaArchivo;
+
+            if (!File.Exists(rutaFisica))
+            {
+                string rutaRelativaLimpia = RutaArchivo.Replace("/WhatsappCorporativo", "")
+                                                      .Replace("/Multimedia", "")
+                                                      .Replace("/", "\\")
+                                                      .TrimStart('\\');
+
+                rutaFisica = Path.Combine(@"C:\GepConecta\Archivos\Multimedia", rutaRelativaLimpia);
+            }
+
+            if (!File.Exists(rutaFisica))
+            {
+                Console.WriteLine($"[ERROR]: No existe el archivo en el disco: {rutaFisica}");
+                return;
+            }
+
+            // 2. Abrir el archivo mediante un Stream en C#
+            using var fileStream = new FileStream(rutaFisica, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var streamRef = new DotNetStreamReference(stream: fileStream);
+
+            // 3. Pasar el Stream al navegador (API oficial de Blazor)
+            await JSRuntime.InvokeVoidAsync("blazorInterop.descargarStreamBlazor", NombreMostrar, streamRef);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR DESCARGA BLAZOR]: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+        }
     }
 }

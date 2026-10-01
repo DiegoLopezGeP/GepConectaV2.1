@@ -24,7 +24,7 @@ function desbloquearAudio() {
 }
 
 // Escuchar el primer clic, toque o tecla del usuario
-document.addEventListener('click', desbloquearAudio);
+document.addEventListener('click', desbloquearAudio); 
 document.addEventListener('touchstart', desbloquearAudio);
 document.addEventListener('keydown', desbloquearAudio);
 
@@ -59,8 +59,24 @@ window.blazorInterop = {
         } catch (e) {
             console.error('Error al reproducir el sonido:', e);
         }
+    },
+
+    // ✅ SINTAXIS CORREGIDA
+    descargarStreamBlazor: async function (fileName, contentStreamReference) {
+        const arrayBuffer = await contentStreamReference.arrayBuffer();
+        const blob = new Blob([arrayBuffer]);
+        const url = URL.createObjectURL(blob);
+
+        const anchorElement = document.createElement('a');
+        anchorElement.href = url;
+        anchorElement.download = fileName ?? 'archivo';
+        anchorElement.click();
+        anchorElement.remove();
+
+        URL.revokeObjectURL(url);
     }
 };
+
 window.emojiHelper = {
     inicializar: function (dotNetHelper, pickerId) {
         const picker = document.getElementById(pickerId);
