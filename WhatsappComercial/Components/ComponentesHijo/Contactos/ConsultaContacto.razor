@@ -41,14 +41,15 @@
     </RadzenStack>
 
     <RadzenStack Gap="1.25rem">
-        <!-- Selector de Tipo de Contacto (Estilo Segmentado) -->
-        <RadzenCard class="rz-background-color-base-100 rz-p-2" Variant="Variant.Flat">
+        <!-- Selector de Tipo -->
+        <RadzenCard class="rz-background-color-base-100 rz-p-3 rz-mb-4" Variant="Variant.Flat">
+            <RadzenText TextStyle="TextStyle.Overline" class="rz-display-block rz-mb-2">Tipo de Contacto</RadzenText>
             <RadzenSelectBar TValue="TipoContactoEnum"
                              Data="@tiposContacto"
                              TextProperty="Texto"
                              ValueProperty="Valor"
-                             @bind-Value="tipoContactoEnum"
-                             Change="@(() => BuscarContacto())"
+                             Value="@tipoContactoEnum"
+                             ValueChanged="@OnTipoContactoChanged"
                              Style="width: 100%; flex-wrap: wrap;" />
         </RadzenCard>
 
@@ -132,14 +133,14 @@
 </div>
 
 <CargandoAccion IsLoading="@cargandoAccion" IsGlobal="true"></CargandoAccion>
-@code
-{
+
+@code {
     [Parameter] public string? NombreUsuarioDA { get; set; }
     [Parameter] public GrupoUser InformacionUsuarioAutenticado { get; set; } = new();
     [Parameter] public bool EsMovil { get; set; }
 
     private string? textoBusqueda;
-    private TipoContactoEnum tipoContactoEnum = TipoContactoEnum.Titular;
+    private TipoContactoEnum tipoContactoEnum = TipoContactoEnum.Relacionista;
     private List<OpcionTipoContacto> tiposContacto = new();
 
     private Contacto? contactoSeleccionado;
@@ -159,7 +160,6 @@
 
     private void ConfigurarTiposContacto()
     {
-        // Compara con IdGrupoUser o Id según la propiedad de tu modelo GrupoUser
         int? idGrupo = InformacionUsuarioAutenticado?.IdGrupoTrabajo;
 
         if (idGrupo == 12)
@@ -178,13 +178,15 @@
         {
             tiposContacto = new List<OpcionTipoContacto>
             {
-                new() { Valor = TipoContactoEnum.Titular, Texto = "Titular" },
-                new() { Valor = TipoContactoEnum.Beneficiario, Texto = "Beneficiario" },
                 new() { Valor = TipoContactoEnum.Relacionista, Texto = "Relacionista" },
-                new() { Valor = TipoContactoEnum.Pagadurias, Texto = "Pagadurías" },
-                new() { Valor = TipoContactoEnum.Cobranzas, Texto = "Cobranzas" }
             };
         }
+    }
+
+    private async Task OnTipoContactoChanged(TipoContactoEnum nuevoTipo)
+    {
+        tipoContactoEnum = nuevoTipo;
+        await BuscarContacto();
     }
 
     private void OnRowSelect(Contacto contacto)
@@ -338,24 +340,9 @@
     {
         switch (tipoContacto)
         {
-            case TipoContactoEnum.Titular:
-                conversacion.IdCliente = id;
-                break;
-
-            case TipoContactoEnum.Beneficiario:
-                conversacion.IdBeneficiario = id;
-                break;
 
             case TipoContactoEnum.Relacionista:
                 conversacion.IdContacto = id;
-                break;
-
-            case TipoContactoEnum.Pagadurias:
-                conversacion.IdBaseTelemercadeo = id;
-                break;
-
-            case TipoContactoEnum.Cobranzas:
-                conversacion.IdCliente = id;
                 break;
 
             default:
@@ -386,25 +373,10 @@
 
         switch (tipoContactoEnum)
         {
-            case TipoContactoEnum.Titular:
-                contactosFiltrados = await busquedaContactos.ObtenerClienteTitularAsync(filtro);
-                break;
-
-            case TipoContactoEnum.Beneficiario:
-                contactosFiltrados = await busquedaContactos.ObtenerBeneficiarioAsync(filtro);
-                break;
-
             case TipoContactoEnum.Relacionista:
                 contactosFiltrados = await busquedaContactos.ObtenerContactoAsync(filtro);
                 break;
 
-            case TipoContactoEnum.Pagadurias:
-                contactosFiltrados = await busquedaContactos.ObtenerClientePagaduriasAsync(filtro);
-                break;
-
-            case TipoContactoEnum.Cobranzas:
-                contactosFiltrados = await busquedaContactos.ObtenerClienteCobranzasAsync(filtro);
-                break;
 
             default:
                 contactosFiltrados = new List<Contacto>();
@@ -418,11 +390,7 @@
 
         Type tipoDialogo = tipoContactoEnum switch
         {
-            TipoContactoEnum.Titular => typeof(EditarContactoDialog),
-            TipoContactoEnum.Beneficiario => typeof(EditarContactoDialog),
             TipoContactoEnum.Relacionista => typeof(EditarContactoDialog),
-            TipoContactoEnum.Pagadurias => typeof(EditarContactoDialog),
-            TipoContactoEnum.Cobranzas => typeof(EditarContactoDialog),
             _ => throw new ArgumentOutOfRangeException()
         };
 

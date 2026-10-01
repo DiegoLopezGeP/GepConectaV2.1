@@ -76,7 +76,7 @@
                                                     Data="@Enum.GetValues(campo.TipoDato)"
                                                     Value="@GetValor(campo.NombreCampo)"
                                                     ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
-                                                    @onkeydown="@(async (KeyboardEventArgs e) => await ManejarKeyDownCampoAsync(e, campo))" />
+                                                    @onkeydown="@(e => ManejarKeyDownCampoAsync(e, campo))" />
                                 }
                                 else if (campo.TipoDato == typeof(bool))
                                 {
@@ -85,7 +85,7 @@
                                                         TValue="bool"
                                                         Value="@GetValorBool(campo.NombreCampo)"
                                                         ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
-                                                        @onkeydown="@(async (KeyboardEventArgs e) => await ManejarKeyDownCampoAsync(e, campo))" />
+                                                        @onkeydown="@(e => ManejarKeyDownCampoAsync(e, campo))" />
                                         <RadzenLabel Text=" Confirmar / Activar" class="rz-ml-2" />
                                     </div>
                                 }
@@ -96,7 +96,7 @@
                                                       TValue="DateTime?"
                                                       Value="@GetValorDateTime(campo.NombreCampo)"
                                                       ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
-                                                      @onkeydown="@(async (KeyboardEventArgs e) => await ManejarKeyDownCampoAsync(e, campo))" />
+                                                      @onkeydown="@(e => ManejarKeyDownCampoAsync(e, campo))" />
                                 }
                                 else if (campo.TipoDato == typeof(int) || campo.TipoDato == typeof(int?) ||
                                          campo.TipoDato == typeof(decimal) || campo.TipoDato == typeof(decimal?))
@@ -105,14 +105,14 @@
                                                    TValue="decimal?"
                                                    Value="@GetValorDecimal(campo.NombreCampo)"
                                                    ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
-                                                   @onkeydown="@(async (KeyboardEventArgs e) => await ManejarKeyDownCampoAsync(e, campo))" />
+                                                   @onkeydown="@(e => ManejarKeyDownCampoAsync(e, campo))" />
                                 }
                                 else
                                 {
                                     <RadzenTextBox Name="@campo.NombreCampo"
                                                    Value="@GetValorString(campo.NombreCampo)"
                                                    ValueChanged="@(val => SetValor(campo.NombreCampo, val))"
-                                                   @onkeydown="@(async (KeyboardEventArgs e) => await ManejarKeyDownCampoAsync(e, campo))" />
+                                                   @onkeydown="@(e => ManejarKeyDownCampoAsync(e, campo))" />
                                 }
                             </ChildContent>
 
@@ -162,7 +162,8 @@
     [Parameter] public GrupoUser? grupoUser { get; set; }
     [Parameter] public bool EsMovil { get; set; }
 
-    private TipoContactoEnum tipoContactoEnum = TipoContactoEnum.Titular;
+    // Valor inicial por defecto: Relacionista
+    private TipoContactoEnum tipoContactoEnum = TipoContactoEnum.Relacionista;
     private List<CampoEsquemaDTO> camposEsquema = new();
     private Dictionary<string, object?> modeloDinamico = new();
     private bool isSaving = false;
@@ -203,10 +204,6 @@
         {
             tiposContacto = new List<OpcionTipoContacto>
             {
-                new OpcionTipoContacto { Texto = "Titular", Valor = TipoContactoEnum.Titular },
-                new OpcionTipoContacto { Texto = "Beneficiario", Valor = TipoContactoEnum.Beneficiario },
-                new OpcionTipoContacto { Texto = "Cobranzas", Valor = TipoContactoEnum.Cobranzas },
-                new OpcionTipoContacto { Texto = "Pagadurías", Valor = TipoContactoEnum.Pagadurias },
                 new OpcionTipoContacto { Texto = "Relacionista", Valor = TipoContactoEnum.Relacionista }
             };
         }
