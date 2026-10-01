@@ -181,8 +181,8 @@ emoji-picker {
 
 @media (max-width: 480px) {
     .popover-emojis {
-        left: 2%;
-        right: 2%;
+        left: 5%;
+        right: 5%;
         bottom: 170px;
     }
 

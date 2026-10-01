@@ -229,7 +229,7 @@
 
 	private async Task OnInputFileChange(InputFileChangeEventArgs e)
 	{
-		const long maxFileSize = 10 * 1024 * 1024; // 10 MB
+		const long maxFileSize = 100 * 1024 * 1024; // 10 MB
 		var archivosValidos = e.GetMultipleFiles(10); // Permite hasta 10 archivos
 
 		foreach (var file in archivosValidos)
