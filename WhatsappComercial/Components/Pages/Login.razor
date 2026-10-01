@@ -3,8 +3,10 @@
 @using Microsoft.AspNetCore.Authorization
 @using Radzen
 @using Radzen.Blazor
+@using WhatsappComercial.Components.ComponentesHijo.Generales
 @attribute [AllowAnonymous]
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <PageTitle>Iniciar Sesión - WhatsApp Comercial</PageTitle>
 
@@ -14,9 +16,7 @@
 
             <!-- Encabezado con Logo y Título -->
             <div class="login-header">
-                @* <div class="logo-container"> *@
-                    <RadzenImage Path="images/Logo.png" AlternateText="Logo" class="logo-img" />
-@*                 </div> *@
+                <RadzenImage Path="images/Logo.png" AlternateText="Logo" class="logo-img" />
                 <h2 class="app-title">WhatsApp Comercial</h2>
                 <p class="app-subtitle">Ingresa tus credenciales corporativas</p>
             </div>
@@ -35,7 +35,7 @@
             }
 
             <!-- Formulario Nativo HTML -->
-            <form action="api/account/login" method="post" class="login-form">
+            <form id="loginForm" action="api/account/login" method="post" class="login-form" @onsubmit="ManejarSubmit">
                 <AntiforgeryToken />
 
                 <div class="form-group">
@@ -61,7 +61,6 @@
                             <RadzenIcon Icon="lock_open" class="field-icon" />
                         </Start>
                         <ChildContent>
-                            <!-- El tipo de input cambia dinámicamente -->
                             <input type="@tipoInput"
                                    name="password"
                                    class="custom-input"
@@ -82,7 +81,7 @@
                     </RadzenFormField>
                 </div>
 
-                <button type="submit" class="submit-btn">
+                <button type="submit" class="submit-btn" disabled="@cargandoSesion">
                     <i class="rzi me-2">login</i> Iniciar Sesión
                 </button>
             </form>
@@ -94,6 +93,8 @@
         </RadzenCard>
     </div>
 </div>
+
+<CargandoAccion IsGlobal="true" IsLoading="@cargandoSesion" Mensaje="Cargando inicio de sesión, Por favor espere..."></CargandoAccion>
 
 <style>
     /* Estructura Principal */
@@ -126,18 +127,6 @@
     .login-header {
         text-align: center;
         margin-bottom: 2rem;
-    }
-
-    .logo-container {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 72px;
-        height: 72px;
-        background: #f0fdf4;
-        border-radius: 50%;
-        margin-bottom: 1rem;
-        box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1);
     }
 
     .logo-img {
@@ -216,15 +205,15 @@
         margin-top: 0.5rem;
     }
 
-        .submit-btn:hover {
+        .submit-btn:hover:not(:disabled) {
             background-color: #1d4ed8;
             box-shadow: 0 6px 12px -2px rgba(37, 99, 235, 0.35);
             transform: translateY(-1px);
         }
 
-        .submit-btn:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px -1px rgba(37, 99, 235, 0.2);
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
         }
 
     /* Pie de página */
@@ -266,8 +255,8 @@
 @code {
     private bool mostrarError = false;
     private bool mostrarContrasena = false;
+    private bool cargandoSesion = false;
 
-    // Propiedades calculadas dinámicas
     private string tipoInput => mostrarContrasena ? "text" : "password";
     private string iconoOpcion => mostrarContrasena ? "visibility_off" : "visibility";
 
@@ -283,5 +272,20 @@
     private void AlternarVisibilidad()
     {
         mostrarContrasena = !mostrarContrasena;
+    }
+
+    private async Task ManejarSubmit()
+    {
+        if (cargandoSesion) return;
+
+        // Activar spinner en pantalla
+        cargandoSesion = true;
+        StateHasChanged();
+
+        // Pequeño retardo para asegurar que el DOM pinte el componente de carga
+        await Task.Delay(50);
+
+        // Enviar el formulario vía JavaScript (esto salta el event.preventDefault de Blazor)
+        await JS.InvokeVoidAsync("eval", "document.getElementById('loginForm').submit()");
     }
 }
